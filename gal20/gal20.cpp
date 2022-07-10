@@ -41,9 +41,8 @@ namespace algo {
     mutation<typename Config::mutation_t, typename Config::chromosome_t>;
     evaluator<typename Config::evaluator_t, typename Config::chromosome_t>;
 
-    std::derived_from<typename Config::only_improving_mutation_t,
-                      std::true_type> ||
-        std::derived_from<typename Config::only_improving_mutation_t,
+    std::derived_from<typename Config::improving_mutation_t, std::true_type> ||
+        std::derived_from<typename Config::improving_mutation_t,
                           std::false_type>;
 
     std::derived_from<typename Config::is_global_scaling_t, std::true_type> ||

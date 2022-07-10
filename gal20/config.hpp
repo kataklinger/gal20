@@ -292,31 +292,100 @@ namespace config {
     statistics_t* statistics_;
   };
 
-  template<typename Crossover, typename Mutation>
+  template<typename Crossover,
+           typename Mutation,
+           typename Evaluator,
+           typename ImprovingMutation>
   class reproduction_context {
   public:
     using crossover_t = Crossover;
     using mutation_t = Mutation;
+    using evaluator_t = Evaluator;
+
+    using improving_mutation_t = ImprovingMutation;
 
   public:
     constexpr inline reproduction_context(crossover_t const& crossover,
-                                          mutation_t const& mutation) noexcept
+                                          mutation_t const& mutation,
+                                          evaluator_t const& evaluator) noexcept
         : crossover_{&crossover}
-        , mutation_{&mutation} {
+        , mutation_{&mutation}
+        , evaluator_{evaluator} {
     }
 
     inline crossover_t const& crossover() const noexcept {
-      return *crossover_;
+      return crossover_;
     }
 
     inline mutation_t const& mutation() const noexcept {
-      return *mutation_;
+      return mutation_;
+    }
+
+    inline evaluator_t const& evaluator() const noexcept {
+      return evaluator_;
     }
 
   private:
-    crossover_t const* crossover_;
-    mutation_t const* mutation_;
+    crossover_t crossover_;
+    mutation_t mutation_;
+    evaluator_t evaluator_;
   };
+
+  template<typename Crossover,
+           typename Mutation,
+           typename Evaluator,
+           typename ImprovingMutation,
+           typename Scaling>
+  class reproduction_context_with_scaling
+      : public reproduction_context<Crossover,
+                                    Mutation,
+                                    Evaluator,
+                                    ImprovingMutation> {
+  public:
+    using crossover_t = Crossover;
+    using mutation_t = Mutation;
+    using evaluator_t = Evaluator;
+    using scaling_t = Scaling;
+
+  public:
+    constexpr inline reproduction_context_with_scaling(
+        crossover_t const& crossover,
+        mutation_t const& mutation,
+        evaluator_t const& evaluator,
+        scaling_t const& scaling) noexcept
+        : reproduction_context_with_scaling{crossover, mutation, evaluator}
+        , scaling_{scaling} {
+    }
+
+    inline scaling_t const& scaling() const noexcept {
+      return scaling_;
+    }
+
+  private:
+    scaling_t scaling_;
+  };
+
+  template<typename Builder, typename = typename Builder::is_global_scaling_t>
+  struct build_reproduction_context {
+    using type = reproduction_context<typename Builder::crossover_t,
+                                      typename Builder::mutation_t,
+                                      typename Builder::evaluator_t,
+                                      typename Builder::improving_mutation_t>;
+  };
+
+  template<typename Builder>
+  struct build_reproduction_context<Builder, std::false_type> {
+    using type = reproduction_context_with_scaling<
+        typename Builder::crossover_t,
+        typename Builder::mutation_t,
+        typename Builder::evaluator_t,
+        typename Builder::improving_mutation_t,
+        typename Builder::scaling_t>;
+  };
+
+  template<typename Builder>
+  using build_reproduction_context_t =
+      typename build_reproduction_context<Builder>::type;
 
   template<typename Builder>
   struct tags_iface : private details::iface_base<Builder, tags_iface> {
@@ -398,7 +467,7 @@ namespace config {
 
   template<typename Builder>
   struct couple_iface : private details::iface_base<Builder, couple_iface> {
-    using reproduction_context_t = typename Builder::reproduction_context_t;
+    using reproduction_context_t = build_reproduction_context_t<Builder>;
     using selection_result_t = typename Builder::selection_result_t;
 
     template<
@@ -499,11 +568,11 @@ namespace config {
       : private details::iface_base<Builder, reproduce_iface> {
     template<crossover<typename Builder::chromosome_t> Crossover,
              mutation<typename Builder::chromosome_t> Mutation,
-             bool OnlyImproving = false>
-    constexpr inline auto
-        reproduce_using(Crossover const& crossover,
-                        Mutation const& mutation,
-                        std::bool_constant<OnlyImproving> /*unused*/) const {
+             bool ImprovingMutation = false>
+    constexpr inline auto reproduce_using(
+        Crossover const& crossover,
+        Mutation const& mutation,
+        std::bool_constant<ImprovingMutation> /*unused*/) const {
       using chromosome_t = typename Builder::chromosome_t;
 
       class node {
@@ -511,10 +580,7 @@ namespace config {
         using crossover_t = Crossover;
         using mutation_t = Mutation;
 
-        using reproduction_context_t =
-            reproduction_context<crossover_t, mutation_t>;
-
-        using only_improving_mutation_t = std::bool_constant<OnlyImproving>;
+        using improving_mutation_t = std::bool_constant<ImprovingMutation>;
 
       public:
         constexpr inline explicit node(crossover_t const& crossover,
@@ -523,8 +589,12 @@ namespace config {
             , mutation_{mutation} {
         }
 
-        inline auto reproduction_context() const noexcept {
-          return reproduction_context_t{crossover_, mutation_};
+        inline auto const& crossover() const noexcept {
+          return crossover_;
+        }
+
+        inline auto const& mutation() const noexcept {
+          return mutation_;
         }
 
       private:
@@ -537,44 +607,6 @@ namespace config {
   };
 
   template<typename Builder>
-  struct context_iface : private details::iface_base<Builder, context_iface> {
-    using required_t = details::iflist<reproduce_iface>;
-
-    constexpr inline auto
-        define_context(std::optional<std::size_t> population_size) const {
-      using population_t = typename Builder::population_t;
-      using statistics_t = typename Builder::statistics_t;
-
-      class node {
-      public:
-        using population_context_t =
-            population_context<population_t, statistics_t>;
-
-      public:
-        constexpr inline explicit node(
-            std::optional<std::size_t> population_size)
-            : population_{population_size} {
-        }
-
-        inline auto population_context() const {
-          return population_context_t{population_, statistics_};
-        }
-
-      private:
-        population_t population_;
-        statistics_t statistics_{};
-      };
-
-      using added_t = std::conditional_t<
-          std::is_same_v<empty_fitness, typename Builder::scaled_fitness_t>,
-          details::iflist<select_iface, criterion_iface>,
-          details::iflist<scale_iface, criterion_iface>>;
-
-      return this->template next<added_t>(node{population_size});
-    }
-  };
-
-  template<typename Builder>
   struct statistics_iface
       : private details::iface_base<Builder, statistics_iface> {
     template<stats::node_value<typename Builder::population_t>... Values>
@@ -583,9 +615,16 @@ namespace config {
 
       struct node {
         using statistics_t = stats::statistics<population_t, Values...>;
+        using population_context_t =
+            population_context<population_t, statistics_t>;
       };
 
-      return this->template next<context_iface>(node{});
+      using added_t = std::conditional_t<
+          std::is_same_v<empty_fitness, typename Builder::scaled_fitness_t>,
+          details::iflist<select_iface, criterion_iface>,
+          details::iflist<scale_iface, criterion_iface>>;
+
+      return this->template next<added_t>(node{});
     }
   };
 
@@ -595,7 +634,7 @@ namespace config {
   private:
     struct node_base {};
     struct node_base_none {
-      using is_global_scaling_t = std::false_type;
+      using is_global_scaling_t = std::true_type;
     };
 
     template<fitness Scaled>
