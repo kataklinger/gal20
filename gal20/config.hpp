@@ -7,7 +7,68 @@ namespace config {
   template<typename Fragment>
   concept fragment = !std::is_final_v<Fragment> && std::copyable<Fragment>;
 
+  template<template<typename> class... Interfaces>
+  struct iflist {};
+
+  template<template<typename> class Key,
+           typename Unlocked,
+           typename Required = iflist<>>
+  struct config_entry {};
+
+  template<typename... Maps>
+  struct config_map {};
+
+  template<typename Entry, typename Builder>
+  struct eval_config_if {
+    using type = Entry;
+  };
+
+  template<template<typename> class Condition, typename Then, typename Else>
+  struct config_if {};
+
   namespace details {
+
+    template<template<typename> class Condition,
+             typename Then,
+             typename Else,
+             typename Builder>
+    struct eval_config_if<config_if<Condition, Then, Else>, Builder> {
+      using type = std::conditional_t<Condition<Builder>::value, Then, Else>;
+    };
+
+    template<typename Entry, typename Builder>
+    using eval_config_if_t = typename eval_config_if<Entry, Builder>::type;
+
+    template<typename Map, template<typename> class Match, typename Builder>
+    struct config_map_match;
+
+    template<template<typename> class Match, typename Builder>
+    struct config_map_match<config_map<>, Match, Builder> {
+      using unlocked_t = iflist<>;
+      using required_t = iflist<>;
+    };
+
+    template<typename Unlocked,
+             typename Required,
+             typename... Rest,
+             template<typename>
+             class Match,
+             typename Builder>
+    struct config_map_match<
+        config_map<config_entry<Match, Unlocked, Required>, Rest...>,
+        Match,
+        Builder> {
+      using unlocked_t = eval_config_if_t<Unlocked, Builder>;
+      using required_t = eval_config_if_t<Required, Builder>;
+    };
+
+    template<typename Map,
+             typename... Rest,
+             template<typename>
+             class Match,
+             typename Builder>
+    struct config_map_match<config_map<Map, Rest...>, Match, Builder>
+        : config_map_match<config_map<Rest...>, Match, Builder> {};
 
     class null_config {};
     class null_iface {};
@@ -44,9 +105,6 @@ namespace config {
           , base_t{base} {
       }
     };
-
-    template<template<typename> class... Interfaces>
-    struct iflist {};
 
     template<typename Left, typename Right>
     struct iflist_merge;
@@ -134,8 +192,8 @@ namespace config {
     struct iface_satisfied_helper : std::false_type {};
 
     template<typename Used, template<typename> class... Required>
-    struct iface_satisfied_helper<Used, details::iflist<Required...>>
-        : std::conjunction<details::iflist_contain<Required, Used>...> {};
+    struct iface_satisfied_helper<Used, iflist<Required...>>
+        : std::conjunction<iflist_contain<Required, Used>...> {};
 
     template<typename Used, typename Interface, typename = void>
     struct is_iface_satisfied : std::true_type {};
@@ -163,7 +221,7 @@ namespace config {
     class iface_node {};
 
     template<typename Builder, typename Used>
-    class iface_node<Builder, Used, details::iflist<>> {};
+    class iface_node<Builder, Used, iflist<>> {};
 
     template<typename Builder,
              typename Used,
@@ -171,9 +229,9 @@ namespace config {
              class Interface,
              template<typename>
              class... Interfaces>
-    class iface_node<Builder, Used, details::iflist<Interface, Interfaces...>>
+    class iface_node<Builder, Used, iflist<Interface, Interfaces...>>
         : public iface_inherit_t<Used, Interface<Builder>>,
-          public iface_node<Builder, Used, details::iflist<Interfaces...>> {};
+          public iface_node<Builder, Used, iflist<Interfaces...>> {};
 
     template<typename Available, typename Used, fragment... Fragments>
     class builder_node;
@@ -224,12 +282,11 @@ namespace config {
                         Fragment,
                         This,
                         Added> {
-      using type = builder_node<
-          details::iflist_remove_t<This,
-                                   details::iflist_merge_t<Added, Available>>,
-          details::iflist_add_t<This, Used>,
-          Fragment,
-          Fragments...>;
+      using type =
+          builder_node<iflist_remove_t<This, iflist_merge_t<Added, Available>>,
+                       iflist_add_t<This, Used>,
+                       Fragment,
+                       Fragments...>;
     };
 
     template<typename Builder,
@@ -241,18 +298,23 @@ namespace config {
         typename next_builder<Builder, Fragment, Current, Added>::type;
 
     template<typename Builder, template<typename> class Derived>
-    struct iface_base {
-      template<typename Added, fragment Fragment>
+    class iface_base {
+    private:
+      using config_map_t =
+          config_map_match<typename Builder::entries_t, Derived, Builder>;
+
+    public:
+      using required_t = typename config_map_t::required_t;
+
+    protected:
+      template<fragment Fragment>
       constexpr inline auto next(Fragment&& fragment) const {
-        return next_builder_t<Builder, Derived, Fragment, Added>{
+        return next_builder_t<Builder,
+                              Derived,
+                              Fragment,
+                              typename config_map_t::unlocked_t>{
             static_cast<Builder const&>(*this),
             std::forward<Fragment>(fragment)};
-      }
-
-      template<template<typename> class... Added, fragment Fragment>
-      constexpr inline auto next(Fragment&& fragment) const {
-        return next<details::iflist<Added...>,
-                    std::forward<Fragment>(fragment)>();
       }
     };
 
@@ -388,7 +450,7 @@ namespace config {
       typename build_reproduction_context<Builder>::type;
 
   template<typename Builder>
-  struct tags_iface : private details::iface_base<Builder, tags_iface> {
+  struct tags_iface : public details::iface_base<Builder, tags_iface> {
     template<typename Tags>
     constexpr inline auto tag_with() const {
       struct node {
@@ -409,7 +471,7 @@ namespace config {
 
   template<typename Builder>
   struct criterion_iface
-      : private details::iface_base<Builder, criterion_iface> {
+      : public details::iface_base<Builder, criterion_iface> {
     using population_t = typename Builder::population_t;
     using statistics_t = typename Builder::statistics_t;
 
@@ -438,7 +500,7 @@ namespace config {
   };
 
   template<typename Builder>
-  struct replace_iface : private details::iface_base<Builder, replace_iface> {
+  struct replace_iface : public details::iface_base<Builder, replace_iface> {
     using population_t = typename Builder::population_t;
     using copuling_result_t = typename Builder::copuling_result_t;
 
@@ -466,7 +528,7 @@ namespace config {
   };
 
   template<typename Builder>
-  struct couple_iface : private details::iface_base<Builder, couple_iface> {
+  struct couple_iface : public details::iface_base<Builder, couple_iface> {
     using reproduction_context_t = build_reproduction_context_t<Builder>;
     using selection_result_t = typename Builder::selection_result_t;
 
@@ -495,12 +557,12 @@ namespace config {
         factory_t coupling_;
       };
 
-      return this->template next<replace_iface>(node{coupling});
+      return this->template next<>(node{coupling});
     }
   };
 
   template<typename Builder>
-  struct select_iface : private details::iface_base<Builder, select_iface> {
+  struct select_iface : public details::iface_base<Builder, select_iface> {
     using population_t = typename Builder::population_t;
 
     template<selection<population_t> Selection>
@@ -525,13 +587,12 @@ namespace config {
         selection_t selection_;
       };
 
-      return this->template next<couple_iface>(node{selection});
+      return this->template next<>(node{selection});
     }
   };
 
   template<typename Builder>
-  struct scale_iface : private details::iface_base<Builder, scale_iface> {
-    using required_t = details::iflist<tags_iface>;
+  struct scale_iface : public details::iface_base<Builder, scale_iface> {
     using population_context_t = typename Builder::population_context_t;
 
     template<scaling_factory<population_context_t> Factory>
@@ -559,13 +620,13 @@ namespace config {
         factory_t scaling_;
       };
 
-      return this->template next<select_iface>(node{scaling});
+      return this->template next<>(node{scaling});
     }
   };
 
   template<typename Builder>
   struct reproduce_iface
-      : private details::iface_base<Builder, reproduce_iface> {
+      : public details::iface_base<Builder, reproduce_iface> {
     template<crossover<typename Builder::chromosome_t> Crossover,
              mutation<typename Builder::chromosome_t> Mutation,
              bool ImprovingMutation = false>
@@ -608,7 +669,7 @@ namespace config {
 
   template<typename Builder>
   struct statistics_iface
-      : private details::iface_base<Builder, statistics_iface> {
+      : public details::iface_base<Builder, statistics_iface> {
     template<stats::node_value<typename Builder::population_t>... Values>
     constexpr inline auto track_these() const {
       using population_t = typename Builder::population_t;
@@ -619,18 +680,13 @@ namespace config {
             population_context<population_t, statistics_t>;
       };
 
-      using added_t = std::conditional_t<
-          std::is_same_v<empty_fitness, typename Builder::scaled_fitness_t>,
-          details::iflist<select_iface, criterion_iface>,
-          details::iflist<scale_iface, criterion_iface>>;
-
-      return this->template next<added_t>(node{});
+      return this->template next<>(node{});
     }
   };
 
   template<typename Builder>
   class scale_fitness_iface
-      : private details::iface_base<Builder, scale_fitness_iface> {
+      : public details::iface_base<Builder, scale_fitness_iface> {
   private:
     struct node_base {};
     struct node_base_none {
@@ -657,12 +713,12 @@ namespace config {
                                         typename Builder::tags_t>;
       };
 
-      return this->template next<statistics_iface>(node{});
+      return this->template next<>(node{});
     }
   };
 
   template<typename Builder>
-  struct evaluate_iface : private details::iface_base<Builder, evaluate_iface> {
+  struct evaluate_iface : public details::iface_base<Builder, evaluate_iface> {
     template<evaluator<typename Builder::chromosome_t> Evaluator>
     constexpr inline auto evaluate_against(Evaluator const& evaluator) const {
       using chromosome_t = typename Builder::chromosome_t;
@@ -687,12 +743,12 @@ namespace config {
         evaluator_t evaluator_;
       };
 
-      return this->template next<scale_fitness_iface>(node{evaluator});
+      return this->template next<>(node{evaluator});
     }
   };
 
   template<typename Builder>
-  struct init_iface : private details::iface_base<Builder, init_iface> {
+  struct init_iface : public details::iface_base<Builder, init_iface> {
     template<initializator Initializator>
     constexpr inline auto make_like(Initializator const& initializator) const {
       class node {
@@ -713,23 +769,39 @@ namespace config {
         initializator_t initializator_;
       };
 
-      return this->template next<evaluate_iface, reproduce_iface>(
-          node{initializator});
+      return this->template next<>(node{initializator});
     }
   };
 
   template<typename Builder>
   struct root_iface : public details::iface_base<Builder, root_iface> {
     constexpr inline auto begin() const {
-      return this->template next<init_iface, tags_iface>(
-          details::null_config{});
+      return this->template next<>(details::null_config{});
     }
   };
 
-  template<template<typename> class Root>
-  using builder = details::builder_node<details::iflist<Root>,
-                                        details::iflist<>,
-                                        details::null_builder>;
+  template<template<typename> class Root, typename Entries>
+  struct builder
+      : details::builder_node<iflist<Root>, iflist<>, details::null_builder> {
+    using entries_t = Entries;
+  };
+
+  template<typename Builder>
+  struct basic_algorithm_scaling_cond
+      : std::is_same<empty_fitness, typename Builder::scaled_fitness_t> {};
+
+  using basic_algorithm_config = config_map<
+      config_entry<root_iface, iflist<init_iface, tags_iface>>,
+      config_entry<init_iface, iflist<evaluate_iface, reproduce_iface>>,
+      config_entry<evaluate_iface, iflist<scale_fitness_iface>>,
+      config_entry<scale_fitness_iface, iflist<statistics_iface>>,
+      config_entry<statistics_iface,
+                   config_if<basic_algorithm_scaling_cond,
+                             iflist<select_iface, criterion_iface>,
+                             iflist<scale_iface, criterion_iface>>>,
+      config_entry<scale_iface, iflist<select_iface>, iflist<tags_iface>>,
+      config_entry<select_iface, iflist<couple_iface>>,
+      config_entry<couple_iface, iflist<replace_iface>>>;
 
 } // namespace config
 } // namespace gal
