@@ -13,37 +13,37 @@ namespace config {
   template<template<typename> class Key,
            typename Unlocked,
            typename Required = iflist<>>
-  struct config_entry {};
+  struct entry {};
 
   template<typename... Maps>
-  struct config_map {};
-
-  template<typename Entry, typename Builder>
-  struct eval_config_if {
-    using type = Entry;
-  };
+  struct entry_map {};
 
   template<template<typename> class Condition, typename Then, typename Else>
-  struct config_if {};
+  struct entry_if {};
 
   namespace details {
+
+    template<typename Entry, typename Builder>
+    struct eval_entry_if {
+      using type = Entry;
+    };
 
     template<template<typename> class Condition,
              typename Then,
              typename Else,
              typename Builder>
-    struct eval_config_if<config_if<Condition, Then, Else>, Builder> {
+    struct eval_entry_if<entry_if<Condition, Then, Else>, Builder> {
       using type = std::conditional_t<Condition<Builder>::value, Then, Else>;
     };
 
     template<typename Entry, typename Builder>
-    using eval_config_if_t = typename eval_config_if<Entry, Builder>::type;
+    using eval_entry_if_t = typename eval_entry_if<Entry, Builder>::type;
 
     template<typename Map, template<typename> class Match, typename Builder>
-    struct config_map_match;
+    struct entry_map_match;
 
     template<template<typename> class Match, typename Builder>
-    struct config_map_match<config_map<>, Match, Builder> {
+    struct entry_map_match<entry_map<>, Match, Builder> {
       using unlocked_t = iflist<>;
       using required_t = iflist<>;
     };
@@ -54,12 +54,11 @@ namespace config {
              template<typename>
              class Match,
              typename Builder>
-    struct config_map_match<
-        config_map<config_entry<Match, Unlocked, Required>, Rest...>,
-        Match,
-        Builder> {
-      using unlocked_t = eval_config_if_t<Unlocked, Builder>;
-      using required_t = eval_config_if_t<Required, Builder>;
+    struct entry_map_match<entry_map<entry<Match, Unlocked, Required>, Rest...>,
+                           Match,
+                           Builder> {
+      using unlocked_t = eval_entry_if_t<Unlocked, Builder>;
+      using required_t = eval_entry_if_t<Required, Builder>;
     };
 
     template<typename Map,
@@ -67,40 +66,40 @@ namespace config {
              template<typename>
              class Match,
              typename Builder>
-    struct config_map_match<config_map<Map, Rest...>, Match, Builder>
-        : config_map_match<config_map<Rest...>, Match, Builder> {};
+    struct entry_map_match<entry_map<Map, Rest...>, Match, Builder>
+        : entry_map_match<entry_map<Rest...>, Match, Builder> {};
 
-    class null_config {};
-    class null_iface {};
-    class null_builder {};
+    class empty_fragment {};
+    class empty_iface {};
+    class empty_builder {};
 
     template<fragment... Fragments>
-    class config_node;
+    class output_node;
 
     template<>
-    class config_node<> {};
+    class output_node<> {};
 
     template<fragment Fragment>
-    class config_node<Fragment> : public Fragment {
+    class output_node<Fragment> : public Fragment {
     public:
       using fragment_t = Fragment;
 
     public:
-      constexpr inline config_node(fragment_t const& fragment,
-                                   config_node<> const& /*unused*/)
+      constexpr inline output_node(fragment_t const& fragment,
+                                   output_node<> const& /*unused*/)
           : fragment_t{fragment} {
       }
     };
 
     template<fragment Fragment, fragment... Fragments>
-    class config_node<Fragment, Fragments...>
-        : public Fragment, public config_node<Fragments...> {
+    class output_node<Fragment, Fragments...>
+        : public Fragment, public output_node<Fragments...> {
     public:
       using fragment_t = Fragment;
-      using base_t = config_node<Fragments...>;
+      using base_t = output_node<Fragments...>;
 
     public:
-      constexpr inline config_node(fragment_t const& frag, base_t const& base)
+      constexpr inline output_node(fragment_t const& frag, base_t const& base)
           : fragment_t{frag}
           , base_t{base} {
       }
@@ -212,16 +211,16 @@ namespace config {
     struct iface_inherit
         : std::conditional<is_iface_satisfied_v<Used, Interface>,
                            Interface,
-                           null_iface> {};
+                           empty_iface> {};
 
     template<typename Used, typename Interface>
     using iface_inherit_t = typename iface_inherit<Used, Interface>::type;
 
     template<typename Builder, typename Used, typename Interfaces>
-    class iface_node {};
+    class input_node {};
 
     template<typename Builder, typename Used>
-    class iface_node<Builder, Used, iflist<>> {};
+    class input_node<Builder, Used, iflist<>> {};
 
     template<typename Builder,
              typename Used,
@@ -229,9 +228,9 @@ namespace config {
              class Interface,
              template<typename>
              class... Interfaces>
-    class iface_node<Builder, Used, iflist<Interface, Interfaces...>>
+    class input_node<Builder, Used, iflist<Interface, Interfaces...>>
         : public iface_inherit_t<Used, Interface<Builder>>,
-          public iface_node<Builder, Used, iflist<Interfaces...>> {};
+          public input_node<Builder, Used, iflist<Interfaces...>> {};
 
     template<typename Available, typename Used, fragment... Fragments>
     class builder_node;
@@ -244,14 +243,14 @@ namespace config {
              fragment Fragment,
              fragment... Rest>
     class builder_node<Available, Used, Fragment, Rest...>
-        : public iface_node<builder_node<Available, Used, Fragment, Rest...>,
+        : public input_node<builder_node<Available, Used, Fragment, Rest...>,
                             Used,
                             Available>,
-          public config_node<Fragment, Rest...> {
+          public output_node<Fragment, Rest...> {
     public:
       using fragment_t = Fragment;
-      using base_t = config_node<fragment_t, Rest...>;
-      using previous_t = config_node<Rest...>;
+      using base_t = output_node<fragment_t, Rest...>;
+      using previous_t = output_node<Rest...>;
 
     public:
       constexpr inline builder_node(fragment_t const& fragment,
@@ -300,11 +299,11 @@ namespace config {
     template<typename Builder, template<typename> class Derived>
     class iface_base {
     private:
-      using config_map_t =
-          config_map_match<typename Builder::entries_t, Derived, Builder>;
+      using entry_map_t =
+          entry_map_match<typename Builder::entries_t, Derived, Builder>;
 
     public:
-      using required_t = typename config_map_t::required_t;
+      using required_t = typename entry_map_t::required_t;
 
     protected:
       template<fragment Fragment>
@@ -312,7 +311,7 @@ namespace config {
         return next_builder_t<Builder,
                               Derived,
                               Fragment,
-                              typename config_map_t::unlocked_t>{
+                              typename entry_map_t::unlocked_t>{
             static_cast<Builder const&>(*this),
             std::forward<Fragment>(fragment)};
       }
@@ -670,11 +669,15 @@ namespace config {
   template<typename Builder>
   struct statistics_iface
       : public details::iface_base<Builder, statistics_iface> {
-    template<stats::node_value<typename Builder::population_t>... Values>
-    constexpr inline auto track_these() const {
-      using population_t = typename Builder::population_t;
+    using internal_population_t = population<typename Builder::chromosome_t,
+                                             typename Builder::raw_fitness_t,
+                                             typename Builder::scaled_fitness_t,
+                                             typename Builder::tags_t>;
 
+    template<stats::node_value<internal_population_t>... Values>
+    constexpr inline auto track_these() const {
       struct node {
+        using population_t = internal_population_t;
         using statistics_t = stats::statistics<population_t, Values...>;
         using population_context_t =
             population_context<population_t, statistics_t>;
@@ -707,10 +710,6 @@ namespace config {
     constexpr inline auto scale_impl() const {
       struct node : Base {
         using scaled_fitness_t = Scaled;
-        using population_t = population<typename Builder::chromosome_t,
-                                        typename Builder::raw_fitness_t,
-                                        scaled_fitness_t,
-                                        typename Builder::tags_t>;
       };
 
       return this->template next<>(node{});
@@ -776,13 +775,13 @@ namespace config {
   template<typename Builder>
   struct root_iface : public details::iface_base<Builder, root_iface> {
     constexpr inline auto begin() const {
-      return this->template next<>(details::null_config{});
+      return this->template next<>(details::empty_fragment{});
     }
   };
 
   template<template<typename> class Root, typename Entries>
   struct builder
-      : details::builder_node<iflist<Root>, iflist<>, details::null_builder> {
+      : details::builder_node<iflist<Root>, iflist<>, details::empty_builder> {
     using entries_t = Entries;
   };
 
@@ -790,18 +789,18 @@ namespace config {
   struct basic_algorithm_scaling_cond
       : std::is_same<empty_fitness, typename Builder::scaled_fitness_t> {};
 
-  using basic_algorithm_config = config_map<
-      config_entry<root_iface, iflist<init_iface, tags_iface>>,
-      config_entry<init_iface, iflist<evaluate_iface, reproduce_iface>>,
-      config_entry<evaluate_iface, iflist<scale_fitness_iface>>,
-      config_entry<scale_fitness_iface, iflist<statistics_iface>>,
-      config_entry<statistics_iface,
-                   config_if<basic_algorithm_scaling_cond,
-                             iflist<select_iface, criterion_iface>,
-                             iflist<scale_iface, criterion_iface>>>,
-      config_entry<scale_iface, iflist<select_iface>, iflist<tags_iface>>,
-      config_entry<select_iface, iflist<couple_iface>>,
-      config_entry<couple_iface, iflist<replace_iface>>>;
+  using basic_algorithm_config = entry_map<
+      entry<root_iface, iflist<init_iface, tags_iface>>,
+      entry<init_iface, iflist<evaluate_iface, reproduce_iface>>,
+      entry<evaluate_iface, iflist<scale_fitness_iface>>,
+      entry<scale_fitness_iface, iflist<statistics_iface>, iflist<tags_iface>>,
+      entry<statistics_iface,
+            entry_if<basic_algorithm_scaling_cond,
+                     iflist<select_iface, criterion_iface>,
+                     iflist<scale_iface, criterion_iface>>>,
+      entry<scale_iface, iflist<select_iface>>,
+      entry<select_iface, iflist<couple_iface>>,
+      entry<couple_iface, iflist<replace_iface>>>;
 
 } // namespace config
 } // namespace gal
