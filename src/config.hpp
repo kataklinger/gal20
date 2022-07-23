@@ -789,18 +789,19 @@ namespace config {
   struct basic_algorithm_scaling_cond
       : std::is_same<empty_fitness, typename Builder::scaled_fitness_t> {};
 
-  using basic_algorithm_config = entry_map<
-      entry<root_iface, iflist<init_iface, tags_iface>>,
-      entry<init_iface, iflist<evaluate_iface, reproduce_iface>>,
-      entry<evaluate_iface, iflist<scale_fitness_iface>>,
-      entry<scale_fitness_iface, iflist<statistics_iface>, iflist<tags_iface>>,
-      entry<statistics_iface,
-            entry_if<basic_algorithm_scaling_cond,
-                     iflist<select_iface, criterion_iface>,
-                     iflist<scale_iface, criterion_iface>>>,
-      entry<scale_iface, iflist<select_iface>>,
-      entry<select_iface, iflist<couple_iface>>,
-      entry<couple_iface, iflist<replace_iface>>>;
+  using basic_algorithm_config =
+      entry_map<entry<root_iface, iflist<init_iface, tags_iface>>,
+                entry<init_iface, iflist<evaluate_iface, reproduce_iface>>,
+                entry<evaluate_iface, iflist<scale_fitness_iface>>,
+                entry<scale_fitness_iface, iflist<statistics_iface>>,
+                entry<statistics_iface,
+                      entry_if<basic_algorithm_scaling_cond,
+                               iflist<select_iface, criterion_iface>,
+                               iflist<scale_iface, criterion_iface>>,
+                      iflist<tags_iface>>,
+                entry<scale_iface, iflist<select_iface>>,
+                entry<select_iface, iflist<couple_iface>>,
+                entry<couple_iface, iflist<replace_iface>>>;
 
 } // namespace config
 } // namespace gal

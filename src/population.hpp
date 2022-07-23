@@ -49,6 +49,14 @@ public:
     swap(scaled_, other.scaled_);
   }
 
+  inline auto& raw() const noexcept {
+    return raw_;
+  }
+
+  inline auto& scaled() const noexcept {
+    return scaled_;
+  }
+
 private:
   raw_t raw_{};
   [[no_unique_address]] scaled_t scaled_{};

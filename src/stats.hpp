@@ -3,6 +3,7 @@
 
 #include "population.hpp"
 
+#include <concepts>
 #include <type_traits>
 
 namespace gal {
@@ -83,6 +84,32 @@ namespace stats {
 
   private:
     std::size_t value_{};
+  };
+
+  template<typename Fitness>
+  concept ordered_fitness = fitness<Fitness> && std::totally_ordered<Fitness>;
+
+  template<ordered_fitness Fitness, typename FitnessTag>
+  class best_fitness {
+  public:
+    using fitness_t = Fitness;
+    using fitness_tag_t = FitnessTag;
+
+    inline static constexpr fitness_tag_t fitness_tag{};
+
+  public:
+    template<typename Population>
+    inline best_fitness(Population const& population,
+                        best_fitness const& previous) noexcept
+        : value_{/* population.best(fitness_tag).evaluation.get(fitness_tag) */} {
+    }
+
+    inline auto best_fitness_value() const noexcept {
+      return value_;
+    }
+
+  private:
+    std::optional<fitness_t> value_{};
   };
 
   template<typename Population, node_value<Population>... Values>
