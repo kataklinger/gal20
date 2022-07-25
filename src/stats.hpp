@@ -11,8 +11,10 @@ namespace stats {
 
   template<typename Value, typename Population>
   concept node_value =
-      !std::is_final_v<Value> &&
-      std::is_constructible_v<Value, Population const&, Value const&>;
+      !std::is_final_v<typename Value::template type<Population>> &&
+      std::is_constructible_v<typename Value::template type<Population>,
+                              Population const&,
+                              typename Value::template type<Population> const&>;
 
   namespace details {
 
@@ -23,9 +25,9 @@ namespace stats {
     class node<Population> {};
 
     template<typename Population, node_value<Population> Value>
-    class node<Population, Value> : public Value {
+    class node<Population, Value> : public Value::template type<Population> {
     public:
-      using value_t = Value;
+      using value_t = typename Value::template type<Population>;
 
     public:
       template<typename Population>
@@ -38,10 +40,11 @@ namespace stats {
     template<typename Population,
              node_value<Population> Value,
              node_value<Population>... Rest>
-    class node<Population, Value, Rest...> : public Value,
-                                             public node<Population, Rest...> {
+    class node<Population, Value, Rest...>
+        : public Value::template type<Population>,
+          public node<Population, Rest...> {
     public:
-      using value_t = Value;
+      using value_t = typename Value::template type<Population>;
       using base_t = node<Population, Rest...>;
 
     public:
@@ -54,62 +57,74 @@ namespace stats {
 
   } // namespace details
 
-  class generation {
-  public:
+  struct generation {
     template<typename Population>
-    inline generation(Population const& population,
-                      generation const& previous) noexcept
-        : value_{previous.value_ + 1} {
-    }
+    class type {
+    public:
+      inline type(Population const& population, type const& previous) noexcept
+          : value_{previous.value_ + 1} {
+      }
 
-    inline auto generation_value() const noexcept {
-      return value_;
-    }
+      inline auto generation_value() const noexcept {
+        return value_;
+      }
 
-  private:
-    std::size_t value_{};
+    private:
+      std::size_t value_{};
+    };
   };
 
-  class population_size {
-  public:
+  struct population_size {
     template<typename Population>
-    inline population_size(Population const& population,
-                           population_size const& previous) noexcept
-        : value_{population.current_size()} {
-    }
+    class type {
+    public:
+      inline type(Population const& population, type const& previous) noexcept
+          : value_{population.current_size()} {
+      }
 
-    inline auto population_size_value() const noexcept {
-      return value_;
-    }
+      inline auto population_size_value() const noexcept {
+        return value_;
+      }
 
-  private:
-    std::size_t value_{};
+    private:
+      std::size_t value_{};
+    };
   };
 
-  template<typename Fitness>
-  concept ordered_fitness = fitness<Fitness> && std::totally_ordered<Fitness>;
+  template<typename FitnessTag>
+  struct extreme_fitness {
+    template<ordered_population<FitnessTag> Population>
+    class type {
+    public:
+      using fitness_tag_t = FitnessTag;
 
-  template<ordered_fitness Fitness, typename FitnessTag>
-  class best_fitness {
-  public:
-    using fitness_t = Fitness;
-    using fitness_tag_t = FitnessTag;
+      using fitness_t = get_fitness_t<FitnessTag, Population>;
+      using minmax_fitness_t = std::pair<fitness_t, fitness_t>;
 
-    inline static constexpr fitness_tag_t fitness_tag{};
+      inline static constexpr fitness_tag_t fitness_tag{};
 
-  public:
-    template<typename Population>
-    inline best_fitness(Population const& population,
-                        best_fitness const& previous) noexcept
-        : value_{/* population.best(fitness_tag).evaluation.get(fitness_tag) */} {
-    }
+    public:
+      inline type(Population const& population, type const& previous) noexcept {
+        auto [mini, maxi] = population.extremes(fitness_tag);
+        value_ = minmax_fitness_t{mini.evaluation().get(fitness_tag),
+                                  maxi.evaluation().get(fitness_tag)};
+      }
 
-    inline auto best_fitness_value() const noexcept {
-      return value_;
-    }
+      inline bool has_extreme_values() const noexcept {
+        return value_.has_value();
+      }
 
-  private:
-    std::optional<fitness_t> value_{};
+      inline auto const& worst_fitness_value() const noexcept {
+        return value_->first;
+      }
+
+      inline auto const& best_fitness_value() const noexcept {
+        return value_->second;
+      }
+
+    private:
+      std::optional<minmax_fitness_t> value_{};
+    };
   };
 
   template<typename Population, node_value<Population>... Values>

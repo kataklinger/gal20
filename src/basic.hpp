@@ -13,6 +13,9 @@ concept fitness = std::is_default_constructible_v<Type> &&
     std::is_nothrow_move_assignable_v<Type>;
 
 template<typename Type>
+concept ordered_fitness = fitness<Type> && std::totally_ordered<Type>;
+
+template<typename Type>
 concept chromosome = std::is_nothrow_move_constructible_v<Type> &&
     std::is_nothrow_move_assignable_v<Type>;
 

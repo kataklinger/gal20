@@ -10,6 +10,9 @@
 
 namespace gal {
 
+struct raw_fitness_tag {};
+struct scaled_fitness_tag {};
+
 template<fitness Raw, fitness Scaled>
 class evaluation {
 public:
@@ -49,28 +52,41 @@ public:
     swap(scaled_, other.scaled_);
   }
 
-  inline auto& raw() const noexcept {
+  inline auto& raw() noexcept {
     return raw_;
   }
 
-  inline auto& scaled() const noexcept {
+  inline auto& scaled() noexcept {
     return scaled_;
+  }
+
+  inline auto const& raw() const noexcept {
+    return raw_;
+  }
+
+  inline auto const& scaled() const noexcept {
+    return scaled_;
+  }
+
+  inline auto& get(raw_fitness_tag /*unused*/) noexcept {
+    return raw();
+  }
+
+  inline auto const& get(raw_fitness_tag /*unused*/) const noexcept {
+    return raw();
+  }
+
+  inline auto& get(scaled_fitness_tag /*unused*/) noexcept {
+    return scaled();
+  }
+
+  inline auto const& get(scaled_fitness_tag /*unused*/) const noexcept {
+    return scaled();
   }
 
 private:
   raw_t raw_{};
   [[no_unique_address]] scaled_t scaled_{};
-};
-
-template<typename Evaluation>
-struct evaluation_traits;
-
-template<typename Raw, typename Scaled>
-struct evaluation_traits<evaluation<Raw, Scaled>> {
-  using raw_t = Raw;
-  using scaled_t = Scaled;
-
-  using has_scaling_t = std::is_same<scaled_t, empty_fitness>;
 };
 
 template<chromosome Chromosome, fitness Raw, fitness Scaled, typename Tags>
@@ -142,6 +158,45 @@ private:
   [[no_unique_address]] tags_t tags_;
 };
 
+template<typename FitnessTag, typename Raw, typename Scaled>
+concept fitness_tag = ( std::same_as<FitnessTag, raw_fitness_tag> &&
+                        ordered_fitness<Raw> ) ||
+                      (std::same_as<FitnessTag, scaled_fitness_tag> &&
+                       ordered_fitness<Scaled>);
+
+enum class sort_by { none, raw, scaled };
+
+template<typename FitnessTag>
+struct sort_policy_base {
+  template<typename Collection>
+  inline static auto minmax(Collection const& individuals) {
+    return std::ranges::minmax_element(
+        individuals, std::ranges::greater{}, [](auto const& i) {
+          return i.evaluation().get(FitnessTag{});
+        });
+  }
+
+  template<typename Collection>
+  inline static void sort(Collection& individuals) {
+    std::ranges::sort(individuals, std::ranges::greater{}, [](auto const& i) {
+      return i.evaluation().get(FitnessTag{});
+    });
+  }
+};
+
+template<typename FitnessTag>
+struct sort_policy {};
+
+template<>
+struct sort_policy<raw_fitness_tag> : sort_policy_base<raw_fitness_tag> {
+  inline static constexpr auto by = sort_by::raw;
+};
+
+template<>
+struct sort_policy<scaled_fitness_tag> : sort_policy_base<raw_fitness_tag> {
+  inline static constexpr auto by = sort_by::scaled;
+};
+
 template<chromosome Chromosome,
          fitness Raw,
          fitness Scaled = empty_fitness,
@@ -155,10 +210,10 @@ public:
   using individual_t =
       individual<chromosome_t, raw_fitness_t, scaled_fitness_t, Tags>;
 
-  using set_t = std::vector<individual_t>;
+  using collection_t = std::vector<individual_t>;
 
-  using iterator_t = typename set_t::iterator;
-  using const_iterator_t = typename set_t::const_iterator;
+  using iterator_t = typename collection_t::iterator;
+  using const_iterator_t = typename collection_t::const_iterator;
 
 public:
   inline population() noexcept
@@ -176,6 +231,8 @@ public:
   inline auto insert(Range&& chromosomes) {
     auto insertion = individuals_.size();
 
+    sorted_ = sort_by::none;
+
     auto output = std::back_inserter(individuals_);
     if constexpr (std::is_reference_v<Range>) {
       std::ranges::copy(chromosomes, output);
@@ -190,6 +247,8 @@ public:
   template<replacement_range<const_iterator_t, individual_t> Range>
   auto replace(Range&& replacements) {
     auto removed = ensure_removed(std::ranges::size(replacements));
+
+    sorted_ = sort_by::none;
 
     for (auto& replacement : replacements) {
       auto parent =
@@ -222,6 +281,31 @@ public:
         to_trim < individuals_.size() ? individuals_.size() - to_trim : 0);
   }
 
+  template<fitness_tag<raw_fitness_t, scaled_fitness_t> FitnessTag>
+  inline void sort(FitnessTag /*unused*/) {
+    using policy_t = sort_policy<FitnessTag>;
+
+    if (sorted_ != policy_t::by) {
+      sorted_ = sort_by::none;
+      policy_t::sort(individuals_);
+      sorted_ = policy_t::by;
+    }
+  }
+
+  template<fitness_tag<raw_fitness_t, scaled_fitness_t> FitnessTag>
+  inline std::pair<individual_t const&, individual_t const&>
+      extremes(FitnessTag /*unused*/) const noexcept {
+    using policy_t = sort_policy<FitnessTag>;
+
+    if (sorted_ == policy_t::by) {
+      return {individuals_.back(), individuals_.front()};
+    }
+    else {
+      auto [mini, maxi] = policy_t::minmax(individuals_);
+      return {*mini, *maxi};
+    }
+  }
+
   inline auto& individuals() noexcept {
     return individuals_;
   }
@@ -251,7 +335,7 @@ private:
   }
 
   inline auto ensure_removed(std::size_t size) const {
-    set_t result{};
+    collection_t result{};
     result.reserve(size);
 
     return result;
@@ -259,7 +343,31 @@ private:
 
 private:
   std::optional<std::size_t> target_size_;
-  set_t individuals_;
+  collection_t individuals_;
+  sort_by sorted_{sort_by::none};
 };
+
+template<typename FitnessTag>
+struct get_fitness_type;
+
+template<>
+struct get_fitness_type<raw_fitness_tag> {
+  template<typename Population>
+  using type = typename Population::raw_fitness_t;
+};
+
+template<>
+struct get_fitness_type<scaled_fitness_tag> {
+  template<typename Population>
+  using type = typename Population::scaled_fitness_t;
+};
+
+template<typename FitnessType, typename Population>
+using get_fitness_t =
+    typename get_fitness_type<FitnessType>::template type<Population>;
+
+template<typename Population, typename FitnessTag>
+concept ordered_population =
+    ordered_fitness<get_fitness_t<FitnessTag, Population>>;
 
 } // namespace gal
