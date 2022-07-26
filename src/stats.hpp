@@ -4,6 +4,7 @@
 #include "population.hpp"
 
 #include <concepts>
+#include <numeric>
 #include <type_traits>
 
 namespace gal {
@@ -55,6 +56,35 @@ namespace stats {
       }
     };
 
+    template<arithmetic_fintess Value>
+    class kahan_state {
+    public:
+      using value_t = Value;
+
+    public:
+      inline kahan_state() = default;
+
+      inline auto add(value_t const& value) const noexcept {
+        value_t y = value - correction_;
+        value_t t = sum_ + y;
+        return kahan_state{t, (t - sum_) - y};
+      }
+
+      inline value_t const& sum() const noexcept {
+        return sum_;
+      }
+
+    private:
+      inline kahan_state(value_t const& sum, value_t const& correction)
+          : sum_{sum}
+          , correction_{correction} {
+      }
+
+    private:
+      value_t sum_{};
+      value_t correction_{};
+    };
+
   } // namespace details
 
   struct generation {
@@ -95,7 +125,7 @@ namespace stats {
   struct extreme_fitness {
     template<ordered_population<FitnessTag> Population>
     class type {
-    public:
+    private:
       using fitness_tag_t = FitnessTag;
 
       using fitness_t = get_fitness_t<FitnessTag, Population>;
@@ -110,20 +140,50 @@ namespace stats {
                                   maxi.evaluation().get(fitness_tag)};
       }
 
-      inline bool has_extreme_values() const noexcept {
-        return value_.has_value();
-      }
-
       inline auto const& worst_fitness_value() const noexcept {
-        return value_->first;
+        return value_.first;
       }
 
       inline auto const& best_fitness_value() const noexcept {
-        return value_->second;
+        return value_.second;
       }
 
     private:
-      std::optional<minmax_fitness_t> value_{};
+      minmax_fitness_t value_{};
+    };
+  };
+
+  template<typename FitnessTag>
+  struct average_fitness {
+    template<averageable_population<FitnessTag> Population>
+    class type {
+    private:
+      using fitness_tag_t = FitnessTag;
+
+      using fitness_t = get_fitness_t<FitnessTag, Population>;
+      using state_t = details::kahan_state<fitness_t>;
+
+      inline static constexpr fitness_tag_t fitness_tag{};
+
+    public:
+      inline type(Population const& population, type const& previous) noexcept
+          : value_{std::accumulate(population.individuals().begin(),
+                                   population.individuals().end(),
+                                   state_t{},
+                                   [](state_t acc, auto const& ind) {
+                                     return acc.add(
+                                         ind.evaluation().get(fitness_tag));
+                                   })
+                       .sum() /
+                   population.current_size()} {
+      }
+
+      inline auto const& average_value() const noexcept {
+        return value_;
+      }
+
+    private:
+      fitness_t value_;
     };
   };
 

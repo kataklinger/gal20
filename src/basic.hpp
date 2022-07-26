@@ -16,6 +16,13 @@ template<typename Type>
 concept ordered_fitness = fitness<Type> && std::totally_ordered<Type>;
 
 template<typename Type>
+concept arithmetic_fintess = fitness<Type> && requires(Type a) {
+  { a + a } -> std::same_as<Type>;
+  { a - a } -> std::same_as<Type>;
+  { a / std::size_t(1) } -> std::same_as<Type>;
+};
+
+template<typename Type>
 concept chromosome = std::is_nothrow_move_constructible_v<Type> &&
     std::is_nothrow_move_assignable_v<Type>;
 
