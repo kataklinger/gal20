@@ -254,13 +254,11 @@ namespace stats {
                                   maxi.evaluation().get(fitness_tag)};
       }
 
-      inline auto const&
-          fitness_worst_value(fitness_tag_t /*unused*/) const noexcept {
+      inline auto const& fitness_worst_value() const noexcept {
         return value_.first;
       }
 
-      inline auto const&
-          fitness_best_value(fitness_tag_t /*unused*/) const noexcept {
+      inline auto const& fitness_best_value() const noexcept {
         return value_.second;
       }
 
@@ -294,8 +292,7 @@ namespace stats {
                    population.current_size()} {
       }
 
-      inline auto const&
-          fitness_average_value(fitness_tag_t /*unused*/) const noexcept {
+      inline auto const& fitness_average_value() const noexcept {
         return value_;
       }
 
@@ -355,7 +352,7 @@ namespace stats {
                   dependencies_t const& dependencies) noexcept {
         auto const& avg =
             unpack_dependency<pack_t, average_fitness_t>(dependencies)
-                .fitness_average_value(fitness_tag);
+                .fitness_average_value();
 
         variance_ =
             std::accumulate(
@@ -370,13 +367,11 @@ namespace stats {
         deviation_ = sqrt_(variance_ / population.current_size());
       }
 
-      inline auto const&
-          fitness_variance_value(fitness_tag_t /*unused*/) const noexcept {
+      inline auto const& fitness_variance_value() const noexcept {
         return variance_;
       }
 
-      inline auto const&
-          fitness_deviation_value(fitness_tag_t /*unused*/) const noexcept {
+      inline auto const& fitness_deviation_value() const noexcept {
         return deviation_;
       }
 
@@ -402,6 +397,11 @@ namespace stats {
   public:
     inline auto next(Population const& population) const {
       return statistics(population, *this);
+    }
+
+    template<node_value<Population> Value>
+    inline auto const& get() const noexcept {
+      return static_cast<Value const&>(*this);
     }
   };
 
