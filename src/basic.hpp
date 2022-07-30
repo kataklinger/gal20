@@ -8,8 +8,8 @@
 namespace gal {
 
 template<typename Type>
-concept fitness = std::is_default_constructible_v<Type> &&
-    std::is_nothrow_move_constructible_v<Type> &&
+concept fitness =
+    std::regular<Type> && std::is_nothrow_move_constructible_v<Type> &&
     std::is_nothrow_move_assignable_v<Type>;
 
 template<typename Type>
@@ -23,7 +23,8 @@ concept arithmetic_fintess = fitness<Type> && requires(Type a) {
 };
 
 template<typename Type>
-concept chromosome = std::is_nothrow_move_constructible_v<Type> &&
+concept chromosome =
+    std::regular<Type> && std::is_nothrow_move_constructible_v<Type> &&
     std::is_nothrow_move_assignable_v<Type>;
 
 template<typename Operation>
