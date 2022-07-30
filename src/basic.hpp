@@ -16,7 +16,7 @@ template<typename Type>
 concept ordered_fitness = fitness<Type> && std::totally_ordered<Type>;
 
 template<typename Type>
-concept arithmetic_fintess = fitness<Type> && requires(Type a) {
+concept arithmetic_fitness = fitness<Type> && requires(Type a) {
   { a + a } -> std::same_as<Type>;
   { a - a } -> std::same_as<Type>;
   { a / std::size_t(1) } -> std::same_as<Type>;

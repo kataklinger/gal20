@@ -372,6 +372,6 @@ concept ordered_population =
 
 template<typename Population, typename FitnessTag>
 concept averageable_population =
-    arithmetic_fintess<get_fitness_t<FitnessTag, Population>>;
+    arithmetic_fitness<get_fitness_t<FitnessTag, Population>>;
 
 } // namespace gal

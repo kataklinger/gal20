@@ -170,7 +170,7 @@ namespace stats {
       }
     };
 
-    template<arithmetic_fintess Value>
+    template<arithmetic_fitness Value>
     class kahan_state {
     public:
       using value_t = Value;
@@ -254,11 +254,13 @@ namespace stats {
                                   maxi.evaluation().get(fitness_tag)};
       }
 
-      inline auto const& worst_fitness_value() const noexcept {
+      inline auto const&
+          fitness_worst_value(fitness_tag_t /*unused*/) const noexcept {
         return value_.first;
       }
 
-      inline auto const& best_fitness_value() const noexcept {
+      inline auto const&
+          fitness_best_value(fitness_tag_t /*unused*/) const noexcept {
         return value_.second;
       }
 
@@ -292,7 +294,8 @@ namespace stats {
                    population.current_size()} {
       }
 
-      inline auto const& average_value() const noexcept {
+      inline auto const&
+          fitness_average_value(fitness_tag_t /*unused*/) const noexcept {
         return value_;
       }
 
@@ -300,6 +303,28 @@ namespace stats {
       fitness_t value_;
     };
   };
+
+  template<typename Value>
+  struct square_power {
+    auto operator()(Value const& value) const {
+      return std::pow(value, 2);
+    }
+  };
+
+  template<typename Value>
+  using square_power_result_t =
+      std::decay_t<std::invoke_result_t<square_power<Value>, Value>>;
+
+  template<typename Value>
+  struct square_root {
+    auto operator()(Value const& value) const {
+      return std::sqrt(value);
+    }
+  };
+
+  template<typename Value>
+  using square_root_result_t =
+      std::decay_t<std::invoke_result_t<square_root<Value>, Value>>;
 
   template<typename FitnessTag>
   struct fitness_deviation {
@@ -314,14 +339,53 @@ namespace stats {
       using pack_t = dependencies_pack<Population, required_t>;
       using dependencies_t = typename pack_t::type;
 
+    private:
+      using fitness_t = get_fitness_t<FitnessTag, Population>;
+
+      using variance_t = square_power_result_t<fitness_t>;
+      using deviation_t = square_root_result_t<variance_t>;
+
+      using state_t = details::kahan_state<variance_t>;
+
+      inline static constexpr fitness_tag_t fitness_tag{};
+
     public:
       inline type(Population const& population,
                   type const& previous,
                   dependencies_t const& dependencies) noexcept {
-        auto& avg = unpack_dependency<pack_t, average_fitness_t>(dependencies);
+        auto const& avg =
+            unpack_dependency<pack_t, average_fitness_t>(dependencies)
+                .fitness_average_value(fitness_tag);
+
+        variance_ =
+            std::accumulate(
+                population.individuals().begin(),
+                population.individuals().end(),
+                state_t{},
+                [](state_t acc, auto const& ind) {
+                  return acc.add(pow_(avg - ind.evaluation().get(fitness_tag)));
+                })
+                .sum();
+
+        deviation_ = sqrt_(variance_ / population.current_size());
+      }
+
+      inline auto const&
+          fitness_variance_value(fitness_tag_t /*unused*/) const noexcept {
+        return variance_;
+      }
+
+      inline auto const&
+          fitness_deviation_value(fitness_tag_t /*unused*/) const noexcept {
+        return deviation_;
       }
 
     private:
+      [[no_unique_address]] square_power<fitness_t> pow_{};
+      [[no_unique_address]] square_root<variance_t> sqrt_{};
+
+      variance_t variance_;
+      deviation_t deviation_;
     };
   };
 
