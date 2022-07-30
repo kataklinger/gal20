@@ -5,19 +5,126 @@
 
 #include <concepts>
 #include <numeric>
+#include <tuple>
 #include <type_traits>
 
 namespace gal {
 namespace stats {
 
+  template<typename... Dependencies>
+  struct dependencies {};
+
+  template<typename Population, typename Dependencies>
+  struct dependencies_pack;
+
+  template<typename Population, typename... Dependencies>
+  struct dependencies_pack<Population, dependencies<Dependencies...>> {
+    template<typename Dependency>
+    using element_t = std::add_lvalue_reference_t<
+        std::add_const_t<typename Dependency::template type<Population>>>;
+
+    using type = std::tuple<element_t<Dependencies>...>;
+
+    template<typename Source>
+    auto pack(Source const& source) {
+      return type{static_cast<element_t<Dependencies>>(source)...};
+    }
+
+    template<typename Dependency>
+    decltype(auto) unpack(type const& pack) {
+      return std::get<element_t<Dependency>>(pack);
+    }
+  };
+
+  template<typename Pack, typename Dependency, typename Dependencies>
+  decltype(auto) unpack_dependency(Dependencies const& dependencies) {
+    return Pack::template unpack<Dependency>(dependencies);
+  }
+
+  namespace details {
+
+    template<typename Value, typename = void>
+    struct node_value_dependencies {
+      using type = dependencies<>;
+    };
+
+    template<typename Value>
+    struct node_value_dependencies<Value,
+                                   std::void_t<typename Value::required_t>> {
+      using type = typename Value::required_t;
+    };
+
+    template<typename Value>
+    using node_value_dependencies_t =
+        typename node_value_dependencies<Value>::type;
+
+    template<typename Value>
+    struct has_node_value_dependencies
+        : std::negation<
+              std::is_same<node_value_dependencies_t<Value>, dependencies<>>> {
+    };
+
+    template<typename Value>
+    inline static constexpr auto has_node_value_dependencies_v =
+        has_node_value_dependencies<Value>::value;
+
+    template<typename Population, typename Value>
+    using node_value_dependencies_pack =
+        dependencies_pack<Population, node_value_dependencies_t<Value>>;
+
+    template<typename Population, typename Value>
+    using node_value_dependencies_pack_t =
+        typename dependencies_pack<Population, Value>::type;
+
+    template<typename Population, typename Value, typename Source>
+    auto pack_dependencies(Source const& source) {
+      return dependencies_pack<Population, Value>::pack(Source);
+    }
+
+    template<typename Value, typename Population>
+    struct is_node_value_constructor
+        : std::conditional_t<
+              has_node_value_dependencies_v<Value>,
+              std::is_constructible<
+                  typename Value::template type<Population>,
+                  Population const&,
+                  typename Value::template type<Population> const&,
+                  node_value_dependencies_pack_t<Population, Value> const&>,
+              std::is_constructible<
+                  typename Value::template type<Population>,
+                  Population const&,
+                  typename Value::template type<Population> const&>> {};
+
+    template<typename Value, typename Population>
+    inline static constexpr auto is_node_value_constructor_v =
+        is_node_value_constructor<Value, Population>::value;
+
+  } // namespace details
+
   template<typename Value, typename Population>
   concept node_value =
       !std::is_final_v<typename Value::template type<Population>> &&
-      std::is_constructible_v<typename Value::template type<Population>,
-                              Population const&,
-                              typename Value::template type<Population> const&>;
+      details::is_node_value_constructor_v<Value, Population>;
 
   namespace details {
+
+    template<typename Value>
+    class node_value_constructor : public Value {
+    public:
+      template<typename Population>
+      inline node_value_constructor(Population const& population,
+                                    Value const& previous,
+                                    std::tuple<> const& /*unused*/)
+          : Value{population, previous} {
+      }
+
+      template<typename Population, typename Dependencies>
+      inline node_value_constructor(Population const& population,
+                                    Value const& previous,
+                                    Dependencies const& dependencies)
+          : Value{population, previous, dependencies} {
+      }
+    };
 
     template<typename Population, node_value<Population>... Values>
     class node;
@@ -26,15 +133,19 @@ namespace stats {
     class node<Population> {};
 
     template<typename Population, node_value<Population> Value>
-    class node<Population, Value> : public Value::template type<Population> {
+    class node<Population, Value>
+        : public node_value_constructor<
+              typename Value::template type<Population>> {
     public:
-      using value_t = typename Value::template type<Population>;
+      using constructor_t =
+          node_value_constructor<typename Value::template type<Population>>;
 
     public:
-      template<typename Population>
       inline node(Population const& population,
                   node<Population> const& previous)
-          : value_t{population, previous} {
+          : constructor_t{population,
+                          previous,
+                          pack_dependencies<Population, Value>(*this)} {
       }
     };
 
@@ -42,17 +153,20 @@ namespace stats {
              node_value<Population> Value,
              node_value<Population>... Rest>
     class node<Population, Value, Rest...>
-        : public Value::template type<Population>,
+        : public node_value_constructor<
+              typename Value::template type<Population>>,
           public node<Population, Rest...> {
     public:
-      using value_t = typename Value::template type<Population>;
       using base_t = node<Population, Rest...>;
+      using constructor_t =
+          node_value_constructor<typename Value::template type<Population>>;
 
     public:
-      template<typename Population>
       inline node(Population const& population, node const& previous)
-          : value_t{population, previous}
-          , base_t{previous} {
+          : base_t{previous}
+          , constructor_t{population,
+                          previous,
+                          pack_dependencies<Population, Value>(*this)} {
       }
     };
 
@@ -184,6 +298,30 @@ namespace stats {
 
     private:
       fitness_t value_;
+    };
+  };
+
+  template<typename FitnessTag>
+  struct fitness_deviation {
+    using fitness_tag_t = FitnessTag;
+    using average_fitness_t = average_fitness<fitness_tag_t>;
+
+    using required_t = dependencies<average_fitness_t>;
+
+    template<averageable_population<fitness_tag_t> Population>
+    class type {
+    public:
+      using pack_t = dependencies_pack<Population, required_t>;
+      using dependencies_t = typename pack_t::type;
+
+    public:
+      inline type(Population const& population,
+                  type const& previous,
+                  dependencies_t const& dependencies) noexcept {
+        auto& avg = unpack_dependency<pack_t, average_fitness_t>(dependencies);
+      }
+
+    private:
     };
   };
 
