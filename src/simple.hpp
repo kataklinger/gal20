@@ -117,6 +117,8 @@ namespace simple {
     using evaluation_t = typename individual_t::evaluation_t;
     using scaling_t = typename config_t::scaling_t;
 
+    using reproduction_context_t = typename config_t::reproduction_context_t;
+
   public:
     inline explicit algorithm(config_t const& config)
         : config_{config}
@@ -124,16 +126,15 @@ namespace simple {
     }
 
     void run(std::stop_token token) {
-      init();
-
       auto scaling = config_.scaling({population_, statistics_});
       constexpr auto global_scaling = typename config_t::is_global_scaling_t{};
 
       auto coupling =
           config_.coupling(get_coupling_context(scaling, global_scaling));
 
-      while (!token.stop_requested() &&
-             !config_.criterion(population_, statistics_)) {
+      for (auto const* stats = &init();
+           !token.stop_requested() && !config_.criterion(population_, *stats);
+           stats = &statistics_.next(population_)) {
         scale(scaling, global_scaling);
 
         auto selected = config_.selection()(population_);
@@ -141,13 +142,11 @@ namespace simple {
         auto replaced = config_.replacement()(population_, offspring);
 
         population_.trim();
-
-        statistics_ = statistics_.next();
       }
     }
 
   private:
-    void init() {
+    auto const& init() {
       auto initial =
           std::ranges::generate(population_.target_size(), [&config_] {
             auto chromosome = config_.initializator()();
@@ -159,7 +158,7 @@ namespace simple {
           });
       population_.insert(initial);
 
-      statistics_ = statistics_.next();
+      return statistics_.next(population_);
     }
 
     void scale(std::true_type /*unused*/) {
@@ -176,22 +175,22 @@ namespace simple {
 
     inline auto get_coupling_context(scaling_t const& scaling,
                                      std::true_type /*unused*/) {
-      return typename config_t::reproduction_context_t{
+      return reproduction_context_t{
           config_.crossover(), config_.mutation(), config_.evaluator()};
     }
 
     inline auto get_coupling_context(scaling_t const& scaling,
                                      std::false_type /*unused*/) {
-      return typename config_t::reproduction_context_t{config_.crossover(),
-                                                       config_.mutation(),
-                                                       config_.evaluator(),
-                                                       scaling};
+      return reproduction_context_t{config_.crossover(),
+                                    config_.mutation(),
+                                    config_.evaluator(),
+                                    scaling};
     }
 
   private:
     config_t config_;
     population_t population_;
-    statistics_t statistics_{};
+    stats::history<statistics_t> statistics_;
   };
 
 } // namespace simple

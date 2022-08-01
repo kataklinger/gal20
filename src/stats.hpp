@@ -5,6 +5,7 @@
 
 #include <concepts>
 #include <numeric>
+#include <queue>
 #include <tuple>
 #include <type_traits>
 
@@ -386,23 +387,69 @@ namespace stats {
 
   template<typename Population, node_value<Population>... Values>
   class statistics : public details::node<Population, Values...> {
-  private:
-    using base_t = details::node<Population, Values...>;
+  public:
+    using population_t = Population;
 
   private:
-    inline statistics(Population const& population, statistics const& previous)
+    using base_t = details::node<population_t, Values...>;
+
+  private:
+    inline statistics(population_t const& population,
+                      statistics const& previous)
         : base_t{population, previous} {
     }
 
   public:
-    inline auto next(Population const& population) const {
+    inline auto next(population_t const& population) const {
       return statistics(population, *this);
     }
 
-    template<node_value<Population> Value>
+    template<node_value<population_t> Value>
     inline auto const& get() const noexcept {
       return static_cast<Value const&>(*this);
     }
+  };
+
+  template<typename Statistics>
+  concept statistical = requires(Statistics s) {
+    typename Statistics::population_t;
+
+    {
+      s.next(std::declval<typename Statistics::population_t&>())
+      } -> std::convertible_to<Statistics>;
+  };
+
+  template<statistical Statistics>
+  class history {
+  public:
+    using statistics_t = Statistics;
+    using population_t = typename statistics_t::population_t;
+
+  public:
+    inline explicit history(std::size_t depth)
+        : depth_{depth} {
+      values_.push(statistics_t{});
+    }
+
+    inline auto const& next(population_t const& population) {
+      if (values_.size() >= depth_) {
+        values_.pop();
+      }
+
+      return values_.push(current().next(population));
+    }
+
+    inline auto& current() noexcept {
+      return values_.back();
+    }
+
+    inline auto const& current() const noexcept {
+      return values_.back();
+    }
+
+  private:
+    std::size_t depth_;
+    std::queue<statistics_t> values_;
   };
 
 } // namespace stats

@@ -528,7 +528,8 @@ namespace config {
 
   template<typename Builder>
   struct couple_iface : public details::iface_base<Builder, couple_iface> {
-    using internal_reproduction_context_t = build_reproduction_context_t<Builder>;
+    using internal_reproduction_context_t =
+        build_reproduction_context_t<Builder>;
     using selection_result_t = typename Builder::selection_result_t;
 
     template<coupling_factory<internal_reproduction_context_t,
@@ -676,15 +677,28 @@ namespace config {
                                              typename Builder::tags_t>;
 
     template<stats::node_value<internal_population_t>... Values>
-    constexpr inline auto track_these() const {
-      struct node {
+    constexpr inline auto track_these(std::size_t depth) const {
+      class node {
+      public:
         using population_t = internal_population_t;
         using statistics_t = stats::statistics<population_t, Values...>;
         using population_context_t =
             population_context<population_t, statistics_t>;
+
+      public:
+        inline explicit node(std::size_t depth) noexcept
+            : depth_{depth} {
+        }
+
+        inline auto depth() const noexcept {
+          return depth_;
+        }
+
+      private:
+        std::size_t depth_;
       };
 
-      return this->template next<>(node{});
+      return this->template next<>(node{depth});
     }
   };
 
