@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "population.hpp"
+#include "pop.hpp"
 
 #include <concepts>
 #include <numeric>

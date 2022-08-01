@@ -528,16 +528,17 @@ namespace config {
 
   template<typename Builder>
   struct couple_iface : public details::iface_base<Builder, couple_iface> {
-    using reproduction_context_t = build_reproduction_context_t<Builder>;
+    using internal_reproduction_context_t = build_reproduction_context_t<Builder>;
     using selection_result_t = typename Builder::selection_result_t;
 
-    template<
-        coupling_factory<reproduction_context_t, selection_result_t> Factory>
+    template<coupling_factory<internal_reproduction_context_t,
+                              selection_result_t> Factory>
     constexpr inline auto couple_like(Factory const& coupling) const {
       using factory_t = Factory;
 
       class node {
       public:
+        using reproduction_context_t = internal_reproduction_context_t;
         using coupling_t = factory_result_t<factory_t, reproduction_context_t>;
         using copuling_result_t = std::invoke_result_t<
             coupling_t,
@@ -773,6 +774,27 @@ namespace config {
   };
 
   template<typename Builder>
+  struct size_iface : public details::iface_base<Builder, init_iface> {
+    constexpr inline auto limit_to(size_t size) const {
+      class node {
+      public:
+        constexpr inline explicit node(size_t size)
+            : size_{size} {
+        }
+
+        inline auto const& population_size() const noexcept {
+          return size_;
+        }
+
+      private:
+        std::size_t size_;
+      };
+
+      return this->template next<>(node{size});
+    }
+  };
+
+  template<typename Builder>
   struct root_iface : public details::iface_base<Builder, root_iface> {
     constexpr inline auto begin() const {
       return this->template next<>(details::empty_fragment{});
@@ -784,24 +806,6 @@ namespace config {
       : details::builder_node<iflist<Root>, iflist<>, details::empty_builder> {
     using entries_t = Entries;
   };
-
-  template<typename Builder>
-  struct basic_algorithm_scaling_cond
-      : std::is_same<empty_fitness, typename Builder::scaled_fitness_t> {};
-
-  using basic_algorithm_config =
-      entry_map<entry<root_iface, iflist<init_iface, tags_iface>>,
-                entry<init_iface, iflist<evaluate_iface, reproduce_iface>>,
-                entry<evaluate_iface, iflist<scale_fitness_iface>>,
-                entry<scale_fitness_iface, iflist<statistics_iface>>,
-                entry<statistics_iface,
-                      entry_if<basic_algorithm_scaling_cond,
-                               iflist<select_iface, criterion_iface>,
-                               iflist<scale_iface, criterion_iface>>,
-                      iflist<tags_iface>>,
-                entry<scale_iface, iflist<select_iface>>,
-                entry<select_iface, iflist<couple_iface>>,
-                entry<couple_iface, iflist<replace_iface>>>;
 
 } // namespace config
 } // namespace gal

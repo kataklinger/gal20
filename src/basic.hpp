@@ -51,11 +51,11 @@ concept evaluator = std::is_invocable_v<
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>>;
 
 template<typename Scaling, typename Chromosome, typename Raw, typename Scaled>
-concept scaling = std::is_invocable_r_v<
-    Scaled,
+concept scaling = std::is_invocable_v<
     Scaling,
     std::add_lvalue_reference_t<std::add_const_t<Chromosome>>,
-    std::add_lvalue_reference_t<std::add_const_t<Raw>>>;
+    std::add_lvalue_reference_t<std::add_const_t<Raw>>,
+    std::add_lvalue_reference_t<Scaled>>;
 
 template<typename Scaling>
 struct scaling_traits {
