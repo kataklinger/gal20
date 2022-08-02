@@ -1,6 +1,6 @@
-# GAL TODO List
+# TODO List
 
-List of task to implemente or improve
+List of task to implement or improve
 
 ## Basic Operations
  - [ ] initializator to produce tags

@@ -147,8 +147,10 @@ namespace simple {
 
   private:
     auto const& init() {
-      auto initial =
-          std::ranges::generate(population_.target_size(), [&config_] {
+      std::ranges::generate_n(
+          std::back_inserter(population_.individuals()),
+          population_.target_size(),
+          [&config_] {
             auto chromosome = config_.initializator()();
 
             evaluation_t evaluation{};
@@ -156,7 +158,6 @@ namespace simple {
 
             return individual_t{std::move(chromosome), std::move(evaluation)};
           });
-      population_.insert(initial);
 
       return statistics_.next(population_);
     }
