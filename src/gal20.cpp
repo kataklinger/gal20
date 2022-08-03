@@ -4,6 +4,7 @@
 #include "gal20.h"
 
 #include "simple.hpp"
+#include "select.hpp"
 
 #include <tuple>
 
