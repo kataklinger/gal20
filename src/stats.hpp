@@ -269,12 +269,11 @@ namespace stats {
   };
 
   template<typename FitnessTag>
-  struct average_fitness {
+  struct total_fitness {
     template<averageable_population<FitnessTag> Population>
     class type {
     private:
       using fitness_tag_t = FitnessTag;
-
       using fitness_t = get_fitness_t<FitnessTag, Population>;
       using state_t = details::kahan_state<fitness_t>;
 
@@ -289,8 +288,43 @@ namespace stats {
                                      return acc.add(
                                          ind.evaluation().get(fitness_tag));
                                    })
-                       .sum() /
-                   population.current_size()} {
+                       .sum()} {
+      }
+
+      inline auto const& fitness_total_value() const noexcept {
+        return value_;
+      }
+
+    private:
+      fitness_t value_;
+    };
+  };
+
+  template<typename FitnessTag>
+  struct average_fitness {
+    using fitness_tag_t = FitnessTag;
+    using total_fitness_t = total_fitness<fitness_tag_t>;
+
+    using required_t = dependencies<total_fitness_t>;
+
+    template<averageable_population<FitnessTag> Population>
+    class type {
+    public:
+      using pack_t = dependencies_pack<Population, required_t>;
+      using dependencies_t = typename pack_t::type;
+
+    private:
+      using fitness_t = get_fitness_t<FitnessTag, Population>;
+
+      inline static constexpr fitness_tag_t fitness_tag{};
+
+    public:
+      inline type(Population const& population, type const& previous) noexcept {
+        auto const& sum =
+            unpack_dependency<pack_t, total_fitness_t>(dependencies)
+                .fitness_total_value();
+
+        value_ = sum / population.current_size();
       }
 
       inline auto const& fitness_average_value() const noexcept {

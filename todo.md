@@ -8,9 +8,10 @@ List of task to implement or improve
 ## Basic Operations
  - [ ] initializator to produce tags
  - [ ] preparation step for global scaling (e.g. sorting for ranking based scaling)
+ - [ ] case where scaling does not change the ordering
 
 ## Statistics Tracking
  - [ ] refreshing statistics (e.g. before/after global scaling operation)
- - [ ] split average and sum statistics
+ - [x] split average and sum statistics
  - [ ] optimize summation stats (simple summing for integers)
  - [ ] statistic that counts operation effects and timings (mutations/crossovers/replacements)
