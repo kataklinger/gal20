@@ -112,7 +112,7 @@ namespace select {
     using state_t = details::nonunique_state<Size>;
 
   public:
-    template<typename Population>
+    template<ordered_population<fitness_tag_t> Population>
     inline auto operator()(Population const& population) {
       population.sort(fitness_tag_t{});
 
@@ -133,7 +133,9 @@ namespace select {
 
   public:
     template<typename Population>
-    inline auto operator()(Population const& population) {
+    inline auto operator()(Population const& population) requires
+        ordered_population<Population, FitnessTag> &&
+        averageable_population<Population, FitnessTag> {
       population.sort(fitness_tag_t{});
 
       //
