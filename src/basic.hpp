@@ -59,7 +59,7 @@ concept scaling = std::is_invocable_v<
 
 template<typename Scaling>
 struct scaling_traits {
-  using is_global_t = std::true_type;
+  using is_global_t = std::is_invocable<Scaling>;
 };
 
 template<typename Range, typename It>

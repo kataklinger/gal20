@@ -2,6 +2,7 @@
 
 #include "config.hpp"
 
+#include <functional>
 #include <stop_token>
 
 namespace gal {
@@ -137,9 +138,10 @@ namespace simple {
            stats = &statistics_.next(population_)) {
         scale(scaling, global_scaling);
 
-        auto selected = config_.selection()(population_);
-        auto offspring = coupling(offspring);
-        auto replaced = config_.replacement()(population_, offspring);
+        auto selected = std::invoke(config_.selection(), population_);
+        auto offspring = std::invoke(coupling, offspring);
+        auto replaced =
+            std::invoke(config_.replacement(), population_, offspring);
 
         population_.trim();
       }
@@ -162,16 +164,20 @@ namespace simple {
       return statistics_.next(population_);
     }
 
-    void scale(std::true_type /*unused*/) {
+    void scale(scaling_t& scaling, std::true_type /*unused*/) {
+      std::invoke(scaling);
+
       for (auto& individual : population_.individuals()) {
         auto& evaluation = individual.evaluation();
 
-        config_.scaling()(
-            individual.chromosome(), individual.raw(), individual.scaled());
+        std::invoke(scaling,
+                    individual.chromosome(),
+                    evaluation.raw(),
+                    evaluation.scaled());
       }
     }
 
-    inline void scale(std::false_type /*unused*/) noexcept {
+    inline void scale(scaling_t& scaling, std::false_type /*unused*/) noexcept {
     }
 
     inline auto get_coupling_context(scaling_t const& scaling,
