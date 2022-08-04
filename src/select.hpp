@@ -92,7 +92,6 @@ namespace select {
 
     template<typename Population>
     inline auto operator()(Population const& population) {
-
       return details::select_many(
           population,
           state_,
@@ -127,19 +126,58 @@ namespace select {
            typename FitnessTag,
            typename Generator>
   class pick_roulette {
+  public:
+    using generator_t = Generator;
+
   private:
     using fitness_tag_t = FitnessTag;
     using state_t = details::state_t<Size, Unique>;
 
+  private:
+    inline static constexpr fitness_tag_t fitness_tag{};
+
   public:
+    inline explicit pick_roulette(generator_t& generator) noexcept
+        : generator_{&generator} {
+    }
+
     template<typename Population>
     inline auto operator()(Population const& population) requires
         ordered_population<Population, FitnessTag> &&
         averageable_population<Population, FitnessTag> {
-      population.sort(fitness_tag_t{});
+      using fitness_t = get_fitness_t<fitness_tag_t, Population>;
 
-      //
+      population.sort(fitness_tag);
+
+      auto wheel = get_wheel(population);
+      std::uniform_real_distribution<fitness_t> dist{0, wheel.back()};
+
+      return details::select_many(
+          population, state_, [&wheel, &dist, generator_]() {
+            return std::ranges::lower_bound(wheel, dist(*generator_)) -
+                   wheel.begin();
+          });
     }
+
+  private:
+    template<typename Population>
+    auto get_wheel(Population const& population) const {
+      using fitness_t = get_fitness_t<fitness_tag_t, Population>;
+
+      gal::stats::details::kahan_state<fitness_t> state{};
+      auto wheel = population.individuals() |
+                   std::ranges::views::transform([&state](auto& ind) {
+                     state = state.add(ind.evaluation().get(fitness_tag));
+                     return state.sum();
+                   }) |
+                   std::views::common;
+
+      return std::vector<fitness_t>{wheel.begin(), wheel.end()};
+    }
+
+  private:
+    generator_t* generator_;
+    [[no_unique_address]] state_t state_{};
   };
 
 } // namespace select

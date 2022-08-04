@@ -15,3 +15,7 @@ List of task to implement or improve
  - [ ] optimize summation stats (simple summing for integers)
  - [ ] statistic that counts operation effects and timings (mutations/crossovers/replacements)
  - [x] split average and sum statistics
+
+# Fitness
+ - [ ] real number vs integer fitness
+ - [ ] fitness that can be used for defining uniform random distribution
