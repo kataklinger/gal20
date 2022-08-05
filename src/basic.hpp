@@ -4,6 +4,7 @@
 #include <concepts>
 #include <ranges>
 #include <type_traits>
+#include <random>
 
 namespace gal {
 
@@ -21,6 +22,23 @@ concept arithmetic_fitness = fitness<Type> && requires(Type a) {
   { a - a } -> std::same_as<Type>;
   { a / std::size_t(1) } -> std::same_as<Type>;
 };
+
+template<typename Fitness>
+struct random_fitness_distribution;
+
+template<std::integral Fitness>
+struct random_fitness_distribution<Fitness> {
+  using type = std::uniform_int_distribution<Fitness>;
+};
+
+template<std::floating_point Fitness>
+struct random_fitness_distribution<Fitness> {
+  using type = std::uniform_real_distribution<Fitness>;
+};
+
+template<typename Fitness>
+using random_fitness_distribution_t =
+    typename random_fitness_distribution<Fitness>::type;
 
 template<typename Type>
 concept chromosome =

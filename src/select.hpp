@@ -146,14 +146,16 @@ namespace select {
         ordered_population<Population, FitnessTag> &&
         averageable_population<Population, FitnessTag> {
       using fitness_t = get_fitness_t<fitness_tag_t, Population>;
+      using distribution_t = random_fitness_distribution_t<fitness_t>;
 
       population.sort(fitness_tag);
 
       auto wheel = get_wheel(population);
-      std::uniform_real_distribution<fitness_t> dist{0, wheel.back()};
 
       return details::select_many(
-          population, state_, [&wheel, &dist, generator_]() {
+          population,
+          state_,
+          [&wheel, dist = distribution_t{{}, wheel.back()}, generator_]() {
             return std::ranges::lower_bound(wheel, dist(*generator_)) -
                    wheel.begin();
           });
