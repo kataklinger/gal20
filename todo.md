@@ -7,7 +7,7 @@ List of task to implement or improve
 
 ## Basic Operations
  - [ ] initializator to produce tags
- - [ ] case where scaling does not change the ordering
+ - [x] case where scaling does not change the ordering
  - [x] preparation step for global scaling (e.g. sorting for ranking based scaling)
 
 ## Statistics Tracking
@@ -17,5 +17,4 @@ List of task to implement or improve
  - [x] split average and sum statistics
 
 # Fitness
- - [ ] real number vs integer fitness
- - [ ] fitness that can be used for defining uniform random distribution
+ - [x] fitness that can be used for defining uniform random distribution

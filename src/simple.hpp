@@ -9,7 +9,7 @@ namespace gal {
 namespace simple {
   template<typename Builder>
   struct basic_algorithm_scaling_cond
-      : std::is_same<empty_fitness, typename Builder::scaled_fitness_t> {};
+      : is_empty_fitness<typename Builder::scaled_fitness_t> {};
 
   using basic_algorithm_config = config::entry_map<
       config::entry<config::root_iface,
@@ -37,7 +37,7 @@ namespace simple {
 
   template<typename Config>
   concept scaling_config =
-      std::same_as<typename Config::scaled_fitness_t, empty_fitness> ||
+      is_empty_fitness_v<typename Config::scaled_fitness_t> ||
       requires(Config c) {
     scaling<typename Config::scaling_t,
             typename Config::chromosome_t,
@@ -69,9 +69,8 @@ namespace simple {
         std::derived_from<typename Config::improving_mutation_t,
                           std::false_type>;
 
-    std::derived_from<typename Config::is_global_scaling_t, std::true_type> ||
-        std::derived_from<typename Config::is_global_scaling_t,
-                          std::false_type>;
+    traits::boolean_flag<typename Config::is_global_scaling_t>;
+    traits::boolean_flag<typename Config::is_stable_scaling_t>;
 
     selection_range<typename Config::selection_result_t,
                     typename Config::population_t::const_iterator_t>;
@@ -123,7 +122,8 @@ namespace simple {
   public:
     inline explicit algorithm(config_t const& config)
         : config_{config}
-        , population_{population_.population_size()} {
+        , population_{population_.population_size(),
+                      config_t::is_stable_scaling_t::value} {
     }
 
     void run(std::stop_token token) {

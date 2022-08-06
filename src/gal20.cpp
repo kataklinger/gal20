@@ -61,7 +61,7 @@ int main() {
 
   std::vector<parent_replacement_t> x{};
 
-  pop_t p{};
+  pop_t p{true};
   p.replace(std::move(x));
 
   test_selection_range<pop_t>(std::vector<pop_t::const_iterator_t>{});

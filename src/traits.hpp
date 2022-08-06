@@ -50,5 +50,8 @@ namespace traits {
   constexpr inline auto is_nothrow_forward_assignables_v =
       is_nothrow_forward_assignables<Tys...>::value;
 
+  template<typename Ty>
+  concept boolean_flag = std::derived_from<Ty, std::true_type> ||
+      std::derived_from<Ty, std::false_type>;
 } // namespace traits
 } // namespace gal

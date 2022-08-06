@@ -607,6 +607,8 @@ namespace config {
         using scaling_t = factory_result_t<factory_t, population_context_t>;
         using is_global_scaling_t =
             typename scaling_traits<scaling_t>::is_global_t;
+        using is_stable_scaling_t =
+            typename scaling_traits<scaling_t>::is_stable_t;
 
       public:
         constexpr inline explicit node(factory_t const& scaling)
@@ -709,6 +711,7 @@ namespace config {
     struct node_base {};
     struct node_base_none {
       using is_global_scaling_t = std::true_type;
+      using is_stable_scaling_t = std::true_type;
     };
 
     template<fitness Scaled>

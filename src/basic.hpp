@@ -2,9 +2,9 @@
 #pragma once
 
 #include <concepts>
+#include <random>
 #include <ranges>
 #include <type_traits>
-#include <random>
 
 namespace gal {
 
@@ -78,6 +78,7 @@ concept scaling = std::is_invocable_v<
 template<typename Scaling>
 struct scaling_traits {
   using is_global_t = std::is_invocable<Scaling>;
+  using is_stable_t = std::false_type;
 };
 
 template<typename Range, typename It>
@@ -155,5 +156,11 @@ using factory_result_t = std::invoke_result_t<Factory, Context>;
 
 struct empty_fitness {};
 struct empty_tags {};
+
+template<typename Fitness>
+struct is_empty_fitness : std::is_same<Fitness, empty_fitness> {};
+
+template<typename Fitness>
+inline constexpr auto is_empty_fitness_v = is_empty_fitness<Fitness>::value;
 
 } // namespace gal

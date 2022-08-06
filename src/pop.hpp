@@ -164,12 +164,18 @@ concept fitness_tag = ( std::same_as<FitnessTag, raw_fitness_tag> &&
                       (std::same_as<FitnessTag, scaled_fitness_tag> &&
                        ordered_fitness<Scaled>);
 
-enum class sort_by { none, raw, scaled };
+enum class sort_by { none, raw, scaled, both };
 
 template<typename FitnessTag>
 struct sort_policy_base {
+  const sort_by by;
+
+  inline explicit sort_policy_base(bool stable_scaling, sort_by value) noexcept
+      : by{stable_scaling ? sort_by::both : value} {
+  }
+
   template<typename Collection>
-  inline static auto minmax(Collection const& individuals) {
+  inline auto minmax(Collection const& individuals) noexcept {
     return std::ranges::minmax_element(
         individuals, std::ranges::greater{}, [](auto const& i) {
           return i.evaluation().get(FitnessTag{});
@@ -177,7 +183,7 @@ struct sort_policy_base {
   }
 
   template<typename Collection>
-  inline static void sort(Collection& individuals) {
+  inline void sort(Collection& individuals) {
     std::ranges::sort(individuals, std::ranges::greater{}, [](auto const& i) {
       return i.evaluation().get(FitnessTag{});
     });
@@ -189,12 +195,16 @@ struct sort_policy {};
 
 template<>
 struct sort_policy<raw_fitness_tag> : sort_policy_base<raw_fitness_tag> {
-  inline static constexpr auto by = sort_by::raw;
+  inline explicit sort_policy(bool stable_scaling) noexcept
+      : sort_policy_base<raw_fitness_tag>{stable_scaling, sort_by::raw} {
+  }
 };
 
 template<>
-struct sort_policy<scaled_fitness_tag> : sort_policy_base<raw_fitness_tag> {
-  inline static constexpr auto by = sort_by::scaled;
+struct sort_policy<scaled_fitness_tag> : sort_policy_base<scaled_fitness_tag> {
+  inline explicit sort_policy(bool stable_scaling) noexcept
+      : sort_policy_base<scaled_fitness_tag>{stable_scaling, sort_by::scaled} {
+  }
 };
 
 template<chromosome Chromosome,
@@ -216,12 +226,14 @@ public:
   using const_iterator_t = typename collection_t::const_iterator;
 
 public:
-  inline population() noexcept
-      : target_size_{std::nullopt} {
+  inline explicit population(bool stable_scaling) noexcept
+      : target_size_{std::nullopt}
+      , stable_scaling_{stable_scaling} {
   }
 
-  inline explicit population(std::optional<std::size_t> target_size)
-      : target_size_{target_size} {
+  inline explicit population(std::size_t target_size, bool stable_scaling)
+      : target_size_{target_size}
+      , stable_scaling_{stable_scaling} {
     if (target_size_) {
       individuals_.reserve(*target_size_);
     }
@@ -283,25 +295,25 @@ public:
 
   template<fitness_tag<raw_fitness_t, scaled_fitness_t> FitnessTag>
   inline void sort(FitnessTag /*unused*/) {
-    using policy_t = sort_policy<FitnessTag>;
+    sort_policy<FitnessTag> policy{stable_scaling_};
 
-    if (sorted_ != policy_t::by) {
+    if (sorted_ != policy.by) {
       sorted_ = sort_by::none;
-      policy_t::sort(individuals_);
-      sorted_ = policy_t::by;
+      policy.sort(individuals_);
+      sorted_ = policy.by;
     }
   }
 
   template<fitness_tag<raw_fitness_t, scaled_fitness_t> FitnessTag>
   inline std::pair<individual_t const&, individual_t const&>
       extremes(FitnessTag /*unused*/) const noexcept {
-    using policy_t = sort_policy<FitnessTag>;
+    sort_policy<FitnessTag> policy{stable_scaling_};
 
-    if (sorted_ == policy_t::by) {
+    if (sorted_ == policy.by) {
       return {individuals_.back(), individuals_.front()};
     }
     else {
-      auto [mini, maxi] = policy_t::minmax(individuals_);
+      auto [mini, maxi] = policy.minmax(individuals_);
       return {*mini, *maxi};
     }
   }
@@ -344,7 +356,9 @@ private:
 private:
   std::optional<std::size_t> target_size_;
   collection_t individuals_;
+
   sort_by sorted_{sort_by::none};
+  bool stable_scaling_;
 };
 
 template<typename FitnessTag>
