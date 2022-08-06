@@ -146,7 +146,8 @@ namespace select {
         ordered_population<Population, FitnessTag> &&
         averageable_population<Population, FitnessTag> {
       using fitness_t = get_fitness_t<fitness_tag_t, Population>;
-      using distribution_t = random_fitness_distribution_t<fitness_t>;
+      using distribution_t =
+          typename fitness_traits<fitness_t>::random_distribution_t;
 
       population.sort(fitness_tag);
 
@@ -165,14 +166,15 @@ namespace select {
     template<typename Population>
     auto get_wheel(Population const& population) const {
       using fitness_t = get_fitness_t<fitness_tag_t, Population>;
+      using state_t = typename fitness_traits<fitness_t>::totalizator_t;
 
-      gal::stats::details::kahan_state<fitness_t> state{};
-      auto wheel = population.individuals() |
-                   std::ranges::views::transform([&state](auto& ind) {
-                     state = state.add(ind.evaluation().get(fitness_tag));
-                     return state.sum();
-                   }) |
-                   std::views::common;
+      auto wheel =
+          population.individuals() |
+          std::ranges::views::transform([state = state_t{}](auto& ind) {
+            state = state.add(ind.evaluation().get(fitness_tag));
+            return state.sum();
+          }) |
+          std::views::common;
 
       return std::vector<fitness_t>{wheel.begin(), wheel.end()};
     }

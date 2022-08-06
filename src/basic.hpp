@@ -24,21 +24,92 @@ concept arithmetic_fitness = fitness<Type> && requires(Type a) {
 };
 
 template<typename Fitness>
-struct random_fitness_distribution;
-
-template<std::integral Fitness>
-struct random_fitness_distribution<Fitness> {
-  using type = std::uniform_int_distribution<Fitness>;
-};
-
-template<std::floating_point Fitness>
-struct random_fitness_distribution<Fitness> {
-  using type = std::uniform_real_distribution<Fitness>;
-};
+concept integer_fitness = arithmetic_fitness<Fitness> && std::integral<Fitness>;
 
 template<typename Fitness>
-using random_fitness_distribution_t =
-    typename random_fitness_distribution<Fitness>::type;
+concept real_fitness =
+    arithmetic_fitness<Fitness> && std::floating_point<Fitness>;
+
+template<typename Totalizator>
+concept fitness_totalizator = requires(Totalizator t) {
+  std::semiregular<Totalizator>;
+  arithmetic_fitness<typename Totalizator::value_t>;
+
+  {
+    t.add(std::declval<typename Totalizator::value_t>())
+    } -> std::convertible_to<Totalizator>;
+
+  { t.sum() } -> std::convertible_to<typename Totalizator::value_t>;
+};
+
+template<arithmetic_fitness Value>
+class integer_fitness_totalizator {
+public:
+  using value_t = Value;
+
+public:
+  inline integer_fitness_totalizator() = default;
+
+  inline auto add(value_t const& value) const noexcept {
+    return integer_fitness_totalizator{sum_ + value};
+  }
+
+  inline value_t const& sum() const noexcept {
+    return sum_;
+  }
+
+private:
+  inline integer_fitness_totalizator(value_t const& sum)
+      : sum_{sum} {
+  }
+
+private:
+  value_t sum_{};
+};
+
+template<arithmetic_fitness Value>
+class real_fitness_totalizator {
+public:
+  using value_t = Value;
+
+public:
+  inline real_fitness_totalizator() = default;
+
+  inline auto add(value_t const& value) const noexcept {
+    value_t y = value - correction_;
+    value_t t = sum_ + y;
+    return real_fitness_totalizator{t, (t - sum_) - y};
+  }
+
+  inline value_t const& sum() const noexcept {
+    return sum_;
+  }
+
+private:
+  inline real_fitness_totalizator(value_t const& sum, value_t const& correction)
+      : sum_{sum}
+      , correction_{correction} {
+  }
+
+private:
+  value_t sum_{};
+  value_t correction_{};
+};
+
+template<fitness Fitness>
+struct fitness_traits;
+
+template<integer_fitness Fitness>
+struct fitness_traits<Fitness> {
+  using totalizator_t = integer_fitness_totalizator<Fitness>;
+  using random_distribution_t = std::uniform_int_distribution<Fitness>;
+};
+
+template<real_fitness Fitness>
+struct fitness_traits<Fitness> {
+  using totalizator_t = real_fitness_totalizator<Fitness>;
+  using random_distribution_t = std::uniform_real_distribution<Fitness>;
+};
 
 template<typename Type>
 concept chromosome =

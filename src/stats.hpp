@@ -171,35 +171,6 @@ namespace stats {
       }
     };
 
-    template<arithmetic_fitness Value>
-    class kahan_state {
-    public:
-      using value_t = Value;
-
-    public:
-      inline kahan_state() = default;
-
-      inline auto add(value_t const& value) const noexcept {
-        value_t y = value - correction_;
-        value_t t = sum_ + y;
-        return kahan_state{t, (t - sum_) - y};
-      }
-
-      inline value_t const& sum() const noexcept {
-        return sum_;
-      }
-
-    private:
-      inline kahan_state(value_t const& sum, value_t const& correction)
-          : sum_{sum}
-          , correction_{correction} {
-      }
-
-    private:
-      value_t sum_{};
-      value_t correction_{};
-    };
-
   } // namespace details
 
   struct generation {
@@ -275,7 +246,7 @@ namespace stats {
     private:
       using fitness_tag_t = FitnessTag;
       using fitness_t = get_fitness_t<FitnessTag, Population>;
-      using state_t = details::kahan_state<fitness_t>;
+      using state_t = typename fitness_traits<fitness_t>::totalizator_t;
 
       inline static constexpr fitness_tag_t fitness_tag{};
 
@@ -377,7 +348,7 @@ namespace stats {
       using variance_t = square_power_result_t<fitness_t>;
       using deviation_t = square_root_result_t<variance_t>;
 
-      using state_t = details::kahan_state<variance_t>;
+      using state_t = typename fitness_traits<fitness_t>::totalizator_t;
 
       inline static constexpr fitness_tag_t fitness_tag{};
 
