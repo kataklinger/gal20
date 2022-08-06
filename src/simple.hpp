@@ -105,6 +105,118 @@ namespace simple {
     { c.criterion() } -> std::convertible_to<typename Config::criterion_t>;
   };
 
+  namespace details {
+
+    template<algorithm_config Config>
+    class local_scaler {
+    public:
+      using config_t = Config;
+      using population_context_t = typename config_t::population_context_t;
+      using reproduction_context_t = typename config_t::reproduction_context_t;
+
+    public:
+      inline explicit local_scaler(config_t& config,
+                                   population_context_t& context)
+          : reproduction_{config.crossover(),
+                          config.mutation(),
+                          config.evaluator(),
+                          config.scaling(context)} {
+      }
+
+      inline void operator()() const noexcept {
+      }
+
+      inline auto reproduction() const {
+        return reproduction_;
+      }
+
+    private:
+      reproduction_context_t reproduction_;
+    };
+
+    template<algorithm_config Config>
+    class global_scaler_base {
+    public:
+      using config_t = Config;
+
+      using reproduction_context_t = typename config_t::reproduction_context_t;
+
+    public:
+      inline explicit global_scaler_base(config_t& config)
+          : reproduction_{config.crossover(),
+                          config.mutation(),
+                          config.evaluator()} {
+      }
+
+      inline auto reproduction() const {
+        return reproduction_;
+      }
+
+    private:
+      reproduction_context_t reproduction_;
+    };
+
+    template<algorithm_config Config>
+    class global_scaler : public global_scaler_base<Config> {
+    public:
+      using config_t = Config;
+      using population_context_t = typename config_t::population_context_t;
+      using scaling_t = typename config_t::scaling_t;
+
+    public:
+      inline explicit global_scaler(config_t& config,
+                                    population_context_t& context)
+          : global_scaler_base<config_t>{config}
+          , context_{context}
+          , scaling_{config.scaling(context)} {
+      }
+
+      inline void operator()() const noexcept {
+        if constexpr (std::is_invocable_v<scaling_t>) {
+          std::invoke(scaling_);
+        }
+
+        for (auto& individual : context_->population().individuals()) {
+          auto& evaluation = individual.evaluation();
+
+          std::invoke(scaling_,
+                      individual.chromosome(),
+                      evaluation.raw(),
+                      evaluation.scaled());
+        }
+      }
+
+    private:
+      population_context_t* context_;
+      scaling_t scaling_;
+    };
+
+    template<algorithm_config Config>
+    class disabled_scaler : public global_scaler_base<Config> {
+    public:
+      using config_t = Config;
+      using population_context_t = typename config_t::population_context_t;
+
+    public:
+      inline explicit disabled_scaler(config_t& config,
+                                      population_context_t& /*unused*/)
+          : global_scaler_base<config_t>{config} {
+      }
+
+      inline void operator()() const noexcept {
+      }
+    };
+
+    template<algorithm_config Config>
+    using scaler_t = std::conditional_t<
+        is_empty_fitness_v<typename Config::scaled_fitness_t>,
+        disabled_scaler<Config>,
+        std::conditional_t<Config::is_global_scaling_t::value,
+                           local_scaler<Config>,
+                           global_scaler<Config>>>;
+
+  } // namespace details
+
   template<algorithm_config Config>
   class algorithm {
   public:
@@ -115,7 +227,7 @@ namespace simple {
   private:
     using individual_t = typename population_t::individual_t;
     using evaluation_t = typename individual_t::evaluation_t;
-    using scaling_t = typename config_t::scaling_t;
+    using scaler_t = details::scaler_t<config_t>;
 
     using reproduction_context_t = typename config_t::reproduction_context_t;
 
@@ -127,16 +239,14 @@ namespace simple {
     }
 
     void run(std::stop_token token) {
-      auto scaling = config_.scaling({population_, statistics_});
-      constexpr auto global_scaling = typename config_t::is_global_scaling_t{};
+      scaler_t scaler{config_};
 
-      auto coupling =
-          config_.coupling(get_coupling_context(scaling, global_scaling));
+      auto coupling = config_.coupling(scaler.reproduction());
 
       for (auto const* stats = &init();
            !token.stop_requested() && !config_.criterion(population_, *stats);
            stats = &statistics_.next(population_)) {
-        scale(scaling, global_scaling);
+        scaler();
 
         auto selected = std::invoke(config_.selection(), population_);
         auto offspring = std::invoke(coupling, offspring);
@@ -162,36 +272,6 @@ namespace simple {
           });
 
       return statistics_.next(population_);
-    }
-
-    void scale(scaling_t& scaling, std::true_type /*unused*/) {
-      std::invoke(scaling);
-
-      for (auto& individual : population_.individuals()) {
-        auto& evaluation = individual.evaluation();
-
-        std::invoke(scaling,
-                    individual.chromosome(),
-                    evaluation.raw(),
-                    evaluation.scaled());
-      }
-    }
-
-    inline void scale(scaling_t& scaling, std::false_type /*unused*/) noexcept {
-    }
-
-    inline auto get_coupling_context(scaling_t const& scaling,
-                                     std::true_type /*unused*/) {
-      return reproduction_context_t{
-          config_.crossover(), config_.mutation(), config_.evaluator()};
-    }
-
-    inline auto get_coupling_context(scaling_t const& scaling,
-                                     std::false_type /*unused*/) {
-      return reproduction_context_t{config_.crossover(),
-                                    config_.mutation(),
-                                    config_.evaluator(),
-                                    scaling};
     }
 
   private:
