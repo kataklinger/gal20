@@ -252,8 +252,6 @@ namespace simple {
         auto offspring = std::invoke(coupling, offspring);
         auto replaced =
             std::invoke(config_.replacement(), population_, offspring);
-
-        population_.trim();
       }
     }
 
