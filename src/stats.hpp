@@ -3,6 +3,7 @@
 
 #include "pop.hpp"
 
+#include <chrono>
 #include <concepts>
 #include <numeric>
 #include <queue>
@@ -207,6 +208,56 @@ namespace stats {
     };
   };
 
+  template<typename Tag>
+  struct generic_counter {
+    template<typename Population>
+    class type {
+    public:
+      inline type(Population const& population, type const& previous) noexcept {
+      }
+
+      inline auto count_value() const noexcept {
+        return count_;
+      }
+
+      inline void set_count_value(std::size_t count) noexcept {
+        count_ = count;
+      }
+
+    private:
+      std::size_t count_;
+    };
+  };
+
+  template<typename Tag>
+  struct generic_timer {
+    template<typename Population>
+    class type {
+    public:
+      using timer_t = std::chrono::high_resolution_clock;
+
+    public:
+      inline type(Population const& population, type const& previous) noexcept {
+      }
+
+      inline auto elapsed_value() const noexcept {
+        return stop_ - start_;
+      }
+
+      inline void start_timer() noexcept {
+        start_ = timer_t::now();
+      }
+
+      inline void stop_timer() noexcept {
+        stop_ = timer_t::now();
+      }
+
+    private:
+      timer_t::time_point start_;
+      timer_t::time_point stop_;
+    };
+  };
+
   template<typename FitnessTag>
   struct extreme_fitness {
     template<ordered_population<FitnessTag> Population>
@@ -398,6 +449,9 @@ namespace stats {
   private:
     using base_t = details::node<population_t, Values...>;
 
+    template<node_value<population_t> Value>
+    using base_value_t = typename Value::template type<population_t>;
+
   private:
     inline statistics(population_t const& population,
                       statistics const& previous)
@@ -410,10 +464,25 @@ namespace stats {
     }
 
     template<node_value<population_t> Value>
-    inline auto const& get() const noexcept {
-      return static_cast<Value const&>(*this);
+    inline decltype(auto) get() noexcept {
+      return static_cast<base_value_t<Value>&>(*this);
+    }
+
+    template<node_value<population_t> Value>
+    inline decltype(auto) get() const noexcept {
+      return static_cast<base_value_t<Value> const&>(*this);
     }
   };
+
+  template<typename Statistics, typename Value>
+  struct tracks_statistic
+      : std::is_base_of<
+            typename Value::template type<typename Statistics::population_t>,
+            Statistics> {};
+
+  template<typename Statistics, typename Value>
+  inline constexpr auto tracks_statistic_v =
+      tracks_statistic<Statistics, Value>::value;
 
   template<typename Statistics>
   concept statistical = requires(Statistics s) {
