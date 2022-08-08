@@ -44,7 +44,7 @@ namespace select {
     std::size_t select_single(unique_state<Size>& s, Fn&& produce) {
       std::size_t idx{};
       do {
-        idx = produce();
+        idx = std::invoke(produce);
       } while (!s.update(idx));
 
       return idx;
@@ -52,7 +52,7 @@ namespace select {
 
     template<std::size_t Size, index_producer Fn>
     std::size_t select_single(nonunique_state<Size> /*unused*/, Fn&& produce) {
-      return produce();
+      return std::invoke(std::forward<Fn>(produce));
     }
 
     template<typename Population, typename State, index_producer Fn>
@@ -65,7 +65,7 @@ namespace select {
           result.begin(),
           State::size,
           [first = population.individuals().begin(), &state, &produce] {
-            return first + select_single(state, produce);
+            return first + select_single(state, std::forward<Fn>(produce));
           });
 
       return result;
