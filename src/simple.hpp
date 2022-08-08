@@ -217,6 +217,13 @@ namespace simple {
 
   } // namespace details
 
+  struct scaling_time_t {};
+  struct selection_time_t {};
+  struct selection_count_t {};
+  struct coupling_time_t {};
+  struct replacement_time_t {};
+  struct replacement_count_t {};
+
   template<algorithm_config Config>
   class algorithm {
   public:
@@ -240,19 +247,51 @@ namespace simple {
 
     void run(std::stop_token token) {
       scaler_t scaler{config_};
-
       auto coupling = config_.coupling(scaler.reproduction());
 
       for (auto const* stats = &init();
            !token.stop_requested() && !config_.criterion(population_, *stats);
            stats = &statistics_.next(population_)) {
-        scaler();
 
-        auto selected = std::invoke(config_.selection(), population_);
-        auto offspring = std::invoke(coupling, offspring);
-        auto replaced =
-            std::invoke(config_.replacement(), population_, offspring);
+        scale(scaler, stats);
+
+        auto selected = select(stats);
+        stats::count_range<selection_count_t>(stats, selected);
+
+        auto offspring = couple(selected, coupling, stats);
+
+        auto replaced = replace(offspring, stats);
+        stats::count_range<selection_count_t>(stats, replaced);
       }
+    }
+
+  private:
+    inline void scale(scaler_t& scaler, statistics_t& current) {
+      auto timer = stats::start_timer<scaling_time_t>(current);
+      scaler();
+    }
+
+    inline auto select(statistics_t& current) {
+      auto timer = stats::start_timer<selection_time_t>(current);
+      return std::invoke(config_.selection(), population_);
+    }
+
+    template<std::ranges::range Selected,
+             coupling<population_t, Selected> Coupling>
+    inline auto couple(Selected&& selected,
+                       Coupling&& coupling,
+                       statistics_t& current) {
+      auto coupling_time = stats::start_timer<coupling_time_t>(current);
+      return std::invoke(std::forward<Coupling>(coupling),
+                         std::forward<Selected>(selected));
+    }
+
+    template<std::ranges::range Offspring>
+    inline auto replace(Offspring&& offspring, statistics_t& current) {
+      auto timer = stats::start_timer<replacement_time_t>(current);
+      return std::invoke(config_.replacement(),
+                         population_,
+                         std::forward<Offspring>(offspring));
     }
 
   private:

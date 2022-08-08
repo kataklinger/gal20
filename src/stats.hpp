@@ -493,6 +493,71 @@ namespace stats {
       } -> std::convertible_to<Statistics>;
   };
 
+  template<typename Statistics,
+           node_value<typename Statistics::population_t> Timer>
+  class enabled_timer {
+  private:
+    using statistics_t = Statistics;
+    using timer_t = Timer;
+
+    using population_t = typename statistics_t::population_t;
+    using value_t = typename timer_t::template type<population_t>;
+
+  public:
+    inline explicit enabled_timer(Statistics& statistics)
+        : value_{&statistics.get<timer_t>()} {
+      value_->start_timer();
+    }
+
+    inline ~enabled_timer() noexcept {
+      value_->stop_timer();
+    }
+
+    enabled_timer(enabled_timer&&) = delete;
+    enabled_timer(enabled_timer const&) = delete;
+
+    inline enabled_timer& operator=(enabled_timer&&) = delete;
+    enabled_timer& operator=(enabled_timer const&) = delete;
+
+  private:
+    value_t* value_;
+  };
+
+  struct disabled_timer {};
+
+  template<typename Tag, typename Statistics>
+  inline auto start_timer(Statistics& statistics) {
+    using timer_t = generic_timer<Tag>;
+
+    if constexpr (tracks_statistic_v<Statistics, timer_t>) {
+      return enabled_timer<Statistics, timer_t>{statistics};
+    }
+    else {
+      return disabled_timer{};
+    }
+  }
+
+  template<typename Tag, typename Statistics, typename Fn>
+  inline void
+      count_simple(Statistics& statistics,
+                   Fn&& fn) requires(std::is_invocable_r_v<std::size_t, Fn>) {
+    using counter_t = generic_counter<Tag>;
+
+    if constexpr (tracks_statistic_v<Statistics, counter_t>) {
+      statistics.get<counter_t>().set_count_value(
+          std::invoke(std::forward<Fn>(fn)));
+    }
+  }
+
+  template<typename Tag, typename Statistics, std::ranges::sized_range Range>
+  inline void count_range(Statistics& statistics, Range const& range) {
+    using counter_t = generic_counter<Tag>;
+
+    if constexpr (tracks_statistic_v<Statistics, counter_t>) {
+      statistics.get<counter_t>().set_count_value(std::ranges::size(range));
+    }
+  }
+
   template<statistical Statistics>
   class history {
   public:
