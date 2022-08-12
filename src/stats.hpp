@@ -800,9 +800,8 @@ namespace stats {
     using filter_components_t = typename filter_components<Idxs, Values>::type;
 
     template<typename... Tys, std::size_t... Idxs>
-    auto pack_composite_helper(
-        std::tuple<Tys...>&& raw,
-        std::index_sequence<Idxs...> /*unused*/) noexcept {
+    auto pack_helper(std::tuple<Tys...>&& raw,
+                     std::index_sequence<Idxs...> /*unused*/) noexcept {
       return std::tuple{std::move(std::get<Idxs>(raw))...};
     }
 
@@ -810,7 +809,7 @@ namespace stats {
     auto pack_composite(std::tuple<Tys...>&& raw) noexcept {
       using indices_t =
           filter_components_t<std::index_sequence_for<Tys...>, vlist<Tys...>>;
-      return pack_composite_helper(std::move(raw), indices_t{});
+      return pack_helper(std::move(raw), indices_t{});
     }
 
     template<typename Statistics, typename Value, typename Tag>
@@ -826,6 +825,7 @@ namespace stats {
                                  std::tuple<Tys...>&& pack) {
       (unpack_single(statistics, std::move(std::get<Tys>(pack))), ...);
     }
+
   } // namespace details
 
   template<typename Population,
@@ -850,6 +850,64 @@ namespace stats {
           });
 
       details::unpack_composite(statistics, std::move(result));
+    }
+  }
+
+  namespace details {
+
+    template<typename Result>
+    struct is_complex_result : std::false_type {};
+
+    template<typename... Values, typename... Tags>
+    struct is_complex_result<std::tuple<tagged<Values, Tags>...>>
+        : std::true_type {};
+
+    template<typename Result>
+    inline constexpr auto is_complex_result_v =
+        is_complex_result<Result>::value;
+
+    template<typename Statistics, typename Idxs, typename Values>
+    struct filter_complex_result;
+
+    template<typename Statistics,
+             std::size_t Idx,
+             std::size_t... Idxs,
+             typename Value,
+             typename Tag,
+             typename... Values>
+    struct filter_complex_result<Statistics,
+                                 std::index_sequence<Idx, Idxs...>,
+                                 std::tuple<tagged<Value, Tag>, Values...>> {
+      using rest_t = filter_complex_result<Statistics,
+                                           std::index_sequence<Idxs...>,
+                                           std::tuple<Values...>>;
+      using type = std::conditional_t<
+          tracks_statistic_v<Statistics, generic_value<Value, Tag>>,
+          add_index_sequence_t<Idx, rest_t>,
+          rest_t>;
+    };
+
+    template<typename Statistics, typename Idxs, typename Values>
+    using filter_complex_result_t =
+        typename filter_complex_result<Statistics, Idxs, Values>::type;
+
+  } // namespace details
+
+  template<typename Fn>
+  concept complex_computation = std::is_invocable_v<Fn> &&
+      details::is_complex_result_v<details::compute_result_t<Fn>>;
+
+  template<typename Statistics, complex_computation Fn>
+  inline void compute_complex(Statistics& statistics, Fn&& fn) {
+    using result_t = details::compute_result_t<Fn>;
+    using sequence_t = std::make_index_sequence<std::tuple_size_v<result_t>>;
+    using indices_t =
+        details::filter_complex_result_t<Statistics, sequence_t, result_t>;
+
+    if constexpr (!std::is_same_v<indices_t, std::index_sequence<>>) {
+      details::unpack_composite(
+          statistics,
+          details::pack_helper(std::invoke(std::forward<Fn>(fn)), indices_t{}));
     }
   }
 
