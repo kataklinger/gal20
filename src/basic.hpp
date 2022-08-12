@@ -120,6 +120,12 @@ template<typename Operation>
 concept initializator = std::is_invocable_v<Operation> &&
     chromosome<std::invoke_result_t<Operation>>;
 
+struct coupling_metadata {
+  bool crossover_performed;
+  bool mutation_tried;
+  bool mutation_accepted;
+};
+
 template<typename Operation, typename Chromosome>
 concept crossover = std::is_invocable_r_v<
     std::pair<Chromosome, Chromosome>,

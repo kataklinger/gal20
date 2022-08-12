@@ -217,13 +217,6 @@ namespace simple {
 
   } // namespace details
 
-  struct scaling_time_t {};
-  struct selection_time_t {};
-  struct selection_count_t {};
-  struct coupling_time_t {};
-  struct replacement_time_t {};
-  struct replacement_count_t {};
-
   template<algorithm_config Config>
   class algorithm {
   public:
@@ -238,6 +231,10 @@ namespace simple {
 
     using reproduction_context_t = typename config_t::reproduction_context_t;
 
+    template<typename Tag>
+    using tagged_t = stats::tagged_counter<Tag>;
+    using input_t = coupling_metadata const&;
+
   public:
     inline explicit algorithm(config_t const& config)
         : config_{config}
@@ -249,30 +246,50 @@ namespace simple {
       scaler_t scaler{config_};
       auto coupling = config_.coupling(scaler.reproduction());
 
-      for (auto const* stats = &init();
-           !token.stop_requested() && !config_.criterion(population_, *stats);
-           stats = &statistics_.next(population_)) {
+      for (auto const* statistics = &init();
+           !token.stop_requested() &&
+           !config_.criterion(population_, *statistics);
+           statistics = &statistics_.next(population_)) {
 
-        scale(scaler, stats);
+        scale(scaler, statistics);
 
-        auto selected = select(stats);
-        stats::count_range<selection_count_t>(stats, selected);
+        auto selected = select(statistics);
+        stats::count_range<stats::selection_count_t>(statistics, selected);
 
-        auto offspring = couple(selected, coupling, stats);
+        auto offspring = couple(selected, coupling, statistics);
+        stats::count_range<stats::coupling_count_t>(statistics, offspring);
+        stats::compute_composite(
+            stats,
+            offspring |
+                std::views::transform([](auto const& item) -> decltype(auto) {
+                  return get_metadata(item);
+                }),
 
-        auto replaced = replace(offspring, stats);
-        stats::count_range<selection_count_t>(stats, replaced);
+            [](input_t i, tagged_t<stats::corssover_count_t> s) {
+              return decltype(s){s.value + i.crossover_performed};
+            },
+
+            [](input_t i, tagged_t<stats::mutation_tried_count_t> s) {
+              return decltype(s){s.value + i.mutation_tried};
+            },
+
+            [](input_t i, tagged_t<stats::mutation_accepted_count_t> s) {
+              return decltype(s){s.value + i.mutation_accepted};
+            });
+
+        auto replaced = replace(offspring, statistics);
+        stats::count_range<stats::selection_count_t>(statistics, replaced);
       }
     }
 
   private:
     inline void scale(scaler_t& scaler, statistics_t& current) {
-      auto timer = stats::start_timer<scaling_time_t>(current);
+      auto timer = stats::start_timer<stats::scaling_time_t>(current);
       scaler();
     }
 
     inline auto select(statistics_t& current) {
-      auto timer = stats::start_timer<selection_time_t>(current);
+      auto timer = stats::start_timer<stats::selection_time_t>(current);
       return std::invoke(config_.selection(), population_);
     }
 
@@ -281,14 +298,14 @@ namespace simple {
     inline auto couple(Selected&& selected,
                        Coupling&& coupling,
                        statistics_t& current) {
-      auto coupling_time = stats::start_timer<coupling_time_t>(current);
+      auto coupling_time = stats::start_timer<stats::coupling_time_t>(current);
       return std::invoke(std::forward<Coupling>(coupling),
                          std::forward<Selected>(selected));
     }
 
     template<std::ranges::range Offspring>
     inline auto replace(Offspring&& offspring, statistics_t& current) {
-      auto timer = stats::start_timer<replacement_time_t>(current);
+      auto timer = stats::start_timer<stats::replacement_time_t>(current);
       return std::invoke(config_.replacement(),
                          population_,
                          std::forward<Offspring>(offspring));

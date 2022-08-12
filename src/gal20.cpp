@@ -3,8 +3,8 @@
 
 #include "gal20.h"
 
-#include "simple.hpp"
 #include "select.hpp"
+#include "simple.hpp"
 
 #include <tuple>
 
@@ -21,6 +21,10 @@ pop_t::const_iterator_t get_parent(parent_replacement_t x) {
 
 pop_t::individual_t get_child(parent_replacement_t x) {
   return get<1>(x);
+}
+
+gal::coupling_metadata get_metadata(parent_replacement_t x) {
+  return {};
 }
 
 template<typename Population,

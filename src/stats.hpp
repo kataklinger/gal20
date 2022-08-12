@@ -533,6 +533,21 @@ namespace stats {
 
   struct disabled_timer {};
 
+  struct scaling_time_t {};
+
+  struct selection_time_t {};
+  struct selection_count_t {};
+
+  struct corssover_count_t {};
+  struct mutation_tried_count_t {};
+  struct mutation_accepted_count_t {};
+
+  struct coupling_count_t {};
+  struct coupling_time_t {};
+
+  struct replacement_time_t {};
+  struct replacement_count_t {};
+
   template<typename Tag, typename Statistics>
   inline auto start_timer(Statistics& statistics) {
     using timer_t = generic_timer<Tag>;
@@ -581,17 +596,222 @@ namespace stats {
     value_t value;
   };
 
+  template<typename Tag>
+  using tagged_counter = tagged<std::size_t, Tag>;
+
   namespace details {
-    template<typename Result>
-    struct is_complex_result : std::false_type {};
+    template<typename Fn, typename Input, typename Value>
+    using is_matching_value = std::is_invocable_r<Value, Fn, Input, Value>;
 
-    template<std::semiregular... Values, typename... Tags>
-    struct is_complex_result<std::tuple<tagged<Values, Tags>...>>
-        : std::true_type {};
+    template<typename Fn, typename Input, typename Value>
+    inline constexpr auto is_matching_value_v =
+        is_matching_value<Fn, Input, Value>::value;
 
-    template<typename Result>
-    inline constexpr auto is_complex_result_v =
-        is_complex_result<Result>::value;
+    template<typename... Values>
+    struct vlist {};
+
+    template<typename Added, typename List>
+    struct add_vlist;
+
+    template<typename Added, typename... Values>
+    struct add_vlist<Added, vlist<Values...>> {
+      using type = vlist<Added, Values...>;
+    };
+
+    template<typename Added, typename List>
+    using add_vlist_t = add_vlist<Added, List>;
+
+    template<typename Fn, typename Input, typename Values>
+    struct find_matching_value;
+
+    template<typename Fn, typename Input>
+    struct find_matching_value<Fn, Input, vlist<>> : std::false_type {
+      using value_t = void;
+    };
+
+    template<typename Value>
+    struct matched_value : std::true_type {
+      using value_t = Value;
+    };
+
+    template<typename Fn, typename Input, typename Value, typename... Rest>
+    struct find_matching_value<Fn, Input, vlist<Value, Rest...>>
+        : std::conditional_t<is_matching_value_v<Fn, Input, Value>,
+                             matched_value<Value>,
+                             find_matching_value<Fn, Input, vlist<Rest...>>> {};
+
+    struct nongeneric_value {};
+
+    template<typename Value, typename = void>
+    struct get_tagged_value_helper {
+      using type = nongeneric_value;
+    };
+
+    template<typename Value>
+    struct get_tagged_value_helper<
+        Value,
+        std::void_t<typename Value::value_t, typename Value::tag_t>> {
+      using type = tagged<typename Value::value_t, typename Value::tag_t>;
+    };
+
+    template<typename Value>
+    using get_tagged_value_helper_t =
+        typename get_tagged_value_helper<Value>::type;
+
+    template<typename Population, node_value<Population> Value>
+    using get_tagged_value_t =
+        get_tagged_value_helper_t<typename Value::template type<Population>>;
+
+    template<typename List>
+    struct clean_vlist;
+
+    template<>
+    struct clean_vlist<vlist<>> {
+      using type = vlist<>;
+    };
+
+    template<typename Value, typename... Rest>
+    struct clean_vlist<vlist<Value, Rest...>> {
+      using type = add_vlist_t<Value, typename clean_vlist<Rest...>::type>;
+    };
+
+    template<typename... Rest>
+    struct clean_vlist<vlist<nongeneric_value, Rest...>>
+        : clean_vlist<Rest...> {};
+
+    template<typename List>
+    using clean_vlist_t = typename clean_vlist<List>::type;
+
+    template<typename Population, node_value<Population>... Values>
+    struct convert_to_vlist {
+      using type =
+          clean_vlist_t<vlist<get_tagged_value_t<Population, Values>...>>;
+    };
+
+    template<typename Population, node_value<Population>... Values>
+    using convert_to_vlist_t =
+        typename convert_to_vlist<Population, Values...>::type;
+
+    template<typename Input, typename Values, typename... Fns>
+    struct composite_state_helper;
+
+    template<typename Input, typename Values>
+    struct composite_state_helper<Input, Values> {
+      using type = vlist<>;
+    };
+
+    template<typename Input, typename Values, typename Fn, typename... Rest>
+    struct composite_state_helper<Input, Values, Fn, Rest...> {
+      using match_t = find_matching_value<Fn, Input, Values>;
+      using rest_t =
+          typename composite_state_helper<Input, Values, Rest...>::type;
+
+      using type =
+          std::conditional_t<match_t::value,
+                             add_vlist_t<typename match_t::value_t, rest_t>,
+                             rest_t>;
+    };
+
+    template<typename List>
+    struct vlist_to_tuple;
+
+    template<typename... Values>
+    struct vlist_to_tuple<vlist<Values...>> {
+      using type = std::tuple<Values...>;
+    };
+
+    template<typename List>
+    using vlist_to_tuple_t = typename vlist_to_tuple<List>::type;
+
+    template<typename Tuple>
+    struct tuple_to_vlist;
+
+    template<typename... Values>
+    struct tuple_to_vlist<std::tuple<Values...>> {
+      using type = vlist<Values...>;
+    };
+
+    template<typename Tuple>
+    using tuple_to_vlist_t = typename tuple_to_vlist<Tuple>::type;
+
+    template<typename Input, typename Values, typename... Fns>
+    struct composite_state {
+      using type =
+          vlist_to_tuple_t<composite_state_helper<Input, Values, Fns...>>;
+    };
+
+    template<typename Input, typename Values, typename... Fns>
+    using composite_state_t =
+        typename composite_state<Input, Values, Fns...>::type;
+
+    struct skipped_value {};
+
+    template<typename Fn, typename State, typename Input>
+    auto compute_single(Fn&& fn, State state, Input const& input) {
+      using match_t = find_matching_value<Fn, Input, tuple_to_vlist_t<State>>;
+      if constexpr (match_t::value) {
+        return std::invoke(std::forward<Fn>(fn),
+                           input,
+                           std::get<typename match_t::value_t>(state));
+      }
+      else {
+        return skipped_value{};
+      }
+    }
+
+    template<std::size_t Idx, typename Idxs>
+    struct add_index_sequence;
+
+    template<std::size_t Idx, std::size_t... Idxs>
+    struct add_index_sequence<Idx, std::index_sequence<Idxs...>> {
+      using type = std::index_sequence<Idx, Idxs...>;
+    };
+
+    template<std::size_t Idx, typename Idxs>
+    using add_index_sequence_t = typename add_index_sequence<Idx, Idxs>::type;
+
+    template<typename Idxs, typename Values>
+    struct filter_components;
+
+    template<>
+    struct filter_components<std::index_sequence<>, vlist<>> {
+      using type = std::index_sequence<>;
+    };
+
+    template<std::size_t Idx,
+             std::size_t... Idxs,
+             typename Value,
+             typename... Values>
+    struct filter_components<std::index_sequence<Idx, Idxs...>,
+                             vlist<Value, Values...>> {
+      using rest_t = typename filter_components<std::index_sequence<Idxs...>,
+                                                vlist<Values...>>::type;
+      using type = add_index_sequence_t<Idx, rest_t>;
+    };
+
+    template<std::size_t Idx, std::size_t... Idxs, typename... Values>
+    struct filter_components<std::index_sequence<Idx, Idxs...>,
+                             vlist<skipped_value, Values...>> {
+      using type = typename filter_components<std::index_sequence<Idxs...>,
+                                              vlist<Values...>>::type;
+    };
+
+    template<typename Idxs, typename Values>
+    using filter_components_t = typename filter_components<Idxs, Values>::type;
+
+    template<typename... Tys, std::size_t... Idxs>
+    auto pack_composite_helper(
+        std::tuple<Tys...>&& raw,
+        std::index_sequence<Idxs...> /*unused*/) noexcept {
+      return std::tuple{std::move(std::get<Idxs>(raw))...};
+    }
+
+    template<typename... Tys>
+    auto pack_composite(std::tuple<Tys...>&& raw) noexcept {
+      using indices_t =
+          filter_components_t<std::index_sequence_for<Tys...>, vlist<Tys...>>;
+      return pack_composite_helper(std::move(raw), indices_t{});
+    }
 
     template<typename Statistics, typename Value, typename Tag>
     inline void unpack_single(Statistics& statistics,
@@ -602,19 +822,35 @@ namespace stats {
     }
 
     template<typename Statistics, typename... Tys>
-    inline void unpack_complex(Statistics& statistics,
-                               std::tuple<Tys...>&& pack) {
+    inline void unpack_composite(Statistics& statistics,
+                                 std::tuple<Tys...>&& pack) {
       (unpack_single(statistics, std::move(std::get<Tys>(pack))), ...);
     }
   } // namespace details
 
-  template<typename Fn>
-  concept complex_computation = simple_computation<Fn> &&
-      details::is_complex_result_v<details::compute_result_t<Fn>>;
+  template<typename Population,
+           node_value<Population>... Values,
+           std::ranges::range Range,
+           typename... Fns>
+  inline auto compute_composite(statistics<Population, Values...>& statistics,
+                                Range const& range,
+                                Fns&&... fns) {
+    using input_t = std::remove_cvref_t<decltype(*std::ranges::cbegin(range))>;
+    using vlist_t = details::convert_to_vlist_t<Population, Values...>;
+    using state_t = details::composite_state_t<input_t, vlist_t, Fns...>;
 
-  template<typename Statistics, complex_computation Fn>
-  inline void compute_complex(Statistics& statistics, Fn&& fn) {
-    details::unpack_complex(statistics, std::invoke(std::forward<Fn>(fn)));
+    if constexpr (!std::is_same_v<std::tuple<>, state_t>) {
+      auto result = std::accumulate(
+          std::ranges::cbegin(range),
+          std::ranges::cend(range),
+          state_t{},
+          [&fns...](state_t s, input_t const& i) {
+            std::tuple components{details::compute_single(fns, s, i)...};
+            return details::pack_composite(std::move(components));
+          });
+
+      details::unpack_composite(statistics, std::move(result));
+    }
   }
 
   template<statistical Statistics>
