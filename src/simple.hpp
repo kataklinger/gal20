@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config.hpp"
+#include "configuration.hpp"
 
 #include <functional>
 #include <stop_token>

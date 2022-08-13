@@ -4,7 +4,7 @@
 #include <ranges>
 #include <unordered_set>
 
-#include "pop.hpp"
+#include "population.hpp"
 
 namespace gal {
 namespace select {

@@ -1,18 +1,11 @@
 
 #pragma once
 
-#include "fitness.hpp"
+#include "population.hpp"
 
-#include <concepts>
 #include <random>
-#include <ranges>
 
 namespace gal {
-
-template<typename Type>
-concept chromosome =
-    std::regular<Type> && std::is_nothrow_move_constructible_v<Type> &&
-    std::is_nothrow_move_assignable_v<Type>;
 
 template<typename Operation>
 concept initializator = std::is_invocable_v<Operation> &&
@@ -46,22 +39,6 @@ template<typename Scaling>
 struct scaling_traits {
   using is_global_t = std::is_invocable<Scaling>;
   using is_stable_t = std::false_type;
-};
-
-template<typename Range, typename It>
-concept selection_range = std::ranges::range<Range> && requires(Range r) {
-  requires std::same_as<std::remove_cvref_t<decltype(*std::ranges::begin(r))>,
-                        It>;
-};
-
-template<typename Range, typename It, typename Chromosome>
-concept replacement_range = std::ranges::range<Range> && requires(Range r) {
-  requires std::same_as<
-      std::remove_cvref_t<decltype(get_parent(*std::ranges::begin(r)))>,
-      It>;
-  requires std::same_as<
-      std::remove_cvref_t<decltype(get_child(*std::ranges::begin(r)))>,
-      Chromosome>;
 };
 
 // clang-format off
@@ -124,14 +101,5 @@ concept coupling_factory =
 
 template<typename Factory, typename Context>
 using factory_result_t = std::invoke_result_t<Factory, Context>;
-
-struct empty_fitness {};
-struct empty_tags {};
-
-template<typename Fitness>
-struct is_empty_fitness : std::is_same<Fitness, empty_fitness> {};
-
-template<typename Fitness>
-inline constexpr auto is_empty_fitness_v = is_empty_fitness<Fitness>::value;
 
 } // namespace gal

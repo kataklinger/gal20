@@ -109,7 +109,92 @@ struct fitness_traits<Fitness> {
   using random_distribution_t = std::uniform_real_distribution<Fitness>;
 };
 
+struct empty_fitness {};
+struct empty_tags {};
+
+template<typename Fitness>
+struct is_empty_fitness : std::is_same<Fitness, empty_fitness> {};
+
+template<typename Fitness>
+inline constexpr auto is_empty_fitness_v = is_empty_fitness<Fitness>::value;
+
 struct raw_fitness_tag {};
 struct scaled_fitness_tag {};
+
+template<fitness Raw, fitness Scaled>
+class evaluation {
+public:
+  using raw_t = Raw;
+  using scaled_t = Scaled;
+
+public:
+  inline evaluation() noexcept {
+  }
+
+  inline explicit evaluation(raw_t const& raw) noexcept(
+      std::is_nothrow_copy_constructible_v<raw_t>)
+      : raw_{raw} {
+  }
+
+  inline explicit evaluation(raw_t&& raw) noexcept
+      : raw_{std::move(raw)} {
+  }
+
+  inline explicit evaluation(raw_t const& raw, scaled_t const& scaled) noexcept(
+      std::is_nothrow_copy_constructible_v<raw_t>&&
+          std::is_nothrow_copy_constructible_v<scaled_t>)
+      : raw_{raw}
+      , scaled_{scaled} {
+  }
+
+  inline explicit evaluation(raw_t&& raw, scaled_t&& scaled) noexcept
+      : raw_{std::move(raw)}
+      , scaled_{std::move(scaled)} {
+  }
+
+  inline void swap(evaluation& other) noexcept(
+      std::is_nothrow_swappable_v<evaluation>) {
+    using std::swap;
+
+    swap(raw_, other.raw_);
+    swap(scaled_, other.scaled_);
+  }
+
+  inline auto& raw() noexcept {
+    return raw_;
+  }
+
+  inline auto& scaled() noexcept {
+    return scaled_;
+  }
+
+  inline auto const& raw() const noexcept {
+    return raw_;
+  }
+
+  inline auto const& scaled() const noexcept {
+    return scaled_;
+  }
+
+  inline auto& get(raw_fitness_tag /*unused*/) noexcept {
+    return raw();
+  }
+
+  inline auto const& get(raw_fitness_tag /*unused*/) const noexcept {
+    return raw();
+  }
+
+  inline auto& get(scaled_fitness_tag /*unused*/) noexcept {
+    return scaled();
+  }
+
+  inline auto const& get(scaled_fitness_tag /*unused*/) const noexcept {
+    return scaled();
+  }
+
+private:
+  raw_t raw_{};
+  [[no_unique_address]] scaled_t scaled_{};
+};
 
 } // namespace gal
