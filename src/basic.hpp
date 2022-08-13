@@ -6,17 +6,17 @@
 #include <stop_token>
 
 namespace gal {
-namespace simple {
+namespace alg {
 
   namespace details {
 
     template<typename Builder>
-    struct basic_algorithm_scaling_cond
+    struct basic_scaling_cond
         : is_empty_fitness<typename Builder::scaled_fitness_t> {};
 
   } // namespace details
 
-  using basic_algorithm_config = config::entry_map<
+  using basic_config_map = config::entry_map<
       config::entry<config::root_iface,
                     config::iflist<config::size_iface,
                                    config::init_iface,
@@ -31,7 +31,7 @@ namespace simple {
       config::entry<
           config::statistics_iface,
           config::entry_if<
-              details::basic_algorithm_scaling_cond,
+              details::basic_scaling_cond,
               config::iflist<config::select_iface, config::criterion_iface>,
               config::iflist<config::scale_iface, config::criterion_iface>>,
           config::iflist<config::tags_iface>>,
@@ -51,7 +51,8 @@ namespace simple {
   };
 
   template<typename Config>
-  concept algorithm_config = scaling_config<Config> && requires(Config c) {
+  concept basic_config = scaling_config<Config> &&
+      requires(Config c) {
     chromosome<typename Config::chromosome_t>;
     fitness<typename Config::raw_fitness_t>;
     fitness<typename Config::scaled_fitness_t>;
@@ -109,7 +110,7 @@ namespace simple {
 
   namespace details {
 
-    template<algorithm_config Config>
+    template<basic_config Config>
     class local_scaler {
     public:
       using config_t = Config;
@@ -136,7 +137,7 @@ namespace simple {
       reproduction_context_t reproduction_;
     };
 
-    template<algorithm_config Config>
+    template<basic_config Config>
     class global_scaler_base {
     public:
       using config_t = Config;
@@ -158,7 +159,7 @@ namespace simple {
       reproduction_context_t reproduction_;
     };
 
-    template<algorithm_config Config>
+    template<basic_config Config>
     class global_scaler : public global_scaler_base<Config> {
     public:
       using config_t = Config;
@@ -188,7 +189,7 @@ namespace simple {
       scaling_t scaling_;
     };
 
-    template<algorithm_config Config>
+    template<basic_config Config>
     class disabled_scaler : public global_scaler_base<Config> {
     public:
       using config_t = Config;
@@ -204,7 +205,7 @@ namespace simple {
       }
     };
 
-    template<algorithm_config Config>
+    template<basic_config Config>
     using scaler_t = std::conditional_t<
         is_empty_fitness_v<typename Config::scaled_fitness_t>,
         disabled_scaler<Config>,
@@ -214,8 +215,8 @@ namespace simple {
 
   } // namespace details
 
-  template<algorithm_config Config>
-  class algorithm {
+  template<basic_config Config>
+  class basic {
   public:
     using config_t = Config;
     using population_t = typename config_t::population_t;
@@ -233,7 +234,7 @@ namespace simple {
     using input_t = coupling_metadata const&;
 
   public:
-    inline explicit algorithm(config_t const& config)
+    inline explicit basic(config_t const& config)
         : config_{config}
         , population_{population_.population_size(),
                       config_t::is_stable_scaling_t::value} {
@@ -331,5 +332,5 @@ namespace simple {
     stats::history<statistics_t> statistics_;
   };
 
-} // namespace simple
+} // namespace alg
 } // namespace gal
