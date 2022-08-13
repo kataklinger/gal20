@@ -7,9 +7,14 @@
 
 namespace gal {
 namespace simple {
-  template<typename Builder>
-  struct basic_algorithm_scaling_cond
-      : is_empty_fitness<typename Builder::scaled_fitness_t> {};
+
+  namespace details {
+
+    template<typename Builder>
+    struct basic_algorithm_scaling_cond
+        : is_empty_fitness<typename Builder::scaled_fitness_t> {};
+
+  } // namespace details
 
   using basic_algorithm_config = config::entry_map<
       config::entry<config::root_iface,
@@ -26,7 +31,7 @@ namespace simple {
       config::entry<
           config::statistics_iface,
           config::entry_if<
-              basic_algorithm_scaling_cond,
+              details::basic_algorithm_scaling_cond,
               config::iflist<config::select_iface, config::criterion_iface>,
               config::iflist<config::scale_iface, config::criterion_iface>>,
           config::iflist<config::tags_iface>>,
@@ -320,7 +325,7 @@ namespace simple {
             auto chromosome = config_.initializator()();
 
             evaluation_t evaluation{};
-            config_.evaluator()(chromosome, evaluation.raw());
+            std::invoke(config_.evaluator(), chromosome, evaluation.raw());
 
             return individual_t{std::move(chromosome), std::move(evaluation)};
           });
