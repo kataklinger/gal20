@@ -120,12 +120,6 @@ template<typename Operation>
 concept initializator = std::is_invocable_v<Operation> &&
     chromosome<std::invoke_result_t<Operation>>;
 
-struct coupling_metadata {
-  bool crossover_performed;
-  bool mutation_tried;
-  bool mutation_accepted;
-};
-
 template<typename Operation, typename Chromosome>
 concept crossover = std::is_invocable_r_v<
     std::pair<Chromosome, Chromosome>,
@@ -145,12 +139,10 @@ concept evaluator = std::is_invocable_v<
         Operation,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>>;
 
-template<typename Scaling, typename Chromosome, typename Raw, typename Scaled>
+template<typename Scaling, typename Population>
 concept scaling = std::is_invocable_v<
     Scaling,
-    std::add_lvalue_reference_t<std::add_const_t<Chromosome>>,
-    std::add_lvalue_reference_t<std::add_const_t<Raw>>,
-    std::add_lvalue_reference_t<Scaled>>;
+    std::add_lvalue_reference_t<typename Population::individual_t>>;
 
 template<typename Scaling>
 struct scaling_traits {
@@ -186,6 +178,12 @@ concept selection =
                              std::add_lvalue_reference_t<Population>>,
         typename Population::const_iterator_t>;
 
+struct coupling_metadata {
+  bool crossover_performed;
+  bool mutation_tried;
+  bool mutation_accepted;
+};
+
 template<typename Operation, typename Population, typename Parents>
 concept coupling = std::is_invocable_v<Operation, Parents> &&
                    replacement_range<std::invoke_result_t<Operation, Parents>,
@@ -215,9 +213,7 @@ template<typename Factory, typename Context>
 concept scaling_factory =
     std::is_invocable_v<Factory, Context> &&
         scaling<std::invoke_result_t<Factory, Context>,
-                typename Context::population_t::chromosome_t,
-                typename Context::population_t::raw_fitness_t,
-                typename Context::population_t::scaled_fitness_t>;
+                typename Context::population_t>;
 
 template<typename Factory, typename Context, typename Parents>
 concept coupling_factory =

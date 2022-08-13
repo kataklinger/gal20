@@ -44,10 +44,7 @@ namespace simple {
   concept scaling_config =
       is_empty_fitness_v<typename Config::scaled_fitness_t> ||
       requires(Config c) {
-    scaling<typename Config::scaling_t,
-            typename Config::chromosome_t,
-            typename Config::raw_fitness_t,
-            typename Config::scaled_fitness_t>;
+    scaling<typename Config::scaling_t, typename Config::population_t>;
     {
       c.scaling(std::declval<typename Config::population_context_t>())
       } -> std::convertible_to<typename Config::scaling_t>;
@@ -182,12 +179,7 @@ namespace simple {
         }
 
         for (auto& individual : context_->population().individuals()) {
-          auto& evaluation = individual.evaluation();
-
-          std::invoke(scaling_,
-                      individual.chromosome(),
-                      evaluation.raw(),
-                      evaluation.scaled());
+          std::invoke(scaling_, individual);
         }
       }
 
