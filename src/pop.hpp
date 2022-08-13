@@ -10,8 +10,6 @@
 
 namespace gal {
 
-struct raw_fitness_tag {};
-struct scaled_fitness_tag {};
 
 template<fitness Raw, fitness Scaled>
 class evaluation {
