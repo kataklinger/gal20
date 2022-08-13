@@ -9,7 +9,7 @@
 #include <tuple>
 
 namespace gal {
-namespace stats {
+namespace stat {
 
   template<typename... Dependencies>
   struct dependencies {};
@@ -941,5 +941,5 @@ namespace stats {
     std::queue<statistics_t> values_;
   };
 
-} // namespace stats
+} // namespace stat
 } // namespace gal

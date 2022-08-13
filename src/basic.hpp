@@ -51,8 +51,7 @@ namespace alg {
   };
 
   template<typename Config>
-  concept basic_config = scaling_config<Config> &&
-      requires(Config c) {
+  concept basic_config = scaling_config<Config> && requires(Config c) {
     chromosome<typename Config::chromosome_t>;
     fitness<typename Config::raw_fitness_t>;
     fitness<typename Config::scaled_fitness_t>;
@@ -230,7 +229,7 @@ namespace alg {
     using reproduction_context_t = typename config_t::reproduction_context_t;
 
     template<typename Tag>
-    using tagged_t = stats::tagged_counter<Tag>;
+    using tagged_t = stat::tagged_counter<Tag>;
     using input_t = coupling_metadata const&;
 
   public:
@@ -252,42 +251,42 @@ namespace alg {
         scale(scaler, statistics);
 
         auto selected = select(statistics);
-        stats::count_range<stats::selection_count_t>(statistics, selected);
+        stat::count_range<stat::selection_count_t>(statistics, selected);
 
         auto offspring = couple(selected, coupling, statistics);
-        stats::count_range<stats::coupling_count_t>(statistics, offspring);
-        stats::compute_composite(
-            stats,
+        stat::count_range<stat::coupling_count_t>(statistics, offspring);
+        stat::compute_composite(
+            statistics,
             offspring |
                 std::views::transform([](auto const& item) -> decltype(auto) {
                   return get_metadata(item);
                 }),
 
-            [](input_t i, tagged_t<stats::corssover_count_t> s) {
+            [](input_t i, tagged_t<stat::corssover_count_t> s) {
               return decltype(s){s.value + i.crossover_performed};
             },
 
-            [](input_t i, tagged_t<stats::mutation_tried_count_t> s) {
+            [](input_t i, tagged_t<stat::mutation_tried_count_t> s) {
               return decltype(s){s.value + i.mutation_tried};
             },
 
-            [](input_t i, tagged_t<stats::mutation_accepted_count_t> s) {
+            [](input_t i, tagged_t<stat::mutation_accepted_count_t> s) {
               return decltype(s){s.value + i.mutation_accepted};
             });
 
         auto replaced = replace(offspring, statistics);
-        stats::count_range<stats::selection_count_t>(statistics, replaced);
+        stat::count_range<stat::selection_count_t>(statistics, replaced);
       }
     }
 
   private:
     inline void scale(scaler_t& scaler, statistics_t& current) {
-      auto timer = stats::start_timer<stats::scaling_time_t>(current);
+      auto timer = stat::start_timer<stat::scaling_time_t>(current);
       scaler();
     }
 
     inline auto select(statistics_t& current) {
-      auto timer = stats::start_timer<stats::selection_time_t>(current);
+      auto timer = stat::start_timer<stat::selection_time_t>(current);
       return std::invoke(config_.selection(), population_);
     }
 
@@ -296,14 +295,14 @@ namespace alg {
     inline auto couple(Selected&& selected,
                        Coupling&& coupling,
                        statistics_t& current) {
-      auto coupling_time = stats::start_timer<stats::coupling_time_t>(current);
+      auto coupling_time = stat::start_timer<stat::coupling_time_t>(current);
       return std::invoke(std::forward<Coupling>(coupling),
                          std::forward<Selected>(selected));
     }
 
     template<std::ranges::range Offspring>
     inline auto replace(Offspring&& offspring, statistics_t& current) {
-      auto timer = stats::start_timer<stats::replacement_time_t>(current);
+      auto timer = stat::start_timer<stat::replacement_time_t>(current);
       return std::invoke(config_.replacement(),
                          population_,
                          std::forward<Offspring>(offspring));
@@ -329,7 +328,7 @@ namespace alg {
   private:
     config_t config_;
     population_t population_;
-    stats::history<statistics_t> statistics_;
+    stat::history<statistics_t> statistics_;
   };
 
 } // namespace alg
