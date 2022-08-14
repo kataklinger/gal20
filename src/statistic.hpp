@@ -44,22 +44,23 @@ namespace stat {
   namespace details {
 
     template<typename Model, typename = void>
-    struct model_dependencies {
-      using type = dependencies<>;
+    struct get_model_dependencies : std::false_type {
+      using list = dependencies<>;
     };
 
     template<typename Model>
-    struct model_dependencies<Model, std::void_t<typename Model::required_t>> {
-      using type = typename Model::required_t;
+    struct get_model_dependencies<Model,
+                                  std::void_t<typename Model::required_t>>
+        : std::true_type {
+      using list = typename Model::required_t;
     };
 
     template<typename Model>
-    using model_dependencies_t = typename model_dependencies<Model>::type;
+    using get_model_dependencies_t =
+        typename get_model_dependencies<Model>::list;
 
     template<typename Model>
-    struct has_model_dependencies
-        : std::negation<
-              std::is_same<model_dependencies_t<Model>, dependencies<>>> {};
+    struct has_model_dependencies : get_model_dependencies<Model> {};
 
     template<typename Model>
     inline static constexpr auto has_model_dependencies_v =
@@ -67,7 +68,7 @@ namespace stat {
 
     template<typename Population, typename Model>
     using model_dependencies_pack =
-        dependencies_pack<Population, model_dependencies_t<Model>>;
+        dependencies_pack<Population, get_model_dependencies_t<Model>>;
 
     template<typename Population, typename Model>
     using model_dependencies_pack_t =
@@ -494,6 +495,8 @@ namespace stat {
       } -> std::convertible_to<Statistics>;
   };
 
+  struct disabled_timer {};
+
   template<typename Statistics, model<typename Statistics::population_t> Timer>
   class enabled_timer {
   private:
@@ -522,8 +525,6 @@ namespace stat {
   private:
     value_t* value_;
   };
-
-  struct disabled_timer {};
 
   struct scaling_time_t {};
 
