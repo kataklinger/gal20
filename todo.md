@@ -6,8 +6,8 @@ List of task to implement or improve
  - [x] use std::invoke for calling operations
 
 ## Basic Operations
- - [ ] pass population and statistics to operations as context (operation factories)
  - [ ] initializator to produce tags
+ - [ ] verify population size for selection/replacement operations
  - [x] case where scaling does not change the ordering
  - [x] preparation step for global scaling (e.g. sorting for ranking based scaling)
 

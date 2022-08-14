@@ -3,7 +3,8 @@
 
 #include "gal20.h"
 
-#include "select.hpp"
+#include "selection.hpp"
+#include "replacement.hpp"
 #include "basic.hpp"
 
 #include <tuple>
