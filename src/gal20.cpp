@@ -16,11 +16,11 @@ struct parent_replacement_t
   using tuple::tuple;
 };
 
-pop_t::iterator_t get_parent(parent_replacement_t x) {
+pop_t::iterator_t& get_parent(parent_replacement_t& x) {
   return get<0>(x);
 }
 
-pop_t::individual_t get_child(parent_replacement_t x) {
+pop_t::individual_t& get_child(parent_replacement_t& x) {
   return get<1>(x);
 }
 
@@ -74,6 +74,11 @@ int main() {
   test_selection<pop_t>(s);
   test_coupling<pop_t>(c);
   test_replacement<pop_t>(r);
+
+  std::mt19937 gen{};
+
+  gal::replace::random<10, std::mt19937> a{gen};
+  a(p, std::vector<parent_replacement_t>{});
 
   return 0;
 }
