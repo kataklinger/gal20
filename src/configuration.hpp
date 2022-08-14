@@ -7,15 +7,15 @@
 namespace gal {
 namespace config {
 
-  template<typename Fragment>
-  concept fragment = !std::is_final_v<Fragment> && std::copyable<Fragment>;
+  template<typename Section>
+  concept section = !std::is_final_v<Section> && std::copyable<Section>;
 
   template<template<typename> class... Interfaces>
-  struct iflist {};
+  struct ptypes {};
 
   template<template<typename> class Key,
            typename Unlocked,
-           typename Required = iflist<>>
+           typename Required = ptypes<>>
   struct entry {};
 
   template<typename... Maps>
@@ -47,8 +47,8 @@ namespace config {
 
     template<template<typename> class Match, typename Builder>
     struct entry_map_match<entry_map<>, Match, Builder> {
-      using unlocked_t = iflist<>;
-      using required_t = iflist<>;
+      using unlocked_t = ptypes<>;
+      using required_t = ptypes<>;
     };
 
     template<typename Unlocked,
@@ -72,74 +72,75 @@ namespace config {
     struct entry_map_match<entry_map<Map, Rest...>, Match, Builder>
         : entry_map_match<entry_map<Rest...>, Match, Builder> {};
 
-    class empty_fragment {};
-    class empty_iface {};
+    class empty_model {};
+    class empty_ptype {};
     class empty_builder {};
 
-    template<fragment... Fragments>
-    class output_node;
+    template<section... Sections>
+    class section_node;
 
     template<>
-    class output_node<> {};
+    class section_node<> {};
 
-    template<fragment Fragment>
-    class output_node<Fragment> : public Fragment {
+    template<section Section>
+    class section_node<Section> : public Section {
     public:
-      using fragment_t = Fragment;
+      using section_t = Section;
 
     public:
-      constexpr inline output_node(fragment_t const& fragment,
-                                   output_node<> const& /*unused*/)
-          : fragment_t{fragment} {
+      constexpr inline section_node(section_t const& section,
+                                    section_node<> const& /*unused*/)
+          : section_t{section} {
       }
     };
 
-    template<fragment Fragment, fragment... Fragments>
-    class output_node<Fragment, Fragments...>
-        : public Fragment, public output_node<Fragments...> {
+    template<section Section, section... Sections>
+    class section_node<Section, Sections...>
+        : public Section, public section_node<Sections...> {
     public:
-      using fragment_t = Fragment;
-      using base_t = output_node<Fragments...>;
+      using section_t = Section;
+      using base_t = section_node<Sections...>;
 
     public:
-      constexpr inline output_node(fragment_t const& frag, base_t const& base)
-          : fragment_t{frag}
+      constexpr inline section_node(section_t const& section,
+                                    base_t const& base)
+          : section_t{section}
           , base_t{base} {
       }
     };
 
     template<typename Left, typename Right>
-    struct iflist_merge;
+    struct ptypes_merge;
 
     template<template<typename> class... Lefts,
              template<typename>
              class... Rights>
-    struct iflist_merge<iflist<Lefts...>, iflist<Rights...>> {
-      using type = iflist<Lefts..., Rights...>;
+    struct ptypes_merge<ptypes<Lefts...>, ptypes<Rights...>> {
+      using type = ptypes<Lefts..., Rights...>;
     };
 
     template<typename Left, typename Right>
-    using iflist_merge_t = typename iflist_merge<Left, Right>::type;
+    using ptypes_merge_t = typename ptypes_merge<Left, Right>::type;
 
     template<template<typename> class Interface, typename Interfaces>
-    struct iflist_add;
+    struct ptypes_add;
 
     template<template<typename> class Interface,
              template<typename>
              class... Interfaces>
-    struct iflist_add<Interface, iflist<Interfaces...>> {
-      using type = iflist<Interface, Interfaces...>;
+    struct ptypes_add<Interface, ptypes<Interfaces...>> {
+      using type = ptypes<Interface, Interfaces...>;
     };
 
     template<template<typename> class Interface, typename Interfaces>
-    using iflist_add_t = typename iflist_add<Interface, Interfaces>::type;
+    using ptypes_add_t = typename ptypes_add<Interface, Interfaces>::type;
 
     template<template<typename> class Interface, typename Interfaces>
-    struct iflist_remove;
+    struct ptypes_remove;
 
     template<template<typename> class Interface>
-    struct iflist_remove<Interface, iflist<>> {
-      using type = iflist<>;
+    struct ptypes_remove<Interface, ptypes<>> {
+      using type = ptypes<>;
     };
 
     template<template<typename> class Interface,
@@ -147,29 +148,29 @@ namespace config {
              class Current,
              template<typename>
              class... Interfaces>
-    struct iflist_remove<Interface, iflist<Current, Interfaces...>>
-        : iflist_remove<Interface, iflist<Interfaces...>> {
-      using type = iflist_add_t<
+    struct ptypes_remove<Interface, ptypes<Current, Interfaces...>>
+        : ptypes_remove<Interface, ptypes<Interfaces...>> {
+      using type = ptypes_add_t<
           Current,
-          typename iflist_remove<Interface, iflist<Interfaces...>>::type>;
+          typename ptypes_remove<Interface, ptypes<Interfaces...>>::type>;
     };
 
     template<template<typename> class Interface,
              template<typename>
              class... Interfaces>
-    struct iflist_remove<Interface, iflist<Interface, Interfaces...>> {
-      using type = iflist<Interfaces...>;
+    struct ptypes_remove<Interface, ptypes<Interface, Interfaces...>> {
+      using type = ptypes<Interfaces...>;
     };
 
     template<template<typename> class Interface, typename Interfaces>
-    using iflist_remove_t = typename iflist_remove<Interface, Interfaces>::type;
+    using ptypes_remove_t = typename ptypes_remove<Interface, Interfaces>::type;
 
     template<template<typename> class Interface, typename Interfaces>
-    struct iflist_contain;
+    struct ptypes_contain;
 
     template<template<typename> class Interface>
-    struct iflist_contain<Interface, iflist<>> : std::false_type {
-      using type = iflist<>;
+    struct ptypes_contain<Interface, ptypes<>> : std::false_type {
+      using type = ptypes<>;
     };
 
     template<template<typename> class Interface,
@@ -177,53 +178,53 @@ namespace config {
              class Current,
              template<typename>
              class... Interfaces>
-    struct iflist_contain<Interface, iflist<Current, Interfaces...>>
-        : iflist_contain<Interface, iflist<Interfaces...>> {};
+    struct ptypes_contain<Interface, ptypes<Current, Interfaces...>>
+        : ptypes_contain<Interface, ptypes<Interfaces...>> {};
 
     template<template<typename> class Interface,
              template<typename>
              class... Interfaces>
-    struct iflist_contain<Interface, iflist<Interface, Interfaces...>>
+    struct ptypes_contain<Interface, ptypes<Interface, Interfaces...>>
         : std::true_type {};
 
     template<template<typename> class Interface, typename Interfaces>
-    constexpr inline auto iflist_contain_v =
-        iflist_contain<Interface, Interfaces>::value;
+    constexpr inline auto ptypes_contain_v =
+        ptypes_contain<Interface, Interfaces>::value;
 
     template<typename Used, typename Required>
-    struct iface_satisfied_helper : std::false_type {};
+    struct ptype_satisfied_helper : std::false_type {};
 
     template<typename Used, template<typename> class... Required>
-    struct iface_satisfied_helper<Used, iflist<Required...>>
-        : std::conjunction<iflist_contain<Required, Used>...> {};
+    struct ptype_satisfied_helper<Used, ptypes<Required...>>
+        : std::conjunction<ptypes_contain<Required, Used>...> {};
 
     template<typename Used, typename Interface, typename = void>
-    struct is_iface_satisfied : std::true_type {};
+    struct is_ptype_satisfied : std::true_type {};
 
     template<typename Used, typename Interface>
-    struct is_iface_satisfied<Used,
+    struct is_ptype_satisfied<Used,
                               Interface,
                               std::void_t<typename Interface::required_t>>
-        : iface_satisfied_helper<Used, typename Interface::required_t> {};
+        : ptype_satisfied_helper<Used, typename Interface::required_t> {};
 
     template<typename Used, typename Interface>
-    constexpr inline auto is_iface_satisfied_v =
-        is_iface_satisfied<Used, Interface>;
+    constexpr inline auto is_ptype_satisfied_v =
+        is_ptype_satisfied<Used, Interface>;
 
     template<typename Used, typename Interface>
-    struct iface_inherit
-        : std::conditional<is_iface_satisfied_v<Used, Interface>,
+    struct ptype_inherit
+        : std::conditional<is_ptype_satisfied_v<Used, Interface>,
                            Interface,
-                           empty_iface> {};
+                           empty_ptype> {};
 
     template<typename Used, typename Interface>
-    using iface_inherit_t = typename iface_inherit<Used, Interface>::type;
+    using ptype_inherit_t = typename ptype_inherit<Used, Interface>::type;
 
     template<typename Builder, typename Used, typename Interfaces>
-    class input_node {};
+    class ptype_node {};
 
     template<typename Builder, typename Used>
-    class input_node<Builder, Used, iflist<>> {};
+    class ptype_node<Builder, Used, ptypes<>> {};
 
     template<typename Builder,
              typename Used,
@@ -231,11 +232,11 @@ namespace config {
              class Interface,
              template<typename>
              class... Interfaces>
-    class input_node<Builder, Used, iflist<Interface, Interfaces...>>
-        : public iface_inherit_t<Used, Interface<Builder>>,
-          public input_node<Builder, Used, iflist<Interfaces...>> {};
+    class ptype_node<Builder, Used, ptypes<Interface, Interfaces...>>
+        : public ptype_inherit_t<Used, Interface<Builder>>,
+          public ptype_node<Builder, Used, ptypes<Interfaces...>> {};
 
-    template<typename Available, typename Used, fragment... Fragments>
+    template<typename Available, typename Used, section... Sections>
     class builder_node;
 
     template<typename Available, typename Used>
@@ -243,22 +244,22 @@ namespace config {
 
     template<typename Available,
              typename Used,
-             fragment Fragment,
-             fragment... Rest>
-    class builder_node<Available, Used, Fragment, Rest...>
-        : public input_node<builder_node<Available, Used, Fragment, Rest...>,
+             section Section,
+             section... Rest>
+    class builder_node<Available, Used, Section, Rest...>
+        : public ptype_node<builder_node<Available, Used, Section, Rest...>,
                             Used,
                             Available>,
-          public output_node<Fragment, Rest...> {
+          public section_node<Section, Rest...> {
     public:
-      using fragment_t = Fragment;
-      using base_t = output_node<fragment_t, Rest...>;
-      using previous_t = output_node<Rest...>;
+      using section_t = Section;
+      using base_t = section_node<section_t, Rest...>;
+      using previous_t = section_node<Rest...>;
 
     public:
-      constexpr inline builder_node(fragment_t const& fragment,
+      constexpr inline builder_node(section_t const& section,
                                     previous_t const& previous)
-          : base_t{fragment, previous} {
+          : base_t{section, previous} {
       }
 
       constexpr inline auto build() const {
@@ -267,7 +268,7 @@ namespace config {
     };
 
     template<typename Builder,
-             fragment Fragment,
+             section Section,
              template<typename>
              class This,
              typename Added>
@@ -275,32 +276,32 @@ namespace config {
 
     template<typename Available,
              typename Used,
-             typename... Fragments,
-             fragment Fragment,
+             typename... Sections,
+             section Section,
              template<typename>
              class This,
              typename Added>
-    struct next_builder<builder_node<Available, Used, Fragments...>,
-                        Fragment,
+    struct next_builder<builder_node<Available, Used, Sections...>,
+                        Section,
                         This,
                         Added> {
       using type =
-          builder_node<iflist_remove_t<This, iflist_merge_t<Added, Available>>,
-                       iflist_add_t<This, Used>,
-                       Fragment,
-                       Fragments...>;
+          builder_node<ptypes_remove_t<This, ptypes_merge_t<Added, Available>>,
+                       ptypes_add_t<This, Used>,
+                       Section,
+                       Sections...>;
     };
 
     template<typename Builder,
              template<typename>
              class Current,
-             fragment Fragment,
+             section Section,
              typename Added>
     using next_builder_t =
-        typename next_builder<Builder, Fragment, Current, Added>::type;
+        typename next_builder<Builder, Section, Current, Added>::type;
 
     template<typename Builder, template<typename> class Derived>
-    class iface_base {
+    class ptype_base {
     private:
       using entry_map_t =
           entry_map_match<typename Builder::entries_t, Derived, Builder>;
@@ -309,14 +310,13 @@ namespace config {
       using required_t = typename entry_map_t::required_t;
 
     protected:
-      template<fragment Fragment>
-      constexpr inline auto next(Fragment&& fragment) const {
+      template<section Section>
+      constexpr inline auto next(Section&& section) const {
         return next_builder_t<Builder,
                               Derived,
-                              Fragment,
+                              Section,
                               typename entry_map_t::unlocked_t>{
-            static_cast<Builder const&>(*this),
-            std::forward<Fragment>(fragment)};
+            static_cast<Builder const&>(*this), std::forward<Section>(section)};
       }
     };
 
@@ -345,40 +345,42 @@ namespace config {
   } // namespace details
 
   template<typename Builder>
-  struct tags_iface : public details::iface_base<Builder, tags_iface> {
+  struct tags_ptype : public details::ptype_base<Builder, tags_ptype> {
     template<typename Tags>
     constexpr inline auto tag_with() const {
-      struct node {
+      class body {
+      public:
         using tags_t = Tags;
       };
 
-      return this->template next<>(node{});
+      return this->template next<>(body{});
     }
 
     constexpr inline auto tag_nothing() const {
-      struct node {
+      class body {
+      public:
         using tags_t = empty_tags;
       };
 
-      return this->template next<>(node{});
+      return this->template next<>(body{});
     }
   };
 
   template<typename Builder>
-  struct criterion_iface
-      : public details::iface_base<Builder, criterion_iface> {
+  struct criterion_ptype
+      : public details::ptype_base<Builder, criterion_ptype> {
     using population_t = typename Builder::population_t;
     using statistics_t = typename Builder::statistics_t;
 
   public:
     template<criterion<population_t, statistics_t> Criterion>
     constexpr inline auto stop_when(Criterion const& criterion) const {
-      class node {
+      class body {
       public:
         using criterion_t = Criterion;
 
       public:
-        constexpr inline explicit node(criterion_t const& criterion)
+        constexpr inline explicit body(criterion_t const& criterion)
             : criterion_{criterion} {
         }
 
@@ -390,23 +392,23 @@ namespace config {
         criterion_t criterion_;
       };
 
-      return this->template next<>(node{criterion});
+      return this->template next<>(body{criterion});
     }
   };
 
   template<typename Builder>
-  struct replace_iface : public details::iface_base<Builder, replace_iface> {
+  struct replace_ptype : public details::ptype_base<Builder, replace_ptype> {
     using population_t = typename Builder::population_t;
     using copuling_result_t = typename Builder::copuling_result_t;
 
     template<replacement<population_t, copuling_result_t> Replacement>
     constexpr inline auto replace_with(Replacement const& replacement) const {
-      class node {
+      class body {
       public:
         using replacement_t = Replacement;
 
       public:
-        constexpr inline explicit node(replacement_t const& replacement)
+        constexpr inline explicit body(replacement_t const& replacement)
             : replacement_{replacement} {
         }
 
@@ -418,12 +420,12 @@ namespace config {
         replacement_t replacement_;
       };
 
-      return this->template next<>(node{replacement});
+      return this->template next<>(body{replacement});
     }
   };
 
   template<typename Builder>
-  struct couple_iface : public details::iface_base<Builder, couple_iface> {
+  struct couple_ptype : public details::ptype_base<Builder, couple_ptype> {
     using internal_reproduction_context_t =
         details::build_reproduction_context_t<Builder>;
     using selection_result_t = typename Builder::selection_result_t;
@@ -433,7 +435,7 @@ namespace config {
     constexpr inline auto couple_like(Factory const& coupling) const {
       using factory_t = Factory;
 
-      class node {
+      class body {
       public:
         using reproduction_context_t = internal_reproduction_context_t;
         using coupling_t = factory_result_t<factory_t, reproduction_context_t>;
@@ -442,7 +444,7 @@ namespace config {
             std::add_lvalue_reference_t<std::add_const_t<selection_result_t>>>;
 
       public:
-        constexpr inline explicit node(factory_t const& coupling)
+        constexpr inline explicit body(factory_t const& coupling)
             : coupling_{coupling} {
         }
 
@@ -454,17 +456,17 @@ namespace config {
         factory_t coupling_;
       };
 
-      return this->template next<>(node{coupling});
+      return this->template next<>(body{coupling});
     }
   };
 
   template<typename Builder>
-  struct select_iface : public details::iface_base<Builder, select_iface> {
+  struct select_ptype : public details::ptype_base<Builder, select_ptype> {
     using population_t = typename Builder::population_t;
 
     template<selection<population_t> Selection>
     constexpr inline auto select_using(Selection const& selection) const {
-      class node {
+      class body {
       public:
         using selection_t = Selection;
         using selection_result_t = std::invoke_result_t<
@@ -472,7 +474,7 @@ namespace config {
             std::add_lvalue_reference_t<std::add_const_t<population_t>>>;
 
       public:
-        constexpr inline explicit node(selection_t const& selection)
+        constexpr inline explicit body(selection_t const& selection)
             : selection_{selection} {
         }
 
@@ -484,12 +486,12 @@ namespace config {
         selection_t selection_;
       };
 
-      return this->template next<>(node{selection});
+      return this->template next<>(body{selection});
     }
   };
 
   template<typename Builder>
-  struct scale_iface : public details::iface_base<Builder, scale_iface> {
+  struct scale_ptype : public details::ptype_base<Builder, scale_ptype> {
     using population_context_t = typename Builder::population_context_t;
 
     template<scaling_factory<population_context_t> Factory>
@@ -498,7 +500,7 @@ namespace config {
       using chromosome_t = typename Builder::chromosome_t;
       using raw_fitness_t = typename Builder::raw_fitness_t;
 
-      class node {
+      class body {
       public:
         using scaling_t = factory_result_t<factory_t, population_context_t>;
         using is_global_scaling_t =
@@ -507,7 +509,7 @@ namespace config {
             typename scaling_traits<scaling_t>::is_stable_t;
 
       public:
-        constexpr inline explicit node(factory_t const& scaling)
+        constexpr inline explicit body(factory_t const& scaling)
             : scaling_{scaling} {
         }
 
@@ -519,13 +521,13 @@ namespace config {
         factory_t scaling_;
       };
 
-      return this->template next<>(node{scaling});
+      return this->template next<>(body{scaling});
     }
   };
 
   template<typename Builder>
-  struct reproduce_iface
-      : public details::iface_base<Builder, reproduce_iface> {
+  struct reproduce_ptype
+      : public details::ptype_base<Builder, reproduce_ptype> {
     template<crossover<typename Builder::chromosome_t> Crossover,
              mutation<typename Builder::chromosome_t> Mutation,
              bool ImprovingMutation = false>
@@ -535,7 +537,7 @@ namespace config {
         std::bool_constant<ImprovingMutation> /*unused*/) const {
       using chromosome_t = typename Builder::chromosome_t;
 
-      class node {
+      class body {
       public:
         using crossover_t = Crossover;
         using mutation_t = Mutation;
@@ -543,7 +545,7 @@ namespace config {
         using improving_mutation_t = std::bool_constant<ImprovingMutation>;
 
       public:
-        constexpr inline explicit node(crossover_t const& crossover,
+        constexpr inline explicit body(crossover_t const& crossover,
                                        mutation_t const& mutation)
             : crossover_{crossover}
             , mutation_{mutation} {
@@ -562,13 +564,13 @@ namespace config {
         mutation_t mutation_;
       };
 
-      return this->template next<>(node{crossover, mutation});
+      return this->template next<>(body{crossover, mutation});
     }
   };
 
   template<typename Builder>
-  struct statistics_iface
-      : public details::iface_base<Builder, statistics_iface> {
+  struct statistics_ptype
+      : public details::ptype_base<Builder, statistics_ptype> {
     using internal_population_t = population<typename Builder::chromosome_t,
                                              typename Builder::raw_fitness_t,
                                              typename Builder::scaled_fitness_t,
@@ -576,7 +578,7 @@ namespace config {
 
     template<stat::section<internal_population_t>... Sections>
     constexpr inline auto track_these(std::size_t depth) const {
-      class node {
+      class body {
       public:
         using population_t = internal_population_t;
         using statistics_t = stat::statistics<population_t, Sections...>;
@@ -584,7 +586,7 @@ namespace config {
             population_context<population_t, statistics_t>;
 
       public:
-        inline explicit node(std::size_t depth) noexcept
+        inline explicit body(std::size_t depth) noexcept
             : depth_{depth} {
         }
 
@@ -596,47 +598,49 @@ namespace config {
         std::size_t depth_;
       };
 
-      return this->template next<>(node{depth});
+      return this->template next<>(body{depth});
     }
   };
 
   template<typename Builder>
-  class scale_fitness_iface
-      : public details::iface_base<Builder, scale_fitness_iface> {
+  class scale_fitness_ptype
+      : public details::ptype_base<Builder, scale_fitness_ptype> {
   private:
-    struct node_base {};
-    struct node_base_none {
+    class body_base {};
+    class body_base_none {
+    public:
       using is_global_scaling_t = std::true_type;
       using is_stable_scaling_t = std::true_type;
     };
 
     template<fitness Scaled>
     constexpr inline auto scale_to() const {
-      return scale_impl<Scaled, node_base>();
+      return scale_impl<Scaled, body_base>();
     }
 
     constexpr inline auto scale_none() const {
-      return scale_impl<empty_fitness, node_base_none>();
+      return scale_impl<empty_fitness, body_base_none>();
     }
 
   private:
     template<fitness Scaled, typename Base>
     constexpr inline auto scale_impl() const {
-      struct node : Base {
+      class body : public Base {
+      public:
         using scaled_fitness_t = Scaled;
       };
 
-      return this->template next<>(node{});
+      return this->template next<>(body{});
     }
   };
 
   template<typename Builder>
-  struct evaluate_iface : public details::iface_base<Builder, evaluate_iface> {
+  struct evaluate_ptype : public details::ptype_base<Builder, evaluate_ptype> {
     template<evaluator<typename Builder::chromosome_t> Evaluator>
     constexpr inline auto evaluate_against(Evaluator const& evaluator) const {
       using chromosome_t = typename Builder::chromosome_t;
 
-      class node {
+      class body {
       public:
         using evaluator_t = Evaluator;
         using raw_fitness_t = std::invoke_result_t<
@@ -644,7 +648,7 @@ namespace config {
             std::add_lvalue_reference_t<std::add_const_t<chromosome_t>>>;
 
       public:
-        constexpr inline explicit node(evaluator_t const& evaluator)
+        constexpr inline explicit body(evaluator_t const& evaluator)
             : evaluator_{evaluator} {
         }
 
@@ -656,21 +660,21 @@ namespace config {
         evaluator_t evaluator_;
       };
 
-      return this->template next<>(node{evaluator});
+      return this->template next<>(body{evaluator});
     }
   };
 
   template<typename Builder>
-  struct init_iface : public details::iface_base<Builder, init_iface> {
+  struct init_ptype : public details::ptype_base<Builder, init_ptype> {
     template<initializator Initializator>
     constexpr inline auto make_like(Initializator const& initializator) const {
-      class node {
+      class body {
       public:
         using initializator_t = Initializator;
         using chromosome_t = std::invoke_result_t<initializator_t>;
 
       public:
-        constexpr inline explicit node(initializator_t const& initializator)
+        constexpr inline explicit body(initializator_t const& initializator)
             : initializator_{initializator} {
         }
 
@@ -682,16 +686,16 @@ namespace config {
         initializator_t initializator_;
       };
 
-      return this->template next<>(node{initializator});
+      return this->template next<>(body{initializator});
     }
   };
 
   template<typename Builder>
-  struct size_iface : public details::iface_base<Builder, init_iface> {
+  struct size_ptype : public details::ptype_base<Builder, init_ptype> {
     constexpr inline auto limit_to(size_t size) const {
-      class node {
+      class body {
       public:
-        constexpr inline explicit node(size_t size)
+        constexpr inline explicit body(size_t size)
             : size_{size} {
         }
 
@@ -703,20 +707,20 @@ namespace config {
         std::size_t size_;
       };
 
-      return this->template next<>(node{size});
+      return this->template next<>(body{size});
     }
   };
 
   template<typename Builder>
-  struct root_iface : public details::iface_base<Builder, root_iface> {
+  struct root_ptype : public details::ptype_base<Builder, root_ptype> {
     constexpr inline auto begin() const {
-      return this->template next<>(details::empty_fragment{});
+      return this->template next<>(details::empty_model{});
     }
   };
 
   template<template<typename> class Root, typename Entries>
   struct builder
-      : details::builder_node<iflist<Root>, iflist<>, details::empty_builder> {
+      : details::builder_node<ptypes<Root>, ptypes<>, details::empty_builder> {
     using entries_t = Entries;
   };
 
