@@ -81,19 +81,18 @@ private:
 
 template<typename Range, typename Selected>
 concept selection_range = std::ranges::range<Range> && requires(Range r) {
-  requires std::convertible_to<
-      std::remove_cvref_t<decltype(*std::ranges::begin(r))>,
-      Selected>;
+  requires std::same_as<std::remove_cvref_t<decltype(*std::ranges::begin(r))>,
+                        Selected>;
 };
 
-template<typename Range, typename It, typename Individual>
+template<typename Range, typename Replaced, typename Replacement>
 concept replacement_range = std::ranges::range<Range> && requires(Range r) {
-  requires std::convertible_to<
+  requires std::same_as<
       std::remove_cvref_t<decltype(get_parent(*std::ranges::begin(r)))>,
-      It>;
+      Replaced>;
   requires std::same_as<
       std::remove_cvref_t<decltype(get_child(*std::ranges::begin(r)))>,
-      Individual>;
+      Replacement>;
 };
 
 } // namespace gal
