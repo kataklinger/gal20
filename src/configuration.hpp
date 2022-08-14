@@ -72,7 +72,7 @@ namespace config {
     struct entry_map_match<entry_map<Map, Rest...>, Match, Builder>
         : entry_map_match<entry_map<Rest...>, Match, Builder> {};
 
-    class empty_model {};
+    class empty_section {};
     class empty_ptype {};
     class empty_builder {};
 
@@ -714,7 +714,7 @@ namespace config {
   template<typename Builder>
   struct root_ptype : public details::ptype_base<Builder, root_ptype> {
     constexpr inline auto begin() const {
-      return this->template next<>(details::empty_model{});
+      return this->template next<>(details::empty_section{});
     }
   };
 
