@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <array>
 #include <random>
 #include <unordered_set>
 
@@ -56,12 +57,14 @@ namespace details {
 
   template<typename Population, typename State, index_producer Fn>
   auto select_many(Population& population, State&& state, Fn&& produce) {
+    constexpr auto size = std::remove_cvref_t<State>::size;
+
     state.begin();
 
-    std::array<typename Population::iterator_t, State::size> result{};
-    std::ranges::generate(
+    std::array<typename Population::iterator_t, size> result{};
+    std::ranges::generate_n(
         result.begin(),
-        State::size,
+        size,
         [first = population.individuals().begin(), &state, &produce] {
           return first + select_single(state, std::forward<Fn>(produce));
         });
