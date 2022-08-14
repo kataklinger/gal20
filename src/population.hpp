@@ -107,16 +107,14 @@ public:
     return std::ranges::views::drop(individuals_, insertion);
   }
 
-  template<replacement_range<const_iterator_t, individual_t> Range>
+  template<replacement_range<iterator_t, individual_t> Range>
   auto replace(Range&& replacements) {
     auto removed = ensure_removed(std::ranges::size(replacements));
 
     sorted_ = sort_by::none;
 
     for (auto& replacement : replacements) {
-      auto parent =
-          individuals_.begin() +
-          std::distance(individuals_.cbegin(), get_parent(replacement));
+      auto parent = get_parent(replacement);
 
       removed.emplace_back(std::move(*parent));
 

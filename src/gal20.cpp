@@ -11,11 +11,11 @@
 using pop_t = gal::population<int, int, int, int>;
 
 struct parent_replacement_t
-    : std::tuple<pop_t::const_iterator_t, pop_t::individual_t> {
+    : std::tuple<pop_t::iterator_t, pop_t::individual_t> {
   using tuple::tuple;
 };
 
-pop_t::const_iterator_t get_parent(parent_replacement_t x) {
+pop_t::iterator_t get_parent(parent_replacement_t x) {
   return get<0>(x);
 }
 
@@ -28,7 +28,7 @@ gal::coupling_metadata get_metadata(parent_replacement_t x) {
 }
 
 template<typename Population,
-         gal::selection_range<typename Population::const_iterator_t> Range>
+         gal::selection_range<typename Population::iterator_t> Range>
 void test_selection_range(Range&& r) {
 }
 
@@ -38,7 +38,7 @@ void test_selection(Selection&& s) {
 
 template<
     typename Population,
-    gal::coupling<Population, std::vector<pop_t::const_iterator_t>> Coupling>
+    gal::coupling<Population, std::vector<pop_t::iterator_t>> Coupling>
 void test_coupling(Coupling&& s) {
 }
 
@@ -48,11 +48,11 @@ template<
 void test_replacement(Replacement&& r) {
 }
 
-std::vector<pop_t::const_iterator_t> s(pop_t const& p) {
+std::vector<pop_t::iterator_t> s(pop_t const& p) {
   return {};
 }
 
-std::vector<parent_replacement_t> c(std::vector<pop_t::const_iterator_t>&& p) {
+std::vector<parent_replacement_t> c(std::vector<pop_t::iterator_t>&& p) {
   return {};
 }
 
@@ -68,7 +68,7 @@ int main() {
   pop_t p{true};
   p.replace(std::move(x));
 
-  test_selection_range<pop_t>(std::vector<pop_t::const_iterator_t>{});
+  test_selection_range<pop_t>(std::vector<pop_t::iterator_t>{});
 
   test_selection<pop_t>(s);
   test_coupling<pop_t>(c);

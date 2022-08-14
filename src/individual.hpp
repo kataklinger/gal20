@@ -79,20 +79,21 @@ private:
   [[no_unique_address]] tags_t tags_;
 };
 
-template<typename Range, typename It>
+template<typename Range, typename Selected>
 concept selection_range = std::ranges::range<Range> && requires(Range r) {
-  requires std::same_as<std::remove_cvref_t<decltype(*std::ranges::begin(r))>,
-                        It>;
+  requires std::convertible_to<
+      std::remove_cvref_t<decltype(*std::ranges::begin(r))>,
+      Selected>;
 };
 
-template<typename Range, typename It, typename Chromosome>
+template<typename Range, typename It, typename Individual>
 concept replacement_range = std::ranges::range<Range> && requires(Range r) {
-  requires std::same_as<
+  requires std::convertible_to<
       std::remove_cvref_t<decltype(get_parent(*std::ranges::begin(r)))>,
       It>;
   requires std::same_as<
       std::remove_cvref_t<decltype(get_child(*std::ranges::begin(r)))>,
-      Chromosome>;
+      Individual>;
 };
 
 } // namespace gal
