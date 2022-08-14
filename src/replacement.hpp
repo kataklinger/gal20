@@ -55,19 +55,19 @@ namespace replace {
              replacement_range<typename Population::iterator_t,
                                typename Population::individual_t> Offspring>
     inline auto operator()(Population& population, Offspring&& offspring) {
-      auto child = std::begin(offspring);
-
-      auto to_replace =
-          details::select_many(
-              population,
-              state_,
-              [dist = distribution_t{0, population.current_size() - 1},
-               this]() { return dist(*generator_); }) |
-          std::ranges::views::transform([&child](auto& replaced) {
-            return replacement_view{replaced, get_child(*child++)};
+      auto to_replace = details::select_many(
+          population,
+          state_,
+          [dist = distribution_t{0, population.current_size() - 1}, this]() {
+            return dist(*generator_);
           });
 
-      return population.replace(to_replace);
+      return population.replace(
+          std::views::iota(std::size_t{}, std::size(to_replace)) |
+          std::ranges::views::transform([&to_replace,
+                                         &offspring](std::size_t idx) {
+            return replacement_view{to_replace[idx], get_child(offspring[idx])};
+          }));
     }
 
   private:
