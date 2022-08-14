@@ -43,128 +43,125 @@ namespace stat {
 
   namespace details {
 
-    template<typename Section, typename = void>
-    struct section_dependencies {
+    template<typename Model, typename = void>
+    struct model_dependencies {
       using type = dependencies<>;
     };
 
-    template<typename Section>
-    struct section_dependencies<Section,
-                                std::void_t<typename Section::required_t>> {
-      using type = typename Section::required_t;
+    template<typename Model>
+    struct model_dependencies<Model, std::void_t<typename Model::required_t>> {
+      using type = typename Model::required_t;
     };
 
-    template<typename Section>
-    using section_dependencies_t = typename section_dependencies<Section>::type;
+    template<typename Model>
+    using model_dependencies_t = typename model_dependencies<Model>::type;
 
-    template<typename Section>
-    struct has_section_dependencies
+    template<typename Model>
+    struct has_model_dependencies
         : std::negation<
-              std::is_same<section_dependencies_t<Section>, dependencies<>>> {};
+              std::is_same<model_dependencies_t<Model>, dependencies<>>> {};
 
-    template<typename Section>
-    inline static constexpr auto has_section_dependencies_v =
-        has_section_dependencies<Section>::value;
+    template<typename Model>
+    inline static constexpr auto has_model_dependencies_v =
+        has_model_dependencies<Model>::value;
 
-    template<typename Population, typename Section>
-    using section_dependencies_pack =
-        dependencies_pack<Population, section_dependencies_t<Section>>;
+    template<typename Population, typename Model>
+    using model_dependencies_pack =
+        dependencies_pack<Population, model_dependencies_t<Model>>;
 
-    template<typename Population, typename Section>
-    using section_dependencies_pack_t =
-        typename dependencies_pack<Population, Section>::type;
+    template<typename Population, typename Model>
+    using model_dependencies_pack_t =
+        typename dependencies_pack<Population, Model>::type;
 
-    template<typename Population, typename Section, typename Source>
+    template<typename Population, typename Model, typename Source>
     auto pack_dependencies(Source const& source) {
-      return dependencies_pack<Population, Section>::pack(source);
+      return dependencies_pack<Population, Model>::pack(source);
     }
 
-    template<typename Section, typename Population>
-    struct is_section_constructor
+    template<typename Model, typename Population>
+    struct is_model_constructor
         : std::conditional_t<
-              has_section_dependencies_v<Section>,
+              has_model_dependencies_v<Model>,
               std::is_constructible<
-                  typename Section::template body<Population>,
+                  typename Model::template body<Population>,
                   Population const&,
-                  typename Section::template body<Population> const&,
-                  section_dependencies_pack_t<Population, Section> const&>,
+                  typename Model::template body<Population> const&,
+                  model_dependencies_pack_t<Population, Model> const&>,
               std::is_constructible<
-                  typename Section::template body<Population>,
+                  typename Model::template body<Population>,
                   Population const&,
-                  typename Section::template body<Population> const&>> {};
+                  typename Model::template body<Population> const&>> {};
 
-    template<typename Section, typename Population>
-    inline static constexpr auto is_section_constructor_v =
-        is_section_constructor<Section, Population>::value;
+    template<typename Model, typename Population>
+    inline static constexpr auto is_model_constructor_v =
+        is_model_constructor<Model, Population>::value;
 
   } // namespace details
 
   template<typename Value, typename Population>
-  concept section =
-      !std::is_final_v<typename Value::template body<Population>> &&
-      details::is_section_constructor_v<Value, Population>;
+  concept model = !std::is_final_v<typename Value::template body<Population>> &&
+                  details::is_model_constructor_v<Value, Population>;
 
   namespace details {
 
     template<typename Value>
-    class section_constructor : public Value {
+    class model_constructor : public Value {
     public:
       template<typename Population>
-      inline section_constructor(Population const& population,
-                                 Value const& previous,
-                                 std::tuple<> const& /*unused*/)
+      inline model_constructor(Population const& population,
+                               Value const& previous,
+                               std::tuple<> const& /*unused*/)
           : Value{population, previous} {
       }
 
       template<typename Population, typename Dependencies>
-      inline section_constructor(Population const& population,
-                                 Value const& previous,
-                                 Dependencies const& dependencies)
+      inline model_constructor(Population const& population,
+                               Value const& previous,
+                               Dependencies const& dependencies)
           : Value{population, previous, dependencies} {
       }
     };
 
-    template<typename Population, section<Population>... Sections>
-    class segment;
+    template<typename Population, model<Population>... Models>
+    class model_node;
 
     template<typename Population>
-    class segment<Population> {};
+    class model_node<Population> {};
 
-    template<typename Population, section<Population> Section>
-    class segment<Population, Section>
-        : public section_constructor<
-              typename Section::template body<Population>> {
+    template<typename Population, model<Population> Model>
+    class model_node<Population, Model>
+        : public model_constructor<typename Model::template body<Population>> {
     public:
       using constructor_t =
-          section_constructor<typename Section::template body<Population>>;
+          model_constructor<typename Model::template body<Population>>;
 
     public:
-      inline segment(Population const& population,
-                     segment<Population> const& previous)
+      inline model_node(Population const& population,
+                        model_node<Population> const& previous)
           : constructor_t{population,
                           previous,
-                          pack_dependencies<Population, Section>(*this)} {
+                          pack_dependencies<Population, Model>(*this)} {
       }
     };
 
     template<typename Population,
-             section<Population> Section,
-             section<Population>... Rest>
-    class segment<Population, Section, Rest...>
-        : public section_constructor<
-              typename Section::template body<Population>>,
-          public segment<Population, Rest...> {
+             model<Population> Model,
+             model<Population>... Rest>
+    class model_node<Population, Model, Rest...>
+        : public model_constructor<typename Model::template body<Population>>,
+          public model_node<Population, Rest...> {
     public:
-      using base_t = segment<Population, Rest...>;
+      using base_t = model_node<Population, Rest...>;
       using constructor_t =
-          section_constructor<typename Section::template body<Population>>;
+          model_constructor<typename Model::template body<Population>>;
 
     public:
-      inline segment(Population const& population, segment const& previous)
+      inline model_node(Population const& population,
+                        model_node const& previous)
           : base_t{previous}
           , constructor_t{population,
                           previous,
-                          pack_dependencies<Population, Section>(*this)} {
+                          pack_dependencies<Population, Model>(*this)} {
       }
     };
 
@@ -445,16 +442,16 @@ namespace stat {
     };
   };
 
-  template<typename Population, section<Population>... Sections>
-  class statistics : public details::segment<Population, Sections...> {
+  template<typename Population, model<Population>... Models>
+  class statistics : public details::model_node<Population, Models...> {
   public:
     using population_t = Population;
 
   private:
-    using base_t = details::segment<population_t, Sections...>;
+    using base_t = details::model_node<population_t, Models...>;
 
-    template<section<population_t> Section>
-    using base_value_t = typename Section::template body<population_t>;
+    template<model<population_t> Model>
+    using base_value_t = typename Model::template body<population_t>;
 
   private:
     inline statistics(population_t const& population,
@@ -467,14 +464,14 @@ namespace stat {
       return statistics(population, *this);
     }
 
-    template<section<population_t> Section>
+    template<model<population_t> Model>
     inline decltype(auto) get() noexcept {
-      return static_cast<base_value_t<Section>&>(*this);
+      return static_cast<base_value_t<Model>&>(*this);
     }
 
-    template<section<population_t> Section>
+    template<model<population_t> Model>
     inline decltype(auto) get() const noexcept {
-      return static_cast<base_value_t<Section> const&>(*this);
+      return static_cast<base_value_t<Model> const&>(*this);
     }
   };
 
@@ -497,8 +494,7 @@ namespace stat {
       } -> std::convertible_to<Statistics>;
   };
 
-  template<typename Statistics,
-           section<typename Statistics::population_t> Timer>
+  template<typename Statistics, model<typename Statistics::population_t> Timer>
   class enabled_timer {
   private:
     using statistics_t = Statistics;
@@ -655,9 +651,9 @@ namespace stat {
     using get_tagged_value_helper_t =
         typename get_tagged_value_helper<Value>::type;
 
-    template<typename Population, section<Population> Section>
+    template<typename Population, model<Population> Model>
     using get_tagged_value_t =
-        get_tagged_value_helper_t<typename Section::template body<Population>>;
+        get_tagged_value_helper_t<typename Model::template body<Population>>;
 
     template<typename List>
     struct clean_vlist;
@@ -679,15 +675,15 @@ namespace stat {
     template<typename List>
     using clean_vlist_t = typename clean_vlist<List>::type;
 
-    template<typename Population, section<Population>... Sections>
+    template<typename Population, model<Population>... Models>
     struct convert_to_vlist {
       using type =
-          clean_vlist_t<vlist<get_tagged_value_t<Population, Sections>...>>;
+          clean_vlist_t<vlist<get_tagged_value_t<Population, Models>...>>;
     };
 
-    template<typename Population, section<Population>... Sections>
+    template<typename Population, model<Population>... Models>
     using convert_to_vlist_t =
-        typename convert_to_vlist<Population, Sections...>::type;
+        typename convert_to_vlist<Population, Models...>::type;
 
     template<typename Input, typename Values, typename... Fns>
     struct composite_state_helper;
@@ -826,14 +822,14 @@ namespace stat {
   } // namespace details
 
   template<typename Population,
-           section<Population>... Sections,
+           model<Population>... Models,
            std::ranges::range Range,
            typename... Fns>
-  inline auto compute_composite(statistics<Population, Sections...>& statistics,
+  inline auto compute_composite(statistics<Population, Models...>& statistics,
                                 Range const& range,
                                 Fns&&... fns) {
     using input_t = std::remove_cvref_t<decltype(*std::ranges::cbegin(range))>;
-    using vlist_t = details::convert_to_vlist_t<Population, Sections...>;
+    using vlist_t = details::convert_to_vlist_t<Population, Models...>;
     using state_t = details::composite_state_t<input_t, vlist_t, Fns...>;
 
     if constexpr (!std::is_same_v<std::tuple<>, state_t>) {

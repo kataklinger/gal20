@@ -576,12 +576,12 @@ namespace config {
                                              typename Builder::scaled_fitness_t,
                                              typename Builder::tags_t>;
 
-    template<stat::section<internal_population_t>... Sections>
+    template<stat::model<internal_population_t>... Models>
     constexpr inline auto track_these(std::size_t depth) const {
       class body {
       public:
         using population_t = internal_population_t;
-        using statistics_t = stat::statistics<population_t, Sections...>;
+        using statistics_t = stat::statistics<population_t, Models...>;
         using population_context_t =
             population_context<population_t, statistics_t>;
 
