@@ -11,11 +11,11 @@ namespace config {
   concept section = !std::is_final_v<Section> && std::copyable<Section>;
 
   template<template<typename> class... Interfaces>
-  struct ptypes {};
+  struct plist {};
 
   template<template<typename> class Key,
            typename Unlocked,
-           typename Required = ptypes<>>
+           typename Required = plist<>>
   struct entry {};
 
   template<typename... Maps>
@@ -47,8 +47,8 @@ namespace config {
 
     template<template<typename> class Match, typename Builder>
     struct entry_map_match<entry_map<>, Match, Builder> {
-      using unlocked_t = ptypes<>;
-      using required_t = ptypes<>;
+      using unlocked_t = plist<>;
+      using required_t = plist<>;
     };
 
     template<typename Unlocked,
@@ -110,37 +110,37 @@ namespace config {
     };
 
     template<typename Left, typename Right>
-    struct ptypes_merge;
+    struct plist_merge;
 
     template<template<typename> class... Lefts,
              template<typename>
              class... Rights>
-    struct ptypes_merge<ptypes<Lefts...>, ptypes<Rights...>> {
-      using type = ptypes<Lefts..., Rights...>;
+    struct plist_merge<plist<Lefts...>, plist<Rights...>> {
+      using type = plist<Lefts..., Rights...>;
     };
 
     template<typename Left, typename Right>
-    using ptypes_merge_t = typename ptypes_merge<Left, Right>::type;
+    using plist_merge_t = typename plist_merge<Left, Right>::type;
 
     template<template<typename> class Interface, typename Interfaces>
-    struct ptypes_add;
+    struct plist_add;
 
     template<template<typename> class Interface,
              template<typename>
              class... Interfaces>
-    struct ptypes_add<Interface, ptypes<Interfaces...>> {
-      using type = ptypes<Interface, Interfaces...>;
+    struct plist_add<Interface, plist<Interfaces...>> {
+      using type = plist<Interface, Interfaces...>;
     };
 
     template<template<typename> class Interface, typename Interfaces>
-    using ptypes_add_t = typename ptypes_add<Interface, Interfaces>::type;
+    using plist_add_t = typename plist_add<Interface, Interfaces>::type;
 
     template<template<typename> class Interface, typename Interfaces>
-    struct ptypes_remove;
+    struct plist_remove;
 
     template<template<typename> class Interface>
-    struct ptypes_remove<Interface, ptypes<>> {
-      using type = ptypes<>;
+    struct plist_remove<Interface, plist<>> {
+      using type = plist<>;
     };
 
     template<template<typename> class Interface,
@@ -148,29 +148,29 @@ namespace config {
              class Current,
              template<typename>
              class... Interfaces>
-    struct ptypes_remove<Interface, ptypes<Current, Interfaces...>>
-        : ptypes_remove<Interface, ptypes<Interfaces...>> {
-      using type = ptypes_add_t<
+    struct plist_remove<Interface, plist<Current, Interfaces...>>
+        : plist_remove<Interface, plist<Interfaces...>> {
+      using type = plist_add_t<
           Current,
-          typename ptypes_remove<Interface, ptypes<Interfaces...>>::type>;
+          typename plist_remove<Interface, plist<Interfaces...>>::type>;
     };
 
     template<template<typename> class Interface,
              template<typename>
              class... Interfaces>
-    struct ptypes_remove<Interface, ptypes<Interface, Interfaces...>> {
-      using type = ptypes<Interfaces...>;
+    struct plist_remove<Interface, plist<Interface, Interfaces...>> {
+      using type = plist<Interfaces...>;
     };
 
     template<template<typename> class Interface, typename Interfaces>
-    using ptypes_remove_t = typename ptypes_remove<Interface, Interfaces>::type;
+    using plist_remove_t = typename plist_remove<Interface, Interfaces>::type;
 
     template<template<typename> class Interface, typename Interfaces>
-    struct ptypes_contain;
+    struct plist_contain;
 
     template<template<typename> class Interface>
-    struct ptypes_contain<Interface, ptypes<>> : std::false_type {
-      using type = ptypes<>;
+    struct plist_contain<Interface, plist<>> : std::false_type {
+      using type = plist<>;
     };
 
     template<template<typename> class Interface,
@@ -178,25 +178,25 @@ namespace config {
              class Current,
              template<typename>
              class... Interfaces>
-    struct ptypes_contain<Interface, ptypes<Current, Interfaces...>>
-        : ptypes_contain<Interface, ptypes<Interfaces...>> {};
+    struct plist_contain<Interface, plist<Current, Interfaces...>>
+        : plist_contain<Interface, plist<Interfaces...>> {};
 
     template<template<typename> class Interface,
              template<typename>
              class... Interfaces>
-    struct ptypes_contain<Interface, ptypes<Interface, Interfaces...>>
+    struct plist_contain<Interface, plist<Interface, Interfaces...>>
         : std::true_type {};
 
     template<template<typename> class Interface, typename Interfaces>
-    constexpr inline auto ptypes_contain_v =
-        ptypes_contain<Interface, Interfaces>::value;
+    constexpr inline auto plist_contain_v =
+        plist_contain<Interface, Interfaces>::value;
 
     template<typename Used, typename Required>
     struct ptype_satisfied_helper : std::false_type {};
 
     template<typename Used, template<typename> class... Required>
-    struct ptype_satisfied_helper<Used, ptypes<Required...>>
-        : std::conjunction<ptypes_contain<Required, Used>...> {};
+    struct ptype_satisfied_helper<Used, plist<Required...>>
+        : std::conjunction<plist_contain<Required, Used>...> {};
 
     template<typename Used, typename Interface, typename = void>
     struct is_ptype_satisfied : std::true_type {};
@@ -224,7 +224,7 @@ namespace config {
     class ptype_node {};
 
     template<typename Builder, typename Used>
-    class ptype_node<Builder, Used, ptypes<>> {};
+    class ptype_node<Builder, Used, plist<>> {};
 
     template<typename Builder,
              typename Used,
@@ -232,9 +232,9 @@ namespace config {
              class Interface,
              template<typename>
              class... Interfaces>
-    class ptype_node<Builder, Used, ptypes<Interface, Interfaces...>>
+    class ptype_node<Builder, Used, plist<Interface, Interfaces...>>
         : public ptype_inherit_t<Used, Interface<Builder>>,
-          public ptype_node<Builder, Used, ptypes<Interfaces...>> {};
+          public ptype_node<Builder, Used, plist<Interfaces...>> {};
 
     template<typename Available, typename Used, section... Sections>
     class builder_node;
@@ -286,8 +286,8 @@ namespace config {
                         This,
                         Added> {
       using type =
-          builder_node<ptypes_remove_t<This, ptypes_merge_t<Added, Available>>,
-                       ptypes_add_t<This, Used>,
+          builder_node<plist_remove_t<This, plist_merge_t<Added, Available>>,
+                       plist_add_t<This, Used>,
                        Section,
                        Sections...>;
     };
@@ -720,7 +720,7 @@ namespace config {
 
   template<template<typename> class Root, typename Entries>
   struct builder
-      : details::builder_node<ptypes<Root>, ptypes<>, details::empty_builder> {
+      : details::builder_node<plist<Root>, plist<>, details::empty_builder> {
     using entries_t = Entries;
   };
 

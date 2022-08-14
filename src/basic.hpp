@@ -18,27 +18,27 @@ namespace alg {
 
   using basic_config_map = config::entry_map<
       config::entry<config::root_ptype,
-                    config::ptypes<config::size_ptype,
-                                   config::init_ptype,
-                                   config::tags_ptype>>,
+                    config::plist<config::size_ptype,
+                                  config::init_ptype,
+                                  config::tags_ptype>>,
       config::entry<
           config::init_ptype,
-          config::ptypes<config::evaluate_ptype, config::reproduce_ptype>>,
+          config::plist<config::evaluate_ptype, config::reproduce_ptype>>,
       config::entry<config::evaluate_ptype,
-                    config::ptypes<config::scale_fitness_ptype>>,
+                    config::plist<config::scale_fitness_ptype>>,
       config::entry<config::scale_fitness_ptype,
-                    config::ptypes<config::statistics_ptype>>,
+                    config::plist<config::statistics_ptype>>,
       config::entry<
           config::statistics_ptype,
           config::entry_if<
               details::basic_scaling_cond,
-              config::ptypes<config::select_ptype, config::criterion_ptype>,
-              config::ptypes<config::scale_ptype, config::criterion_ptype>>,
-          config::ptypes<config::tags_ptype>>,
-      config::entry<config::scale_ptype, config::ptypes<config::select_ptype>>,
-      config::entry<config::select_ptype, config::ptypes<config::couple_ptype>>,
+              config::plist<config::select_ptype, config::criterion_ptype>,
+              config::plist<config::scale_ptype, config::criterion_ptype>>,
+          config::plist<config::tags_ptype>>,
+      config::entry<config::scale_ptype, config::plist<config::select_ptype>>,
+      config::entry<config::select_ptype, config::plist<config::couple_ptype>>,
       config::entry<config::couple_ptype,
-                    config::ptypes<config::replace_ptype>>>;
+                    config::plist<config::replace_ptype>>>;
 
   template<typename Config>
   concept scaling_config =
