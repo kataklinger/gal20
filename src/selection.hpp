@@ -25,8 +25,9 @@ namespace select {
       return details::select_many(
           population,
           state_,
-          [dist = distribution_t{0, population.current_size() - 1},
-           generator_]() { return dist(*generator_); });
+          [dist = distribution_t{0, population.current_size() - 1}, this]() {
+            return dist(*generator_);
+          });
     }
 
   private:
@@ -86,7 +87,7 @@ namespace select {
       return details::select_many(
           population,
           state_,
-          [&wheel, dist = distribution_t{{}, wheel.back()}, generator_]() {
+          [&wheel, dist = distribution_t{{}, wheel.back()}, this]() {
             return std::ranges::lower_bound(wheel, dist(*generator_)) -
                    wheel.begin();
           });
