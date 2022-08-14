@@ -113,17 +113,12 @@ public:
 
     sorted_ = sort_by::none;
 
-    for (auto& replacement : replacements) {
+    for (auto&& replacement : replacements) {
       auto parent = get_parent(replacement);
 
       removed.emplace_back(std::move(*parent));
 
-      if constexpr (std::is_reference_v<Range>) {
-        *parent = get_child(replacement);
-      }
-      else {
-        *parent = std::move(get_child(replacement));
-      }
+      *parent = std::move(get_child(replacement));
     }
 
     return removed;
