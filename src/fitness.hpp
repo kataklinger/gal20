@@ -3,6 +3,7 @@
 
 #include <concepts>
 #include <type_traits>
+#include <random>
 
 namespace gal {
 
