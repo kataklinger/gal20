@@ -3,9 +3,9 @@
 
 #include "gal20.h"
 
-#include "selection.hpp"
-#include "replacement.hpp"
 #include "basic.hpp"
+#include "replacement.hpp"
+#include "selection.hpp"
 
 #include <tuple>
 
@@ -24,6 +24,10 @@ pop_t::individual_t& get_child(parent_replacement_t& x) {
   return get<1>(x);
 }
 
+pop_t::individual_t& get_child(parent_replacement_t&& x) {
+  return get<1>(x);
+}
+
 gal::coupling_metadata get_metadata(parent_replacement_t x) {
   return {};
 }
@@ -37,9 +41,8 @@ template<typename Population, gal::selection<Population> Selection>
 void test_selection(Selection&& s) {
 }
 
-template<
-    typename Population,
-    gal::coupling<Population, std::vector<pop_t::iterator_t>> Coupling>
+template<typename Population,
+         gal::coupling<Population, std::vector<pop_t::iterator_t>> Coupling>
 void test_coupling(Coupling&& s) {
 }
 
@@ -77,8 +80,14 @@ int main() {
 
   std::mt19937 gen{};
 
-  gal::replace::random<10, std::mt19937> a{gen};
-  a(p, std::vector<parent_replacement_t>{});
+  gal::replace::random<10, std::mt19937> ro1{gen};
+  ro1(p, std::vector<parent_replacement_t>{});
+
+  gal::replace::worst<10, gal::raw_fitness_tag> ro2{};
+  ro2(p, std::vector<parent_replacement_t>{});
+
+  gal::replace::crowd<gal::raw_fitness_tag> ro3{};
+  ro3(p, std::vector<parent_replacement_t>{});
 
   return 0;
 }
