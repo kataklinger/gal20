@@ -99,7 +99,7 @@ public:
     auto output = std::back_inserter(individuals_);
     std::ranges::move(std::move(chromosomes), output);
 
-    return std::ranges::views::drop(individuals_, insertion);
+    return std::views::drop(individuals_, insertion);
   }
 
   template<replacement_range<iterator_t, individual_t> Range>
@@ -130,6 +130,10 @@ public:
   inline auto trim(std::size_t to_trim) {
     return trim_impl(
         to_trim < individuals_.size() ? individuals_.size() - to_trim : 0);
+  }
+
+  inline auto trim_all() {
+    return trim_impl(0);
   }
 
   template<sort_fitness_tag<raw_fitness_t, scaled_fitness_t> FitnessTag>

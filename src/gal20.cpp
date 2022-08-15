@@ -89,5 +89,11 @@ int main() {
   gal::replace::crowd<gal::raw_fitness_tag> ro3{};
   ro3(p, std::vector<parent_replacement_t>{});
 
+  gal::replace::total ro4{};
+  ro4(p, std::vector<parent_replacement_t>{});
+
+  gal::replace::parents<10> ro5{};
+  ro5(p, std::vector<parent_replacement_t>{});
+
   return 0;
 }

@@ -40,12 +40,18 @@ namespace replace {
     }
 
     template<std::ranges::sized_range Replaced, typename Offspring>
-    inline auto translate(Replaced&& replaced, Offspring&& offspring) {
+    inline auto apply_replaced(Replaced& replaced, Offspring& offspring) {
       return std::views::iota(std::size_t{}, std::size(replaced)) |
              std::views::transform([&replaced, &offspring](std::size_t idx) {
                return replacement_view{replaced[idx],
                                        get_child(offspring[idx])};
              });
+    }
+
+    template<typename Offspring>
+    inline auto apply_children(Offspring& offspring) {
+      return offspring |
+             std::views::transform([](auto& o) { return get_child(o); });
     }
 
   } // namespace details
@@ -74,7 +80,7 @@ namespace replace {
             return dist(*generator_);
           });
 
-      return population.replace(details::translate(to_replace, offspring));
+      return population.replace(details::apply_replaced(to_replace, offspring));
     }
 
   private:
@@ -103,7 +109,7 @@ namespace replace {
                                     gal::details::nonunique_state<Size>{},
                                     [&idx]() { return idx++; });
 
-      return population.replace(details::translate(to_replace, offspring));
+      return population.replace(details::apply_replaced(to_replace, offspring));
     }
   };
 
@@ -121,17 +127,34 @@ namespace replace {
                                typename Population::individual_t> Offspring>
     inline auto operator()(Population& population, Offspring&& offspring) {
 
-      population.insert(offspring | std::views::transform(
-                                        [](auto& o) { return get_child(o); }));
+      population.insert(details::apply_children(offspring));
       population.sort(fitness_tag);
       return population.trim();
     }
   };
 
   template<std::size_t Size>
-  class parents {};
+  class parents {
+  public:
+    template<typename Population,
+             replacement_range<typename Population::iterator_t,
+                               typename Population::individual_t> Offspring>
+    inline auto operator()(Population& population, Offspring&& offspring) {
+      return population.replace(offspring);
+    }
+  };
 
-  class total {};
+  class total {
+  public:
+    template<typename Population,
+             replacement_range<typename Population::iterator_t,
+                               typename Population::individual_t> Offspring>
+    inline auto operator()(Population& population, Offspring&& offspring) {
+      auto removed = population.trim_all();
+      population.insert(details::apply_children(offspring));
+      return removed;
+    }
+  };
 
 } // namespace replace
 } // namespace gal
