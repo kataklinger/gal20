@@ -13,6 +13,9 @@ namespace details {
   template<std::size_t Size>
   struct nonunique_state {
     inline static constexpr std::size_t size = Size;
+
+    inline void begin() const noexcept {
+    }
   };
 
   template<std::size_t Size>
