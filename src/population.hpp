@@ -97,12 +97,7 @@ public:
     sorted_ = sort_by::none;
 
     auto output = std::back_inserter(individuals_);
-    if constexpr (std::is_reference_v<Range>) {
-      std::ranges::copy(chromosomes, output);
-    }
-    else {
-      std::ranges::move(std::move(chromosomes), output);
-    }
+    std::ranges::move(std::move(chromosomes), output);
 
     return std::ranges::views::drop(individuals_, insertion);
   }
@@ -129,7 +124,7 @@ public:
       return trim_impl(*target_size_);
     }
 
-    return {};
+    return collection_t{};
   }
 
   inline auto trim(std::size_t to_trim) {
@@ -185,7 +180,7 @@ private:
     std::ranges::move(std::ranges::views::drop(individuals_, size),
                       std::back_inserter(removed));
 
-    individuals_.resize(size);
+    individuals_.erase(individuals_.begin() + size, individuals_.end());
 
     return removed;
   }
