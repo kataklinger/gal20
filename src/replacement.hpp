@@ -49,7 +49,7 @@ namespace replace {
     }
 
     template<typename Offspring>
-    inline auto apply_children(Offspring& offspring) {
+    inline auto extract_children(Offspring& offspring) {
       return offspring |
              std::views::transform([](auto& o) { return get_child(o); });
     }
@@ -127,7 +127,7 @@ namespace replace {
                                typename Population::individual_t> Offspring>
     inline auto operator()(Population& population, Offspring&& offspring) {
 
-      population.insert(details::apply_children(offspring));
+      population.insert(details::extract_children(offspring));
       population.sort(fitness_tag);
       return population.trim();
     }
@@ -151,7 +151,7 @@ namespace replace {
                                typename Population::individual_t> Offspring>
     inline auto operator()(Population& population, Offspring&& offspring) {
       auto removed = population.trim_all();
-      population.insert(details::apply_children(offspring));
+      population.insert(details::extract_children(offspring));
       return removed;
     }
   };
