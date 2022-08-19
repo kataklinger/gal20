@@ -72,7 +72,8 @@ namespace stat {
 
     template<typename Population, typename Model>
     using model_dependencies_pack_t =
-        typename dependencies_pack<Population, Model>::type;
+        typename dependencies_pack<Population,
+                                   typename Model::required_t>::type;
 
     template<typename Population, typename Model, typename Source>
     auto pack_dependencies(Source const& source) {
@@ -111,7 +112,8 @@ namespace stat {
   } // namespace details
 
   template<typename Value, typename Population>
-  concept model = !std::is_final_v<typename Value::template body<Population>> &&
+  concept model = std::semiregular<typename Value::template body<Population>> &&
+                  !std::is_final_v<typename Value::template body<Population>> &&
                   details::is_model_constructor_v<Value, Population>;
 
   namespace details {
@@ -172,6 +174,8 @@ namespace stat {
           model_constructor<typename Model::template body<Population>>;
 
     public:
+      model_node() = default;
+
       inline model_node(Population const& population,
                         model_node const& previous)
           : base_t{previous}
@@ -372,7 +376,9 @@ namespace stat {
     public:
       body() = default;
 
-      inline body(Population const& population, body const& previous) noexcept {
+      inline body(Population const& population,
+                  body const& previous,
+                  dependencies_t const& dependencies) noexcept {
         auto const& sum =
             unpack_dependency<pack_t, total_fitness_t>(dependencies)
                 .fitness_total_value();
