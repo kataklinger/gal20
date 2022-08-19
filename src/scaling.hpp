@@ -40,13 +40,83 @@ namespace scale {
   //  k factor, f fitness
   class linear {};
 
-  // f` = 1 + (f - favg) / 2 * d, d != 0; 1, d = 0
-  // f fitness, d std. deviation
-  class sigma {};
+  template<typename Context>
+  class sigma {
+  private:
+    using context_t = Context;
 
-  // f` = (p - 2) * (r - 1)(p - 1) / (N - 1)
-  // p preasure, r rank, N population size
-  class ranked {};
+    using statistics_t = typename context_t::statistics_t;
+    using population_t = typename context_t::population_t;
+    using individual_t = typename population_t::individual_t;
+    using raw_fitness_t = typename population_t::raw_fitness_t;
+    using scaled_fitness_t = typename population_t::scaled_fitness_t;
+
+    using fitness_avg_t = stat::average_fitness<raw_fitness_tag>;
+    using fitness_dev_t = stat::fitness_deviation<raw_fitness_tag>;
+
+  public:
+    inline explicit sigma(context_t& context)
+        : statistics_{&context.statistics()} {
+    }
+
+    inline void operator()(rank_t rank, individual_t& individual) const {
+      auto eval = individual.evaluation();
+      eval.set_scaled(calculate(eval.raw()));
+    }
+
+  private:
+    inline scaled_fitness_t calculate(raw_fitness_t const& raw) const noexcept {
+      if (auto dev = get_deviation(); dev > 0) {
+        return {1.0 + (raw - get_average()) / (2.0 * dev)};
+      }
+      else {
+        return {1.0};
+      }
+    }
+
+    inline auto& get_average() const noexcept {
+      return statistics_->template get<fitness_avg_t>().fitness_average_value();
+    }
+
+    inline auto& get_deviation() const noexcept {
+      return statistics_->template get<fitness_dev_t>()
+          .fitness_deviation_value();
+    }
+
+  private:
+    statistics_t* statistics_;
+  };
+
+  template<typename Context, auto Preassure>
+  requires(scaling_constant<Preassure>) class ranked {
+  private:
+    using context_t = Context;
+
+    using population_t = typename context_t::population_t;
+    using individual_t = typename population_t::individual_t;
+    using scaled_fitness_t = typename population_t::scaled_fitness_t;
+
+  public:
+    inline explicit ranked(context_t& context)
+        : population_{&context.population()} {
+    }
+
+    inline void operator()() {
+      population_->sort(raw_fitness_tag{});
+    }
+
+    inline void operator()(rank_t rank, individual_t& individual) const {
+      auto eval = individual.evaluation();
+
+      auto value = Preassure - 2.0 * (*rank - 1.0) * (Preassure - 1.0) /
+                                   (population_->current_size() - 1.0);
+
+      eval.set_scaled(scaled_fitness_t{value});
+    }
+
+  private:
+    population_t* population_;
+  };
 
   template<typename Context, auto Power>
   requires(scaling_constant<Power>) class power {
@@ -85,7 +155,7 @@ namespace scale {
       population_->sort(raw_fitness_tag{});
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) {
+    inline void operator()(rank_t rank, individual_t& individual) const {
       auto eval = individual.evaluation();
 
       auto power = population_->current_size() - *rank - 1;
@@ -114,7 +184,7 @@ namespace scale {
       population_->sort(raw_fitness_tag{});
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) {
+    inline void operator()(rank_t rank, individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(
           scaled_fitness_t{*rank <= RankCutoff ? Proportion * eval.raw() : 0});
@@ -141,7 +211,7 @@ namespace scale {
         : statistics_{&context.statistics()} {
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) {
+    inline void operator()(rank_t rank, individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(scaled_fitness_t{eval.raw() - get_worst()});
     }

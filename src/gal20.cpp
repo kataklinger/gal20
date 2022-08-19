@@ -98,7 +98,10 @@ int main() {
 
   using stat_t =
       gal::stat::statistics<pop_t,
-                            gal::stat::extreme_fitness<gal::raw_fitness_tag>>;
+                            gal::stat::extreme_fitness<gal::raw_fitness_tag>,
+                            gal::stat::total_fitness<gal::raw_fitness_tag>,
+                            gal::stat::average_fitness<gal::raw_fitness_tag>,
+                            gal::stat::fitness_deviation<gal::raw_fitness_tag>>;
   stat_t stat{};
 
   using ctx_t = gal::population_context<pop_t, stat_t>;
@@ -118,6 +121,13 @@ int main() {
 
   gal::scale::window<ctx_t> sc4{ctx};
   sc4(0, p.individuals()[0]);
+
+  gal::scale::ranked<ctx_t, 1> sc5{ctx};
+  sc5();
+  sc5(0, p.individuals()[0]);
+
+  gal::scale::sigma<ctx_t> sc6{ctx};
+  sc6(0, p.individuals()[0]);
 
   return 0;
 }
