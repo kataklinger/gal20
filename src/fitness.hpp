@@ -2,8 +2,10 @@
 #pragma once
 
 #include <concepts>
-#include <type_traits>
 #include <random>
+#include <type_traits>
+
+#include "traits.hpp"
 
 namespace gal {
 
@@ -161,12 +163,24 @@ public:
     swap(scaled_, other.scaled_);
   }
 
-  inline auto& raw() noexcept {
-    return raw_;
+  template<traits::forward_ref<raw_t> F>
+  inline void set_raw(F&& fitness) {
+    raw_ = std::forward<F>(fitness);
   }
 
-  inline auto& scaled() noexcept {
-    return scaled_;
+  template<traits::forward_ref<scaled_t> F>
+  inline void set_scaled(F&& fitness) {
+    scaled_ = std::forward<F>(fitness);
+  }
+
+  template<traits::forward_ref<raw_t> F>
+  inline void set(raw_fitness_tag /*unused*/, F&& fitness) const noexcept {
+    set_raw(std::forward<F>(fitness));
+  }
+
+  template<traits::forward_ref<scaled_t> F>
+  inline void set(scaled_fitness_tag /*unused*/, F&& fitness) const noexcept {
+    set_scaled(std::forward<F>(fitness));
   }
 
   inline auto const& raw() const noexcept {
@@ -177,16 +191,8 @@ public:
     return scaled_;
   }
 
-  inline auto& get(raw_fitness_tag /*unused*/) noexcept {
-    return raw();
-  }
-
   inline auto const& get(raw_fitness_tag /*unused*/) const noexcept {
     return raw();
-  }
-
-  inline auto& get(scaled_fitness_tag /*unused*/) noexcept {
-    return scaled();
   }
 
   inline auto const& get(scaled_fitness_tag /*unused*/) const noexcept {

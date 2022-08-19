@@ -7,6 +7,7 @@
 #include "traits.hpp"
 
 #include <ranges>
+#include <optional>
 
 namespace gal {
 
@@ -78,6 +79,8 @@ private:
   evaluation_t evaluation_;
   [[no_unique_address]] tags_t tags_;
 };
+
+using rank_t = std::optional<std::size_t>;
 
 template<typename Range, typename Selected>
 concept selection_range = std::ranges::range<Range> && requires(Range r) {

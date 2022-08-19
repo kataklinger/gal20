@@ -5,11 +5,12 @@
 
 #include "basic.hpp"
 #include "replacement.hpp"
+#include "scaling.hpp"
 #include "selection.hpp"
 
 #include <tuple>
 
-using pop_t = gal::population<int, int, int, int>;
+using pop_t = gal::population<int, double, double, int>;
 
 struct parent_replacement_t
     : std::tuple<pop_t::iterator_t, pop_t::individual_t> {
@@ -94,6 +95,29 @@ int main() {
 
   gal::replace::parents<10> ro5{};
   ro5(p, std::vector<parent_replacement_t>{});
+
+  using stat_t =
+      gal::stat::statistics<pop_t,
+                            gal::stat::extreme_fitness<gal::raw_fitness_tag>>;
+  stat_t stat{};
+
+  using ctx_t = gal::population_context<pop_t, stat_t>;
+
+  ctx_t ctx{p, stat};
+
+  gal::scale::top<ctx_t, 5, 1.5> sc1{ctx};
+  sc1();
+  sc1(0, p.individuals()[0]);
+
+  gal::scale::exponential<ctx_t, 1.0025> sc2{ctx};
+  sc2();
+  sc2(0, p.individuals()[0]);
+
+  gal::scale::power<ctx_t, 2> sc3{ctx};
+  sc3(0, p.individuals()[0]);
+
+  gal::scale::window<ctx_t> sc4{ctx};
+  sc4(0, p.individuals()[0]);
 
   return 0;
 }

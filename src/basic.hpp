@@ -178,8 +178,9 @@ namespace alg {
           std::invoke(scaling_);
         }
 
+        std::size_t rank{0};
         for (auto& individual : context_->population().individuals()) {
-          std::invoke(scaling_, individual);
+          std::invoke(scaling_, rank, individual);
         }
       }
 

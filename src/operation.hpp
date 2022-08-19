@@ -33,6 +33,7 @@ concept evaluator = std::is_invocable_v<
 template<typename Scaling, typename Population>
 concept scaling = std::is_invocable_v<
     Scaling,
+    rank_t,
     std::add_lvalue_reference_t<typename Population::individual_t>>;
 
 template<typename Scaling>

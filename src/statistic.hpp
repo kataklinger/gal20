@@ -80,18 +80,29 @@ namespace stat {
     }
 
     template<typename Model, typename Population>
+    struct is_constructible_with_dependencies {
+      using type = std::is_constructible<
+          typename Model::template body<Population>,
+          Population const&,
+          typename Model::template body<Population> const&,
+          model_dependencies_pack_t<Population, Model> const&>;
+    };
+
+    template<typename Model, typename Population>
+    struct is_constructible_without_dependencies {
+      using type = std::is_constructible<
+          typename Model::template body<Population>,
+          Population const&,
+          typename Model::template body<Population> const&>;
+    };
+
+    template<typename Model, typename Population>
     struct is_model_constructor
         : std::conditional_t<
               has_model_dependencies_v<Model>,
-              std::is_constructible<
-                  typename Model::template body<Population>,
-                  Population const&,
-                  typename Model::template body<Population> const&,
-                  model_dependencies_pack_t<Population, Model> const&>,
-              std::is_constructible<
-                  typename Model::template body<Population>,
-                  Population const&,
-                  typename Model::template body<Population> const&>> {};
+              is_constructible_with_dependencies<Model, Population>,
+              is_constructible_without_dependencies<Model, Population>>::type {
+    };
 
     template<typename Model, typename Population>
     inline static constexpr auto is_model_constructor_v =
@@ -108,6 +119,8 @@ namespace stat {
     template<typename Value>
     class model_constructor : public Value {
     public:
+      model_constructor() = default;
+
       template<typename Population>
       inline model_constructor(Population const& population,
                                Value const& previous,
@@ -137,6 +150,8 @@ namespace stat {
           model_constructor<typename Model::template body<Population>>;
 
     public:
+      model_node() = default;
+
       inline model_node(Population const& population,
                         model_node<Population> const& previous)
           : constructor_t{population,
@@ -172,6 +187,8 @@ namespace stat {
     template<typename Population>
     class body {
     public:
+      body() = default;
+
       inline body(Population const& population, body const& previous) noexcept
           : value_{previous.value_ + 1} {
       }
@@ -189,6 +206,8 @@ namespace stat {
     template<typename Population>
     class body {
     public:
+      body() = default;
+
       inline body(Population const& population, body const& previous) noexcept
           : value_{population.current_size()} {
       }
@@ -211,6 +230,8 @@ namespace stat {
       using tag_t = Tag;
 
     public:
+      body() = default;
+
       inline body(Population const& population, body const& previous) noexcept {
       }
 
@@ -239,6 +260,8 @@ namespace stat {
       using timer_t = std::chrono::high_resolution_clock;
 
     public:
+      body() = default;
+
       inline body(Population const& population, body const& previous) noexcept {
       }
 
@@ -273,6 +296,8 @@ namespace stat {
       inline static constexpr fitness_tag_t fitness_tag{};
 
     public:
+      body() = default;
+
       inline body(Population const& population, body const& previous) noexcept {
         auto [mini, maxi] = population.extremes(fitness_tag);
         value_ = minmax_fitness_t{mini.evaluation().get(fitness_tag),
@@ -304,6 +329,8 @@ namespace stat {
       inline static constexpr fitness_tag_t fitness_tag{};
 
     public:
+      body() = default;
+
       inline body(Population const& population, body const& previous) noexcept
           : value_{std::accumulate(population.individuals().begin(),
                                    population.individuals().end(),
@@ -320,7 +347,7 @@ namespace stat {
       }
 
     private:
-      fitness_t value_;
+      fitness_t value_{};
     };
   };
 
@@ -343,6 +370,8 @@ namespace stat {
       inline static constexpr fitness_tag_t fitness_tag{};
 
     public:
+      body() = default;
+
       inline body(Population const& population, body const& previous) noexcept {
         auto const& sum =
             unpack_dependency<pack_t, total_fitness_t>(dependencies)
@@ -356,7 +385,7 @@ namespace stat {
       }
 
     private:
-      fitness_t value_;
+      fitness_t value_{};
     };
   };
 
@@ -406,6 +435,8 @@ namespace stat {
       inline static constexpr fitness_tag_t fitness_tag{};
 
     public:
+      body() = default;
+
       inline body(Population const& population,
                   body const& previous,
                   dependencies_t const& dependencies) noexcept {
@@ -461,6 +492,9 @@ namespace stat {
     }
 
   public:
+    inline statistics() {
+    }
+
     inline auto next(population_t const& population) const {
       return statistics(population, *this);
     }

@@ -4,7 +4,6 @@
 #include "individual.hpp"
 
 #include <algorithm>
-#include <optional>
 #include <vector>
 
 namespace gal {
