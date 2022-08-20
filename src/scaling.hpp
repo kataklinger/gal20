@@ -16,7 +16,7 @@ namespace scale {
   //  d = fmax - favg;
   //
   //  if( fabs( d ) < 0.00001 )
-  //  	a = 1, b = 0;
+  //   a = 1, b = 0;
   //  else
   //  {
   //   a = favg / d;
@@ -38,10 +38,20 @@ namespace scale {
   // }
   //  f` = a * f + b
   //  k factor, f fitness
-  class linear {};
+
+  template<typename Context, auto Preassure>
+  requires(scaling_constant<Preassure>) class linear {
+  public:
+    using is_global_t = std::true_type;
+    using is_stable_t = std::true_type;
+
+  };
 
   template<typename Context>
   class sigma {
+  public:
+    using is_global_t = std::true_type;
+
   private:
     using context_t = Context;
 
@@ -89,6 +99,9 @@ namespace scale {
 
   template<typename Context, auto Preassure>
   requires(scaling_constant<Preassure>) class ranked {
+  public:
+    using is_stable_t = std::true_type;
+
   private:
     using context_t = Context;
 
@@ -120,6 +133,9 @@ namespace scale {
 
   template<typename Context, auto Power>
   requires(scaling_constant<Power>) class power {
+  public:
+    using is_stable_t = std::true_type;
+
   private:
     using context_t = Context;
 
@@ -139,6 +155,9 @@ namespace scale {
 
   template<typename Context, auto Base>
   requires(scaling_constant<Base>) class exponential {
+  public:
+    using is_stable_t = std::true_type;
+
   private:
     using context_t = Context;
 
@@ -168,6 +187,9 @@ namespace scale {
 
   template<typename Context, std::size_t RankCutoff, auto Proportion>
   requires(scaling_constant<Proportion>) class top {
+  public:
+    using is_stable_t = std::true_type;
+
   private:
     using context_t = Context;
 
@@ -196,6 +218,10 @@ namespace scale {
 
   template<typename Context>
   class window {
+  public:
+      using is_global_t = std::true_type;
+      using is_stable_t = std::true_type;
+
   private:
     using context_t = Context;
 

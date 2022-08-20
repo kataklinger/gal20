@@ -36,10 +36,34 @@ concept scaling = std::is_invocable_v<
     rank_t,
     std::add_lvalue_reference_t<typename Population::individual_t>>;
 
+namespace details {
+  template<typename Scaling, typename = void>
+  struct is_global_scaling_helper {
+    using type = std::is_invocable<Scaling>;
+  };
+
+  template<typename Scaling>
+  struct is_global_scaling_helper<Scaling,
+                                  std::void_t<typename Scaling::is_global_t>> {
+    using type = typename Scaling::is_global_t;
+  };
+
+  template<typename Scaling, typename = void>
+  struct is_stable_scaling_helper {
+    using type = std::false_type;
+  };
+
+  template<typename Scaling>
+  struct is_stable_scaling_helper<Scaling,
+                                  std::void_t<typename Scaling::is_stable_t>> {
+    using type = typename Scaling::is_stable_t;
+  };
+} // namespace details
+
 template<typename Scaling>
 struct scaling_traits {
-  using is_global_t = std::is_invocable<Scaling>;
-  using is_stable_t = std::false_type;
+  using is_global_t = typename details::is_global_scaling_helper<Scaling>::type;
+  using is_stable_t = typename details::is_stable_scaling_helper<Scaling>::type;
 };
 
 // clang-format off
