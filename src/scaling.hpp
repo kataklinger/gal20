@@ -44,6 +44,8 @@ namespace scale {
   public:
     using is_global_t = std::true_type;
     using is_stable_t = std::true_type;
+
+  private:
   };
 
   template<typename Context>
@@ -56,12 +58,14 @@ namespace scale {
 
     using statistics_t = typename context_t::statistics_t;
     using population_t = typename context_t::population_t;
-    using individual_t = typename population_t::individual_t;
     using raw_fitness_t = typename population_t::raw_fitness_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
     using fitness_avg_t = stat::average_fitness<raw_fitness_tag>;
     using fitness_dev_t = stat::fitness_deviation<raw_fitness_tag>;
+
+  public:
+    using individual_t = typename population_t::individual_t;
 
   public:
     inline explicit sigma(context_t& context)
@@ -105,8 +109,10 @@ namespace scale {
     using context_t = Context;
 
     using population_t = typename context_t::population_t;
-    using individual_t = typename population_t::individual_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
+
+  public:
+    using individual_t = typename population_t::individual_t;
 
   public:
     inline explicit ranked(context_t& context)
@@ -139,8 +145,10 @@ namespace scale {
     using context_t = Context;
 
     using population_t = typename context_t::population_t;
-    using individual_t = typename population_t::individual_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
+
+  public:
+    using individual_t = typename population_t::individual_t;
 
   public:
     inline explicit power(context_t& context) {
@@ -161,8 +169,10 @@ namespace scale {
     using context_t = Context;
 
     using population_t = typename context_t::population_t;
-    using individual_t = typename population_t::individual_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
+
+  public:
+    using individual_t = typename population_t::individual_t;
 
   public:
     inline explicit exponential(context_t& context)
@@ -194,8 +204,10 @@ namespace scale {
     using context_t = Context;
 
     using population_t = typename context_t::population_t;
-    using individual_t = typename population_t::individual_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
+
+  public:
+    using individual_t = typename population_t::individual_t;
 
     inline static constexpr std::size_t cutoff{RankCutoff};
 
@@ -229,10 +241,12 @@ namespace scale {
 
     using statistics_t = typename context_t::statistics_t;
     using population_t = typename context_t::population_t;
-    using individual_t = typename population_t::individual_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
     using fitness_min_t = stat::extreme_fitness<raw_fitness_tag>;
+
+  public:
+    using individual_t = typename population_t::individual_t;
 
   public:
     inline explicit window(context_t& context)
