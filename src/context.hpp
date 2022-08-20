@@ -37,17 +37,12 @@ private:
   statistics_t* statistics_;
 };
 
-template<typename Crossover,
-         typename Mutation,
-         typename Evaluator,
-         typename ImprovingMutation>
+template<typename Crossover, typename Mutation, typename Evaluator>
 class reproduction_context {
 public:
   using crossover_t = Crossover;
   using mutation_t = Mutation;
   using evaluator_t = Evaluator;
-
-  using improving_mutation_t = ImprovingMutation;
 
 public:
   constexpr inline reproduction_context(crossover_t const& crossover,
@@ -79,13 +74,9 @@ private:
 template<typename Crossover,
          typename Mutation,
          typename Evaluator,
-         typename ImprovingMutation,
          typename Scaling>
 class reproduction_context_with_scaling
-    : public reproduction_context<Crossover,
-                                  Mutation,
-                                  Evaluator,
-                                  ImprovingMutation> {
+    : public reproduction_context<Crossover, Mutation, Evaluator> {
 public:
   using crossover_t = Crossover;
   using mutation_t = Mutation;

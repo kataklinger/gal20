@@ -324,18 +324,16 @@ namespace config {
     struct build_reproduction_context {
       using type = reproduction_context<typename Builder::crossover_t,
                                         typename Builder::mutation_t,
-                                        typename Builder::evaluator_t,
-                                        typename Builder::improving_mutation_t>;
+                                        typename Builder::evaluator_t>;
     };
 
     template<typename Builder>
     struct build_reproduction_context<Builder, std::false_type> {
-      using type = reproduction_context_with_scaling<
-          typename Builder::crossover_t,
-          typename Builder::mutation_t,
-          typename Builder::evaluator_t,
-          typename Builder::improving_mutation_t,
-          typename Builder::scaling_t>;
+      using type =
+          reproduction_context_with_scaling<typename Builder::crossover_t,
+                                            typename Builder::mutation_t,
+                                            typename Builder::evaluator_t,
+                                            typename Builder::scaling_t>;
     };
 
     template<typename Builder>
@@ -529,20 +527,15 @@ namespace config {
   struct reproduce_ptype
       : public details::ptype_base<Builder, reproduce_ptype> {
     template<crossover<typename Builder::chromosome_t> Crossover,
-             mutation<typename Builder::chromosome_t> Mutation,
-             bool ImprovingMutation = false>
-    constexpr inline auto reproduce_using(
-        Crossover const& crossover,
-        Mutation const& mutation,
-        std::bool_constant<ImprovingMutation> /*unused*/) const {
+             mutation<typename Builder::chromosome_t> Mutation>
+    constexpr inline auto reproduce_using(Crossover const& crossover,
+                                          Mutation const& mutation) const {
       using chromosome_t = typename Builder::chromosome_t;
 
       class body {
       public:
         using crossover_t = Crossover;
         using mutation_t = Mutation;
-
-        using improving_mutation_t = std::bool_constant<ImprovingMutation>;
 
       public:
         constexpr inline explicit body(crossover_t const& crossover,
