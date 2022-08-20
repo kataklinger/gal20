@@ -44,7 +44,6 @@ namespace scale {
   public:
     using is_global_t = std::true_type;
     using is_stable_t = std::true_type;
-
   };
 
   template<typename Context>
@@ -185,8 +184,9 @@ namespace scale {
     population_t* population_;
   };
 
-  template<typename Context, std::size_t RankCutoff, auto Proportion>
-  requires(scaling_constant<Proportion>) class top {
+  template<typename Context, auto RankCutoff, auto Proportion>
+  requires(std::integral<decltype(RankCutoff)>&& RankCutoff > 0 &&
+           scaling_constant<Proportion>) class top {
   public:
     using is_stable_t = std::true_type;
 
@@ -196,6 +196,8 @@ namespace scale {
     using population_t = typename context_t::population_t;
     using individual_t = typename population_t::individual_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
+
+    inline static constexpr std::size_t cutoff{RankCutoff};
 
   public:
     inline explicit top(context_t& context)
@@ -209,7 +211,7 @@ namespace scale {
     inline void operator()(rank_t rank, individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(
-          scaled_fitness_t{*rank <= RankCutoff ? Proportion * eval.raw() : 0});
+          scaled_fitness_t{*rank <= cutoff ? Proportion * eval.raw() : 0});
     }
 
   private:
@@ -219,8 +221,8 @@ namespace scale {
   template<typename Context>
   class window {
   public:
-      using is_global_t = std::true_type;
-      using is_stable_t = std::true_type;
+    using is_global_t = std::true_type;
+    using is_stable_t = std::true_type;
 
   private:
     using context_t = Context;
@@ -249,6 +251,14 @@ namespace scale {
 
   private:
     statistics_t* statistics_;
+  };
+
+  template<template<typename, auto...> class Scaling, auto... Parameters>
+  requires(scaling_constant<Parameters>&&...) struct factory {
+    template<typename Context>
+    auto operator()(Context& context) {
+      return Scaling<Context, Parameters...>{context};
+    }
   };
 
 } // namespace scale
