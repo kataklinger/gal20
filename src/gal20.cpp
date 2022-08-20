@@ -108,9 +108,8 @@ int main() {
 
   ctx_t ctx{p, stat};
 
-
   auto sc0 = gal::scale::factory<gal::scale::top, 2, 1.5>{}(ctx);
-  
+
   gal::scale::top<ctx_t, 5, 1.5> sc1{ctx};
   sc1();
   sc1(0, p.individuals()[0]);
@@ -131,6 +130,10 @@ int main() {
 
   gal::scale::sigma<ctx_t> sc6{ctx};
   sc6(0, p.individuals()[0]);
+
+  gal::scale::linear<ctx_t, 1.0025> sc7{ctx};
+  sc7();
+  sc7(0, p.individuals()[0]);
 
   return 0;
 }

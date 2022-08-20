@@ -11,33 +11,37 @@ namespace scale {
   concept scaling_constant = std::integral<decltype(Constant)> ||
       std::floating_point<decltype(Constant)>;
 
-  // if( fmin > ( k * favg - fmax ) / ( k - 1 ) )
-  //{
-  //  d = fmax - favg;
-  //
-  //  if( fabs( d ) < 0.00001 )
-  //   a = 1, b = 0;
-  //  else
-  //  {
-  //   a = favg / d;
-  //   b = a * ( fmax - k * favg );
-  //   a *= ( k - 1 );
-  //  }
-  // }
-  // else
-  //{
-  //  d = favg - fmin;
-  //
-  //  if( fabs( d ) < 0.00001 )
-  //   a = 1, b = 0;
-  //  else
-  //  {
-  //   a = favg / d;
-  //   b = -fmin * a;
-  //  }
-  // }
-  //  f` = a * f + b
-  //  k factor, f fitness
+  namespace details {
+    using linear_coefficients = std::pair<double, double>;
+
+    inline bool approaching_zero(double delta) noexcept {
+      return std::fabs(delta) < 0.00001;
+    }
+
+    template<auto Preassure, fitness Fitness>
+    linear_coefficients caclulate_linear_coefficients(Fitness const& fmin,
+                                                      Fitness const& favg,
+                                                      Fitness const& fmax) {
+      if (fmin > (Preassure * favg - fmax) / (Preassure - 1.0)) {
+        auto delta = fmax - favg;
+        if (approaching_zero(delta)) {
+          return {1, 0};
+        }
+
+        auto a = favg / delta;
+        return {a * (Preassure - 1.0), a * (fmax - Preassure * favg)};
+      }
+      else {
+        auto delta = favg - fmin;
+        if (approaching_zero(delta)) {
+          return {1, 0};
+        }
+
+        auto a = favg / delta;
+        return {a, -fmin * a};
+      }
+    }
+  } // namespace details
 
   template<typename Context, auto Preassure>
   requires(scaling_constant<Preassure>) class linear {
@@ -46,6 +50,54 @@ namespace scale {
     using is_stable_t = std::true_type;
 
   private:
+    using context_t = Context;
+
+    using statistics_t = typename context_t::statistics_t;
+    using population_t = typename context_t::population_t;
+    using raw_fitness_t = typename population_t::raw_fitness_t;
+    using scaled_fitness_t = typename population_t::scaled_fitness_t;
+
+    using fitness_ext_t = stat::extreme_fitness<raw_fitness_tag>;
+    using fitness_avg_t = stat::average_fitness<raw_fitness_tag>;
+
+  public:
+    using individual_t = typename population_t::individual_t;
+
+  public:
+    inline explicit linear(context_t& context)
+        : statistics_{&context.statistics()} {
+    }
+
+    inline void operator()() noexcept {
+      coefficients_ = details::caclulate_linear_coefficients<Preassure>(
+          get_worst(), get_average(), get_best());
+    }
+
+    inline void operator()(rank_t rank, individual_t& individual) const {
+      auto eval = individual.evaluation();
+      eval.set_scaled(calculate(eval.raw()));
+    }
+
+  private:
+    inline scaled_fitness_t calculate(raw_fitness_t const& raw) const noexcept {
+      return {coefficients_.first * raw + coefficients_.second};
+    }
+
+    inline auto& get_average() const noexcept {
+      return statistics_->template get<fitness_avg_t>().fitness_average_value();
+    }
+
+    inline auto& get_best() const noexcept {
+      return statistics_->template get<fitness_ext_t>().fitness_best_value();
+    }
+
+    inline auto& get_worst() const noexcept {
+      return statistics_->template get<fitness_ext_t>().fitness_worst_value();
+    }
+
+  private:
+    std::pair<double, double> coefficients_;
+    statistics_t* statistics_;
   };
 
   template<typename Context>
@@ -243,7 +295,7 @@ namespace scale {
     using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
-    using fitness_min_t = stat::extreme_fitness<raw_fitness_tag>;
+    using fitness_ext_t = stat::extreme_fitness<raw_fitness_tag>;
 
   public:
     using individual_t = typename population_t::individual_t;
@@ -260,7 +312,7 @@ namespace scale {
 
   private:
     inline auto& get_worst() const noexcept {
-      return statistics_->template get<fitness_min_t>().fitness_worst_value();
+      return statistics_->template get<fitness_ext_t>().fitness_worst_value();
     }
 
   private:
