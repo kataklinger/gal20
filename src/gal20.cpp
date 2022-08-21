@@ -4,6 +4,7 @@
 #include "gal20.h"
 
 #include "basic.hpp"
+#include "coupling.hpp"
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"
