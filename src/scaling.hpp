@@ -49,9 +49,9 @@ namespace scale {
     using is_global_t = std::true_type;
     using is_stable_t = std::true_type;
 
-  private:
     using context_t = Context;
 
+  private:
     using statistics_t = typename context_t::statistics_t;
     using population_t = typename context_t::population_t;
     using raw_fitness_t = typename population_t::raw_fitness_t;
@@ -105,9 +105,9 @@ namespace scale {
   public:
     using is_global_t = std::true_type;
 
-  private:
     using context_t = Context;
 
+  private:
     using statistics_t = typename context_t::statistics_t;
     using population_t = typename context_t::population_t;
     using raw_fitness_t = typename population_t::raw_fitness_t;
@@ -157,9 +157,9 @@ namespace scale {
   public:
     using is_stable_t = std::true_type;
 
-  private:
     using context_t = Context;
 
+  private:
     using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
@@ -193,9 +193,9 @@ namespace scale {
   public:
     using is_stable_t = std::true_type;
 
-  private:
     using context_t = Context;
 
+  private:
     using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
@@ -217,9 +217,9 @@ namespace scale {
   public:
     using is_stable_t = std::true_type;
 
-  private:
     using context_t = Context;
 
+  private:
     using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
@@ -252,9 +252,9 @@ namespace scale {
   public:
     using is_stable_t = std::true_type;
 
-  private:
     using context_t = Context;
 
+  private:
     using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
@@ -288,9 +288,9 @@ namespace scale {
     using is_global_t = std::true_type;
     using is_stable_t = std::true_type;
 
-  private:
     using context_t = Context;
 
+  private:
     using statistics_t = typename context_t::statistics_t;
     using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
