@@ -497,12 +497,12 @@ namespace config {
       using factory_t = Factory;
       using chromosome_t = typename Builder::chromosome_t;
       using raw_fitness_t = typename Builder::raw_fitness_t;
+      using population_t = typename Builder::population_t;
 
       class body {
       public:
         using scaling_t = factory_result_t<factory_t, population_context_t>;
-        using is_global_scaling_t =
-            typename scaling_traits<scaling_t>::is_global_t;
+        using is_global_scaling_t = can_scale_global<scaling_t, population_t>;
         using is_stable_scaling_t =
             typename scaling_traits<scaling_t>::is_stable_t;
 

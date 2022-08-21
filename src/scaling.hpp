@@ -46,7 +46,6 @@ namespace scale {
   template<typename Context, auto Preassure>
   requires(scaling_constant<Preassure>) class linear {
   public:
-    using is_global_t = std::true_type;
     using is_stable_t = std::true_type;
 
     using context_t = Context;
@@ -73,7 +72,7 @@ namespace scale {
           get_worst(), get_average(), get_best());
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) const {
+    inline void operator()(rank_t /*unused*/, individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(calculate(eval.raw()));
     }
@@ -103,8 +102,6 @@ namespace scale {
   template<typename Context>
   class sigma {
   public:
-    using is_global_t = std::true_type;
-
     using context_t = Context;
 
   private:
@@ -124,7 +121,7 @@ namespace scale {
         : statistics_{&context.statistics()} {
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) const {
+    inline void operator()(rank_t /*unused*/, individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(calculate(eval.raw()));
     }
@@ -206,7 +203,7 @@ namespace scale {
     inline explicit power(context_t& context) {
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) {
+    inline void operator()(individual_t& individual) {
       auto eval = individual.evaluation();
       eval.set_scaled(scaled_fitness_t{std::pow(eval.raw(), Power)});
     }
@@ -285,7 +282,6 @@ namespace scale {
   template<typename Context>
   class window {
   public:
-    using is_global_t = std::true_type;
     using is_stable_t = std::true_type;
 
     using context_t = Context;
@@ -305,7 +301,7 @@ namespace scale {
         : statistics_{&context.statistics()} {
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) const {
+    inline void operator()(rank_t /*unused*/, individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(scaled_fitness_t{eval.raw() - get_worst()});
     }

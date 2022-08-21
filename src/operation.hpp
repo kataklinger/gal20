@@ -30,24 +30,7 @@ concept evaluator = std::is_invocable_v<
         Operation,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>>;
 
-template<typename Scaling, typename Population>
-concept scaling = std::is_invocable_v<
-    Scaling,
-    rank_t,
-    std::add_lvalue_reference_t<typename Population::individual_t>>;
-
 namespace details {
-  template<typename Scaling, typename = void>
-  struct is_global_scaling_helper {
-    using type = std::is_invocable<Scaling>;
-  };
-
-  template<typename Scaling>
-  struct is_global_scaling_helper<Scaling,
-                                  std::void_t<typename Scaling::is_global_t>> {
-    using type = typename Scaling::is_global_t;
-  };
-
   template<typename Scaling, typename = void>
   struct is_stable_scaling_helper {
     using type = std::false_type;
@@ -58,13 +41,50 @@ namespace details {
                                   std::void_t<typename Scaling::is_stable_t>> {
     using type = typename Scaling::is_stable_t;
   };
+
 } // namespace details
 
 template<typename Scaling>
 struct scaling_traits {
-  using is_global_t = typename details::is_global_scaling_helper<Scaling>::type;
   using is_stable_t = typename details::is_stable_scaling_helper<Scaling>::type;
 };
+
+template<typename Scaling, typename Population>
+struct can_scale_local
+    : std::conjunction<
+          std::negation<std::is_invocable_r<void, Scaling>>,
+          std::is_invocable_r<
+              void,
+              Scaling,
+              std::add_lvalue_reference_t<typename Population::individual_t>>> {
+};
+
+template<typename Scaling, typename Population>
+inline constexpr auto can_scale_local_v = can_scale_local<Scaling, Population>;
+
+template<typename Scaling, typename Population>
+struct can_scale_global
+    : std::is_invocable_r<
+          void,
+          Scaling,
+          std::size_t,
+          std::add_lvalue_reference_t<typename Population::individual_t>> {};
+
+template<typename Scaling, typename Population>
+inline constexpr auto can_scale_global_v =
+    can_scale_global<Scaling, Population>;
+
+template<typename Scaling, typename Population>
+concept local_scaling = can_scale_local_v<Scaling, Population> &&
+    !can_scale_global_v<Scaling, Population>;
+
+template<typename Scaling, typename Population>
+concept global_scaling = can_scale_global_v<Scaling, Population> &&
+    !can_scale_local_v<Scaling, Population>;
+
+template<typename Scaling, typename Population>
+concept scaling =
+    local_scaling<Scaling, Population> || global_scaling<Scaling, Population>;
 
 // clang-format off
 
