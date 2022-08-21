@@ -6,8 +6,8 @@
 
 #include "traits.hpp"
 
-#include <ranges>
 #include <optional>
+#include <ranges>
 
 namespace gal {
 
@@ -83,19 +83,16 @@ private:
 using rank_t = std::optional<std::size_t>;
 
 template<typename Range, typename Selected>
-concept selection_range = std::ranges::range<Range> && requires(Range r) {
-  requires std::same_as<std::remove_cvref_t<decltype(*std::ranges::begin(r))>,
-                        Selected>;
+concept selection_range = std::ranges::random_access_range<Range> &&
+    requires(Range r) {
+  { *std::ranges::begin(r) } -> traits::decays_to<Selected>;
 };
 
 template<typename Range, typename Replaced, typename Replacement>
-concept replacement_range = std::ranges::range<Range> && requires(Range r) {
-  requires std::same_as<
-      std::remove_cvref_t<decltype(get_parent(*std::ranges::begin(r)))>,
-      Replaced>;
-  requires std::same_as<
-      std::remove_cvref_t<decltype(get_child(*std::ranges::begin(r)))>,
-      Replacement>;
+concept replacement_range = std::ranges::random_access_range<Range> &&
+    requires(Range r) {
+  { get_parent(*std::ranges::begin(r)) } -> traits::decays_to<Replaced>;
+  { get_child(*std::ranges::begin(r)) } -> traits::decays_to<Replacement>;
 };
 
 } // namespace gal

@@ -79,9 +79,9 @@ concept selection =
         typename Population::iterator_t>;
 
 struct coupling_metadata {
-  bool crossover_performed;
-  bool mutation_tried;
-  bool mutation_accepted;
+  std::size_t crossover_performed;
+  std::size_t mutation_tried;
+  std::size_t mutation_accepted;
 };
 
 template<typename Operation, typename Population, typename Parents>
