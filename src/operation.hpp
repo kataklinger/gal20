@@ -147,4 +147,36 @@ concept coupling_factory =
 template<typename Factory, typename Context>
 using factory_result_t = std::invoke_result_t<Factory, Context>;
 
+template<auto Probability>
+concept probability = Probability >= 0.f && Probability <= 1.f &&
+                      std::floating_point<decltype(Probability)>;
+
+template<typename Generator, auto Probability>
+requires(probability<Probability>) struct probabilistic_operation {
+public:
+  using generator_t = Generator;
+  using distribution_t = std::uniform_real_distribution<decltype(Probability)>;
+
+public:
+  inline explicit probabilistic_operation(generator_t& generator) noexcept
+      : generator_{&generator_}
+      , distribution_{0.f, 1.f} {
+  }
+
+  inline bool operator()() const {
+    if constexpr (Probability == 0.f) {
+      return false;
+    }
+    else if constexpr (Probability == 1.f) {
+      return true;
+    }
+
+    return dist(*generator_) < Probability;
+  }
+
+private:
+  generator_t* generator_;
+  distribution_t distribution_;
+};
+
 } // namespace gal
