@@ -6,6 +6,71 @@
 namespace gal {
 namespace couple {
 
+  template<auto Probability>
+  concept probability = Probability >= 0.f && Probability <= 1.f &&
+                        std::floating_point<decltype(Probability)>;
+
+  template<typename Generator, auto Probability>
+  requires(probability<Probability>) struct probabilistic_operation {
+  public:
+    using generator_t = Generator;
+    using distribution_t =
+        std::uniform_real_distribution<decltype(Probability)>;
+
+  public:
+    inline explicit probabilistic_operation(generator_t& generator) noexcept
+        : generator_{&generator_}
+        , distribution_{0.f, 1.f} {
+    }
+
+    inline bool operator()() const {
+      if constexpr (Probability == 0.f) {
+        return false;
+      }
+      else if constexpr (Probability == 1.f) {
+        return true;
+      }
+
+      return dist(*generator_) < Probability;
+    }
+
+  private:
+    generator_t* generator_;
+    distribution_t distribution_;
+  };
+
+  template<typename Generator,
+           auto Crossover,
+           auto Mutation,
+           traits::boolean_flag MutationImproveOnly>
+  requires(probability<Crossover>&&
+               probability<Mutation>) class reproduction_params {
+  public:
+    using generator_t = Generator;
+    using mutation_improve_only_t = MutationImproveOnly;
+
+    inline static constexpr auto crossover_probability = Crossover;
+    inline static constexpr auto mutation_probability = Mutation;
+
+  public:
+    inline explicit reproduction_params(generator_t& generator) noexcept
+        : crossover_{generator}
+        , mutation_{generator} {
+    }
+
+    inline auto const& crossover() const noexcept {
+      return crossover_;
+    }
+
+    inline auto const& mutation() const noexcept {
+      return mutation_;
+    }
+
+  private:
+    probabilistic_operation<generator_t, Crossover> crossover_;
+    probabilistic_operation<generator_t, Mutation> mutation_;
+  };
+
   namespace details {
 
     template<typename Context, typename Population>
@@ -25,71 +90,6 @@ namespace couple {
         return std::forward<Ty>(value);
       }
     }
-
-    template<auto Probability>
-    concept probability = Probability >= 0.f && Probability <= 1.f &&
-                          std::floating_point<decltype(Probability)>;
-
-    template<typename Generator, auto Probability>
-    requires(probability<Probability>) struct probabilistic_operation {
-    public:
-      using generator_t = Generator;
-      using distribution_t =
-          std::uniform_real_distribution<decltype(Probability)>;
-
-    public:
-      inline explicit probabilistic_operation(generator_t& generator) noexcept
-          : generator_{&generator_}
-          , distribution_{0.f, 1.f} {
-      }
-
-      inline bool operator()() const {
-        if constexpr (Probability == 0.f) {
-          return false;
-        }
-        else if constexpr (Probability == 1.f) {
-          return true;
-        }
-
-        return dist(*generator_) < Probability;
-      }
-
-    private:
-      generator_t* generator_;
-      distribution_t distribution_;
-    };
-
-    template<typename Generator,
-             auto Crossover,
-             auto Mutation,
-             traits::boolean_flag MutationImproveOnly>
-    requires(probability<Crossover>&&
-                 probability<Mutation>) class reproduction_params {
-    public:
-      using generator_t = Generator;
-      using mutation_improve_only_t = MutationImproveOnly;
-
-      inline static constexpr auto crossover_probability = Crossover;
-      inline static constexpr auto mutation_probability = Mutation;
-
-    public:
-      inline explicit reproduction_params(generator_t& generator) noexcept
-          : crossover_{generator}
-          , mutation_{generator} {
-      }
-
-      inline auto const& crossover() const noexcept {
-        return crossover_;
-      }
-
-      inline auto const& mutation() const noexcept {
-        return mutation_;
-      }
-
-    private:
-      probabilistic_operation<generator_t, Crossover> crossover_;
-      probabilistic_operation<generator_t, Mutation> mutation_;
-    };
 
     template<typename Mutation, typename Chromosome, typename Probability>
     Chromosome mutate(Mutation const& mutation,
