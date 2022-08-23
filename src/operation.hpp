@@ -19,8 +19,8 @@ concept crossover = std::is_invocable_r_v<
     std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>;
 
 template<typename Operation, typename Chromosome>
-concept mutation =
-    std::is_invocable_v<Operation, std::add_lvalue_reference_t<Chromosome>>;
+concept mutation = std::
+    is_invocable_r_v<void, Operation, std::add_lvalue_reference_t<Chromosome>>;
 
 template<typename Operation, typename Chromosome>
 concept evaluator = std::is_invocable_v<
