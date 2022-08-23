@@ -78,7 +78,7 @@ namespace scale {
     }
 
   private:
-    inline scaled_fitness_t calculate(raw_fitness_t const& raw) const noexcept {
+    inline scaled_fitness_t calculate(raw_fitness_t const& raw) const {
       return {coefficients_.first * raw + coefficients_.second};
     }
 
