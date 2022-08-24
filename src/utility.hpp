@@ -79,5 +79,33 @@ namespace details {
   using state_t =
       std::conditional_t<Unique, unique_state<Size>, nonunique_state<Size>>;
 
+  template<typename Replaced, typename Replacement>
+  struct parentship : std::tuple<Replaced, Replacement> {
+    using std::tuple<Replaced, Replacement>::tuple;
+  };
+
+  template<typename Replaced, typename Replacement>
+  parentship(Replaced&, Replacement&) -> parentship<Replaced&, Replacement&>;
+
+  template<typename Replaced, typename Replacement>
+  auto& get_parent(parentship<Replaced, Replacement>& pair) {
+    return std::get<0>(pair);
+  }
+
+  template<typename Replaced, typename Replacement>
+  auto& get_parent(parentship<Replaced, Replacement>&& pair) {
+    return std::get<0>(pair);
+  }
+
+  template<typename Replaced, typename Replacement>
+  auto& get_child(parentship<Replaced, Replacement>& pair) {
+    return std::get<1>(pair);
+  }
+
+  template<typename Replaced, typename Replacement>
+  auto& get_child(parentship<Replaced, Replacement>&& pair) {
+    return std::get<1>(pair);
+  }
+
 } // namespace details
 } // namespace gal
