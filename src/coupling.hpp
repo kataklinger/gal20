@@ -82,28 +82,34 @@ namespace couple {
         results_.reserve(size);
       }
 
-      void reproduce(parent_iterator_t parent1,
-                     parent_iterator_t parent2) const {
+      inline void reproduce(parent_iterator_t parent1,
+                            parent_iterator_t parent2) const {
         auto offspring =
             reproduce_impl(*context_, *parent1, *parent2, *params_);
         results_.emplace_back(parent1, std::move(offspring.first));
         results_.emplace_back(parent2, std::move(offspring.second));
       }
 
-      auto&& take() noexcept {
+      inline auto&& take() noexcept {
         return std::move(results_);
       }
 
-    private:
-      inline auto reproduce_impl(chromosome_t const& parent1,
-                                 chromosome_t const& parent2) {
-        auto crossed =
-            std::invoke(params_->crossover())
-                ? std::invoke(context_->crossover(), parent1, parent2)
-                : std::pair{parent1, parent2};
+      inline auto const& metadata() const noexcept {
+        return metadata_;
+      }
 
-        std::pair offspring{try_mutate(crossed.first),
-                            try_mutate(crossed.second)};
+    private:
+      auto reproduce_impl(chromosome_t const& parent1,
+                          chromosome_t const& parent2) {
+        auto do_cross = std::invoke(params_->crossover());
+        auto produced =
+            do_cross ? std::invoke(context_->crossover(), parent1, parent2)
+                     : std::pair{parent1, parent2};
+
+        metadata_.crossover_performed += do_cross;
+
+        std::pair offspring{try_mutate(produced.first),
+                            try_mutate(produced.second)};
 
         if constexpr (has_scaling_v<population_t, context_t>) {
           std::invoke(context_->scaling(), offspring.first);
@@ -114,29 +120,40 @@ namespace couple {
       }
 
       individual_t try_mutate(chromosome_t& original) {
+        auto do_mutate = std::invoke(params_->mutation());
+
         auto mutated =
             mutate(context_->mutation(),
                    traits::move_if(original, std::negation<improve_t>{}),
-                   params_->mutation());
+                   do_mutate);
 
         auto mutated_fitness = std::invoke(context_->evaluator(), mutated);
 
-        if constexpr (improve_t::value) {
-          auto original_fitness = std::invoke(context_->evaluator(), original);
+        metadata_.mutation_tried += do_mutate;
 
-          if (original_fitness > mutated_fitness) {
-            return {std::move(original), {std::move(original_fitness)}};
+        if constexpr (improve_t::value) {
+          if (do_mutate) {
+            auto original_fitness =
+                std::invoke(context_->evaluator(), original);
+
+            if (original_fitness > mutated_fitness) {
+              metadata_.mutation_accepted += 1;
+              return {std::move(original), {std::move(original_fitness)}};
+            }
           }
+        }
+        else {
+          metadata_.mutation_accepted += do_mutate;
         }
 
         return {std::move(mutated), {std::move(mutated_fitness)}};
       }
 
       template<typename Mutation, typename Chromosome, typename Probability>
-      individual_t mutate(Mutation const& mutation,
-                          Chromosome&& chromosome,
-                          Probability const& probability) {
-        if (std::invoke(probability)) {
+      inline individual_t mutate(Mutation const& mutation,
+                                 Chromosome&& chromosome,
+                                 bool do_mutate) {
+        if (do_mutate) {
           if constexpr (std::is_lvalue_reference_v<Chromosome>) {
             individual_t mutated{chromosome};
             std::invoke(mutation, mutated);
@@ -155,6 +172,7 @@ namespace couple {
     private:
       context_t const* context_;
       params_t const* params_;
+      coupling_metadata metadata_{};
 
       std::vector<parentship_t> results_;
     };
