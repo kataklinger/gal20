@@ -42,7 +42,7 @@ template<typename Population,
          typename Crossover,
          typename Mutation,
          typename Evaluator>
-class reproduction_context : population_context<Population, Statistics> {
+class reproduction_context : public population_context<Population, Statistics> {
 public:
   using population_t = Population;
   using statistics_t = Statistics;
