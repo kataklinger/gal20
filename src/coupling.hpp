@@ -2,6 +2,7 @@
 #pragma once
 
 #include "operation.hpp"
+#include "utility.hpp"
 
 namespace gal {
 namespace couple {
@@ -145,7 +146,7 @@ namespace couple {
                           Chromosome const& parent1,
                           Chromosome const& parent2,
                           Params const& params) {
-      return;
+      return reproduce_impl(context, parent1, parent2, params);
     }
 
     template<typename Population,
@@ -163,27 +164,75 @@ namespace couple {
       return offspring;
     }
 
+    template<typename Context, typename Params>
+    class incubator {
+    public:
+      using context_t = Context;
+      using params_t = Params;
+
+    public:
+      inline incubator(context_t const& context,
+                       params_t const& params,
+                       std::size_t size)
+          : context_{&context}
+          , params_{&params} {
+        results_.reserve(size);
+      }
+
+      template<std::input_iterator It>
+      void reproduce(It parent1, It parent2) const {
+        auto offspring = reproduce(*context_, *parent1, *parent2, *params_);
+        results_.emplace_back(parent1, std::move(offspring.first));
+        results_.emplace_back(parent2, std::move(offspring.second));
+      }
+
+      auto&& take() noexcept {
+        return std::move(results_);
+      }
+
+    private:
+      context_t const* context_;
+      params_t const* params_;
+
+      std::vector<gal::details::parentship> results_;
+    };
+
   } // namespace details
 
   template<typename Range, typename Population>
   concept parents_range =
       selection_range<Range, typename Population::itreator_t>;
 
-  template<typename Context>
+  template<typename Population, typename Context, typename Params>
   class exclusive {
   public:
+    using population_t = Population;
     using context_t = Context;
+    using params_t = Params;
 
   public:
-    inline explicit exclusive(context_t const& context) {
+    inline explicit exclusive(context_t const& context, params_t const& params)
+        : context_{&context}
+        , params_{params} {
     }
 
-    template<typename Population, parents_range<Population> Parents>
-    inline auto operator()(Population& population, Parents&& parents) {
+    template<parents_range<population_t> Parents>
+    inline auto operator()(Parents&& parents) {
+      details::incubator incubate{
+          *context_, params_, std::ranges::size(parents)};
+
+      for (auto it = std::ranges::begin(parents);
+           it != std::ranges::end(parents);
+           it += 2) {
+        incubate(*it, *(it + 1));
+      }
+
+      return incubate.take();
     }
 
   private:
     context_t const* context_;
+    params_t params_;
   };
 
   class overlapping {};
