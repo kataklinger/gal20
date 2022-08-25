@@ -602,6 +602,17 @@ namespace stat {
     }
   }
 
+  template<typename Tag, typename Statistics>
+  inline void increment_count(Statistics& statistics,
+                              std::size_t increment = 1) {
+    using counter_t = generic_counter<Tag>;
+
+    if constexpr (tracks_statistic_v<Statistics, counter_t>) {
+      auto& model = statistics.get<counter_t>();
+      model.set_generic_value(model.get_generic_value() + increment);
+    }
+  }
+
   namespace details {
     template<typename Fn>
     using compute_result_t = std::remove_cvref_t<std::invoke_result_t<Fn>>;
