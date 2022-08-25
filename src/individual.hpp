@@ -22,9 +22,8 @@ public:
 
 public:
   template<traits::forward_ref<chromosome_t> C,
-           traits::forward_ref<evaluation_t> E,
-           std::default_initializable T = tags_t>
-  inline explicit individual(C&& chromosome, E&& evaluation) noexcept(
+           traits::forward_ref<evaluation_t> E>
+  inline individual(C&& chromosome, E&& evaluation) noexcept(
       traits::is_nothrow_forward_constructibles_v<decltype(chromosome),
                                                   decltype(evaluation)>&&
           std::is_nothrow_default_constructible_v<tags_t>)
@@ -43,6 +42,28 @@ public:
       : chromosome_{std::forward<C>(chromosome)}
       , evaluation_{std::forward<E>(evaluation)}
       , tags_{std::forward<T>(tags)} {
+  }
+
+  template<traits::forward_ref<chromosome_t> C,
+           traits::forward_ref<raw_fitness_t> F>
+  inline individual(C&& chromosome, F&& fitness) noexcept(
+      traits::is_nothrow_forward_constructibles_v<decltype(chromosome),
+                                                  decltype(fitness)>&&
+          std::is_nothrow_default_constructible_v<tags_t>)
+      : individual{std::forward<C>(chromosome),
+                   evaluation_t{std::forward<F>(fitness)}} {
+  }
+
+  template<traits::forward_ref<chromosome_t> C,
+           traits::forward_ref<raw_fitness_t> F,
+           traits::forward_ref<tags_t> T>
+  inline individual(C&& chromosome, F&& fitness, T&& tags) noexcept(
+      traits::is_nothrow_forward_constructibles_v<decltype(chromosome),
+                                                  decltype(fitness),
+                                                  decltype(tags)>)
+      : individual{std::forward<C>(chromosome),
+                   evaluation_t{std::forward<F>(fitness)},
+                   std::forward<T>(tags)} {
   }
 
   inline void swap(individual& other) noexcept(
