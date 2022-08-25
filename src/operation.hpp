@@ -60,7 +60,8 @@ struct can_scale_local
 };
 
 template<typename Scaling, typename Population>
-inline constexpr auto can_scale_local_v = can_scale_local<Scaling, Population>;
+inline constexpr auto can_scale_local_v =
+    can_scale_local<Scaling, Population>::value;
 
 template<typename Scaling, typename Population>
 struct can_scale_global
@@ -72,7 +73,7 @@ struct can_scale_global
 
 template<typename Scaling, typename Population>
 inline constexpr auto can_scale_global_v =
-    can_scale_global<Scaling, Population>;
+    can_scale_global<Scaling, Population>::value;
 
 template<typename Scaling, typename Population>
 concept local_scaling = can_scale_local_v<Scaling, Population> &&
@@ -165,7 +166,7 @@ public:
       return true;
     }
 
-    return dist(*generator_) < Probability;
+    return distribution_(*generator_) < Probability;
   }
 
 private:
