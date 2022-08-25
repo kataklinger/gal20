@@ -192,12 +192,13 @@ namespace couple {
   concept parents_range =
       selection_range<Range, typename Population::itreator_t>;
 
-  template<typename Population, typename Context, typename Params>
+  template<typename Context, typename Params>
   class exclusive {
   public:
-    using population_t = Population;
     using context_t = Context;
     using params_t = Params;
+
+    using population_t = typename context_t::population_t;
 
   public:
     inline explicit exclusive(context_t const& context, params_t const& params)
@@ -227,6 +228,30 @@ namespace couple {
   class overlapping {};
 
   class field {};
+
+  template<template<typename, typename> class Coupling, typename Params>
+  class factory {
+  public:
+    using params_t = Params;
+
+  public:
+    inline explicit factory(params_t const& params)
+        : params_{params} {
+    }
+
+    template<typename Context>
+    auto operator()(Context& context) {
+      return Coupling<Context, params_t>{context, params_};
+    }
+
+  private:
+    params_t params_;
+  };
+
+  template<template<typename, typename> class Coupling, typename Params>
+  inline auto make_factory(Params const& params) {
+    return factory<Coupling, Params>{params};
+  }
 
 } // namespace couple
 } // namespace gal
