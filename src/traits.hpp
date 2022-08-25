@@ -57,5 +57,15 @@ namespace traits {
   template<typename From, typename To>
   concept decays_to = std::same_as<std::decay_t<From>, To>;
 
+  template<typename Ty, boolean_flag Condition>
+  inline decltype(auto) move_if(Ty&& value, Condition /*unused*/) noexcept {
+    if constexpr (Condition::value) {
+      return std::move(value);
+    }
+    else {
+      return std::forward<Ty>(value);
+    }
+  }
+
 } // namespace traits
 } // namespace gal

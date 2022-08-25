@@ -10,12 +10,41 @@ namespace replace {
 
   namespace details {
 
+    template<typename Replaced, typename Replacement>
+    struct replacement_view : std::tuple<Replaced, Replacement> {
+      using std::tuple<Replaced, Replacement>::tuple;
+    };
+
+    template<typename Replaced, typename Replacement>
+    replacement_view(Replaced&, Replacement&)
+        -> replacement_view<Replaced&, Replacement&>;
+
+    template<typename Replaced, typename Replacement>
+    auto& get_parent(replacement_view<Replaced, Replacement>& pair) {
+      return std::get<0>(pair);
+    }
+
+    template<typename Replaced, typename Replacement>
+    auto& get_parent(replacement_view<Replaced, Replacement>&& pair) {
+      return std::get<0>(pair);
+    }
+
+    template<typename Replaced, typename Replacement>
+    auto& get_child(replacement_view<Replaced, Replacement>& pair) {
+      return std::get<1>(pair);
+    }
+
+    template<typename Replaced, typename Replacement>
+    auto& get_child(replacement_view<Replaced, Replacement>&& pair) {
+      return std::get<1>(pair);
+    }
+
     template<std::ranges::sized_range Replaced, typename Offspring>
     inline auto apply_replaced(Replaced& replaced, Offspring& offspring) {
       return std::views::iota(std::size_t{}, std::size(replaced)) |
              std::views::transform([&replaced, &offspring](std::size_t idx) {
-               return gal::details::parentship{replaced[idx],
-                                               get_child(offspring[idx])};
+               return replacement_view{replaced[idx],
+                                       get_child(offspring[idx])};
              });
     }
 

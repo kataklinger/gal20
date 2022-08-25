@@ -46,129 +46,32 @@ namespace couple {
       { ctx.scaling() } -> scaling<Population>;
     };
 
-    template<typename Context, typename Population>
-    concept without_scaling = !with_scaling<Context, Population>;
+    template<typename Population, typename Context>
+    struct has_scaling : std::false_type {};
 
-    template<typename Ty, traits::boolean_flag Condition>
-    inline decltype(auto) move_if(Ty&& value, Condition /*unused*/) noexcept {
-      if constexpr (Condition::value) {
-        return std::move(value);
-      }
-      else {
-        return std::forward<Ty>(value);
-      }
-    }
+    template<typename Population, with_scaling<Population> Context>
+    struct has_scaling<Context, Population> : std::true_type {};
 
-    template<typename Mutation, typename Chromosome, typename Probability>
-    Chromosome mutate(Mutation const& mutation,
-                      Chromosome&& chromosome,
-                      Probability const& probability) {
-      if (std::invoke(probability)) {
-        if constexpr (std::is_lvalue_reference_v<Chromosome>) {
-          Chromosome mutated{chromosome};
-          std::invoke(mutation, mutated);
-          return std::move(mutated);
-        }
-        else {
-          std::invoke(mutation, chromosome);
-          return std::move(chromosome);
-        }
-      }
-      else {
-        return std::move(chromosome);
-      }
-    }
+    template<typename Population, typename Context>
+    inline constexpr auto has_scaling_v =
+        has_scaling<Context, Population>::value;
 
-    template<typename Individual,
-             typename Context,
-             typename Chromosome,
-             typename Params>
-    Individual try_mutate(Context const& context,
-                          Chromosome& original,
-                          Params const& params) {
-
-      using improve_t = typename Params::mutation_improve_only_t;
-
-      auto mutated = mutate(context.mutation(),
-                            move_if(original, std::negation<improve_t>{}),
-                            params.mutation());
-
-      auto mutated_fitness = std::invoke(context.evaluator(), mutated);
-
-      if constexpr (improve_t::value) {
-        auto original_fitness = std::invoke(context.evaluator(), original);
-
-        if (original_fitness > mutated_fitness) {
-          return {std::move(original), {std::move(original_fitness)}};
-        }
-      }
-
-      return {std::move(mutated), {std::move(mutated_fitness)}};
-    }
-
-    template<typename Crossover, typename Chromosome, typename Probability>
-    inline std::pair<Chromosome, Chromosome>
-        try_crossover(Crossover const& crossover,
-                      Chromosome const& parent1,
-                      Chromosome const& parent2,
-                      Probability const& probability) {
-      if (std::invoke(probability)) {
-        return std::invoke(crossover, parent1, parent2);
-      }
-      else {
-        return {parent1, parent2};
-      }
-    }
-
-    template<typename Population,
-             typename Context,
-             typename Chromosome,
-             typename Params>
-    auto reproduce_impl(Context const& context,
-                        Chromosome const& parent1,
-                        Chromosome const& parent2,
-                        Params const& params) {
-      using individual_t = typename Population::individual_t;
-
-      auto offspring = try_crossover(
-          context.crossover(), parent1, parent2, params.crossover());
-
-      return std::pair<individual_t, individual_t>{
-          try_mutate<individual_t>(context, offspring.first, params),
-          try_mutate<individual_t>(context, offspring.second, params)};
-    }
-
-    template<typename Population,
-             without_scaling<Population> Context,
-             typename Chromosome,
-             typename Params>
-    inline auto reproduce(Context const& context,
-                          Chromosome const& parent1,
-                          Chromosome const& parent2,
-                          Params const& params) {
-      return reproduce_impl(context, parent1, parent2, params);
-    }
-
-    template<typename Population,
-             with_scaling<Population> Context,
-             typename Chromosome,
-             typename Params>
-    auto reproduce(Context const& context,
-                   Chromosome const& parent1,
-                   Chromosome const& parent2,
-                   Params const& params) {
-      auto offspring = reproduce_impl(context, parent1, parent2, params);
-      std::invoke(context.scaling(), offspring.first);
-      std::invoke(context.scaling(), offspring.second);
-
-      return offspring;
-    }
-
-    template<typename Context, typename Params>
+    template<typename Population, typename Context, typename Params>
     class incubator {
     public:
+      using population_t = Population;
       using context_t = Context;
       using params_t = Params;
+
+      using chromosome_t = typename population_t::chromosome_t;
+      using parent_iterator_t = typename population_t::iterator_t;
+      using individual_t = typename population_t::individual_t;
+
+      using parentship_t =
+          gal::details::parentship<parent_iterator_t, individual_t>;
+
+    private:
+      using improve_t = typename params_t::mutation_improve_only_t;
 
     public:
       inline incubator(context_t const& context,
@@ -179,9 +82,10 @@ namespace couple {
         results_.reserve(size);
       }
 
-      template<std::input_iterator It>
-      void reproduce(It parent1, It parent2) const {
-        auto offspring = reproduce(*context_, *parent1, *parent2, *params_);
+      void reproduce(parent_iterator_t parent1,
+                     parent_iterator_t parent2) const {
+        auto offspring =
+            reproduce_impl(*context_, *parent1, *parent2, *params_);
         results_.emplace_back(parent1, std::move(offspring.first));
         results_.emplace_back(parent2, std::move(offspring.second));
       }
@@ -191,10 +95,68 @@ namespace couple {
       }
 
     private:
+      inline auto reproduce_impl(chromosome_t const& parent1,
+                                 chromosome_t const& parent2) {
+        auto crossed =
+            std::invoke(params_->crossover())
+                ? std::invoke(context_->crossover(), parent1, parent2)
+                : std::pair{parent1, parent2};
+
+        std::pair offspring{try_mutate(crossed.first),
+                            try_mutate(crossed.second)};
+
+        if constexpr (has_scaling_v<population_t, context_t>) {
+          std::invoke(context_->scaling(), offspring.first);
+          std::invoke(context_->scaling(), offspring.second);
+        }
+
+        return offspring;
+      }
+
+      individual_t try_mutate(chromosome_t& original) {
+        auto mutated =
+            mutate(context_->mutation(),
+                   traits::move_if(original, std::negation<improve_t>{}),
+                   params_->mutation());
+
+        auto mutated_fitness = std::invoke(context_->evaluator(), mutated);
+
+        if constexpr (improve_t::value) {
+          auto original_fitness = std::invoke(context_->evaluator(), original);
+
+          if (original_fitness > mutated_fitness) {
+            return {std::move(original), {std::move(original_fitness)}};
+          }
+        }
+
+        return {std::move(mutated), {std::move(mutated_fitness)}};
+      }
+
+      template<typename Mutation, typename Chromosome, typename Probability>
+      individual_t mutate(Mutation const& mutation,
+                          Chromosome&& chromosome,
+                          Probability const& probability) {
+        if (std::invoke(probability)) {
+          if constexpr (std::is_lvalue_reference_v<Chromosome>) {
+            individual_t mutated{chromosome};
+            std::invoke(mutation, mutated);
+            return std::move(mutated);
+          }
+          else {
+            std::invoke(mutation, chromosome);
+            return std::move(chromosome);
+          }
+        }
+        else {
+          return std::move(chromosome);
+        }
+      }
+
+    private:
       context_t const* context_;
       params_t const* params_;
 
-      std::vector<gal::details::parentship> results_;
+      std::vector<parentship_t> results_;
     };
 
   } // namespace details
@@ -218,7 +180,7 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
-      details::incubator incubate{
+      details::incubator<population_t, context_t, params_t> incubate{
           *context_, params_, std::ranges::size(parents)};
 
       for (auto it = std::ranges::begin(parents);
