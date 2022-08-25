@@ -64,18 +64,18 @@ std::vector<pop_t::individual_t> r(pop_t& p,
 }
 
 struct test_crossover {
-  std::pair<int, int> operator()(int, int) {
+  std::pair<int, int> operator()(int, int) const {
     return {0, 0};
   }
 };
 
 struct test_mutation {
-  void operator()(int&) {
+  void operator()(int&) const {
   }
 };
 
 struct test_evaluator {
-  double operator()(int) {
+  double operator()(int) const {
     return 0.0;
   }
 };
@@ -155,13 +155,15 @@ int main() {
                                              test_crossover,
                                              test_mutation,
                                              test_evaluator,
-                                             gal::scale::top<ctx_t, 5, 1.5>>;
-  rtx_t rtx{p, stat, test_crossover{}, test_mutation{}, test_evaluator{}, sc1};
+                                             gal::scale::power<ctx_t, 2>>;
+  rtx_t rtx{p, stat, test_crossover{}, test_mutation{}, test_evaluator{}, sc3};
 
-  auto cp0 = gal::couple::make_factory<gal::couple::exclusive>(
-      gal::couple::
-          reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>{gen})(
-      rtx);
+  gal::couple::reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>
+      rep_p{gen};
+
+  auto cp0 = gal::couple::make_factory<gal::couple::exclusive>(rep_p)(rtx);
+
+  cp0(std::vector<pop_t::iterator_t>{});
 
   return 0;
 }

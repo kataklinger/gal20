@@ -78,17 +78,17 @@ namespace couple {
     public:
       inline incubator(context_t& context,
                        params_t const& params,
-                       std::size_t size,
-                       statistics_t& statistics_)
+                       std::size_t size)
           : context_{&context}
-          , params_{&params} {
+          , params_{&params}
+          , statistics_{&context.statistics()} {
         results_.reserve(size);
       }
 
-      inline void reproduce(parent_iterator_t parent1,
-                            parent_iterator_t parent2) const {
+      inline void operator()(parent_iterator_t parent1,
+                             parent_iterator_t parent2) {
         auto offspring =
-            reproduce_impl(*context_, *parent1, *parent2, *params_);
+            reproduce_impl(parent1->chromosome(), parent2->chromosome());
         results_.emplace_back(parent1, std::move(offspring.first));
         results_.emplace_back(parent2, std::move(offspring.second));
       }
@@ -99,7 +99,7 @@ namespace couple {
 
     private:
       auto reproduce_impl(chromosome_t const& parent1,
-                          chromosome_t const& parent2) {
+                          chromosome_t const& parent2) const {
         auto do_cross = std::invoke(params_->crossover());
         auto produced =
             do_cross ? std::invoke(context_->crossover(), parent1, parent2)
@@ -118,7 +118,7 @@ namespace couple {
         return offspring;
       }
 
-      individual_t try_mutate(chromosome_t& original) {
+      individual_t try_mutate(chromosome_t& original) const {
         auto do_mutate = std::invoke(params_->mutation());
 
         auto mutated =
@@ -137,7 +137,7 @@ namespace couple {
 
             if (original_fitness > mutated_fitness) {
               increment<stat::mutation_accepted_count_t>();
-              return {std::move(original), {std::move(original_fitness)}};
+              return {std::move(original), std::move(original_fitness)};
             }
           }
         }
@@ -145,16 +145,16 @@ namespace couple {
           increment_if<stat::mutation_accepted_count_t>(do_mutate);
         }
 
-        return {std::move(mutated), {std::move(mutated_fitness)}};
+        return {std::move(mutated), std::move(mutated_fitness)};
       }
 
-      template<typename Mutation, typename Chromosome, typename Probability>
-      inline individual_t mutate(Mutation const& mutation,
+      template<typename Mutation, typename Chromosome>
+      inline chromosome_t mutate(Mutation const& mutation,
                                  Chromosome&& chromosome,
-                                 bool do_mutate) {
+                                 bool do_mutate) const {
         if (do_mutate) {
           if constexpr (std::is_lvalue_reference_v<Chromosome>) {
-            individual_t mutated{chromosome};
+            chromosome_t mutated{chromosome};
             std::invoke(mutation, mutated);
             return std::move(mutated);
           }
@@ -169,12 +169,12 @@ namespace couple {
       }
 
       template<typename Tag>
-      inline void increment() {
+      inline void increment() const {
         stat::increment_count<Tag>(*statistics_);
       }
 
       template<typename Tag>
-      inline void increment_if(bool executed) {
+      inline void increment_if(bool executed) const {
         stat::increment_count<Tag>(*statistics_, {executed});
       }
 
@@ -190,7 +190,7 @@ namespace couple {
 
   template<typename Range, typename Population>
   concept parents_range =
-      selection_range<Range, typename Population::itreator_t>;
+      selection_range<Range, typename Population::iterator_t>;
 
   template<typename Context, typename Params>
   class exclusive {
@@ -201,7 +201,7 @@ namespace couple {
     using population_t = typename context_t::population_t;
 
   public:
-    inline explicit exclusive(context_t const& context, params_t const& params)
+    inline explicit exclusive(context_t& context, params_t const& params)
         : context_{&context}
         , params_{params} {
     }
@@ -221,7 +221,7 @@ namespace couple {
     }
 
   private:
-    context_t const* context_;
+    context_t* context_;
     params_t params_;
   };
 
