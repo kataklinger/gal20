@@ -30,10 +30,6 @@ pop_t::individual_t& get_child(parent_replacement_t&& x) {
   return get<1>(x);
 }
 
-gal::coupling_metadata get_metadata(parent_replacement_t x) {
-  return {};
-}
-
 template<typename Population,
          gal::selection_range<typename Population::iterator_t> Range>
 void test_selection_range(Range&& r) {

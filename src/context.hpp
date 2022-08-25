@@ -37,19 +37,28 @@ private:
   statistics_t* statistics_;
 };
 
-template<typename Crossover, typename Mutation, typename Evaluator>
-class reproduction_context {
+template<typename Population,
+         typename Statistics,
+         typename Crossover,
+         typename Mutation,
+         typename Evaluator>
+class reproduction_context : population_context<Population, Statistics> {
 public:
+  using population_t = Population;
+  using statistics_t = Statistics;
   using crossover_t = Crossover;
   using mutation_t = Mutation;
   using evaluator_t = Evaluator;
 
 public:
-  constexpr inline reproduction_context(crossover_t const& crossover,
+  constexpr inline reproduction_context(population_t& population,
+                                        statistics_t& statistics,
+                                        crossover_t const& crossover,
                                         mutation_t const& mutation,
-                                        evaluator_t const& evaluator) noexcept
-      : crossover_{&crossover}
-      , mutation_{&mutation}
+                                        evaluator_t const& evaluator)
+      : population_context{population, statistics}
+      , crossover_{crossover}
+      , mutation_{mutation}
       , evaluator_{evaluator} {
   }
 
@@ -71,13 +80,21 @@ private:
   evaluator_t evaluator_;
 };
 
-template<typename Crossover,
+template<typename Population,
+         typename Statistics,
+         typename Crossover,
          typename Mutation,
          typename Evaluator,
          typename Scaling>
 class reproduction_context_with_scaling
-    : public reproduction_context<Crossover, Mutation, Evaluator> {
+    : public reproduction_context<Population,
+                                  Statistics,
+                                  Crossover,
+                                  Mutation,
+                                  Evaluator> {
 public:
+  using population_t = Population;
+  using statistics_t = Statistics;
   using crossover_t = Crossover;
   using mutation_t = Mutation;
   using evaluator_t = Evaluator;
@@ -85,11 +102,17 @@ public:
 
 public:
   constexpr inline reproduction_context_with_scaling(
+      population_t& population,
+      statistics_t& statistics,
       crossover_t const& crossover,
       mutation_t const& mutation,
       evaluator_t const& evaluator,
       scaling_t const& scaling) noexcept
-      : reproduction_context_with_scaling{crossover, mutation, evaluator}
+      : reproduction_context_with_scaling{population,
+                                          statistics,
+                                          crossover,
+                                          mutation,
+                                          evaluator}
       , scaling_{scaling} {
   }
 

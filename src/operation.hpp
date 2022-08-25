@@ -98,12 +98,6 @@ concept selection =
                              std::add_lvalue_reference_t<Population>>,
         typename Population::iterator_t>;
 
-struct coupling_metadata {
-  std::size_t crossover_performed{};
-  std::size_t mutation_tried{};
-  std::size_t mutation_accepted{};
-};
-
 template<typename Operation, typename Population, typename Parents>
 concept coupling = std::is_invocable_v<Operation, Parents> &&
                    replacement_range<std::invoke_result_t<Operation, Parents>,

@@ -571,7 +571,7 @@ namespace stat {
   struct selection_time_t {};
   struct selection_count_t {};
 
-  struct corssover_count_t {};
+  struct crossover_count_t {};
   struct mutation_tried_count_t {};
   struct mutation_accepted_count_t {};
 

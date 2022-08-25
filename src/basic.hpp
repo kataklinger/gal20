@@ -119,7 +119,9 @@ namespace alg {
     public:
       inline explicit local_scaler(config_t& config,
                                    population_context_t& context)
-          : reproduction_{config.crossover(),
+          : reproduction_{context.population(),
+                          context.statistics(),
+                          config.crossover(),
                           config.mutation(),
                           config.evaluator(),
                           config.scaling(context)} {
@@ -141,11 +143,15 @@ namespace alg {
     public:
       using config_t = Config;
 
+      using population_context_t = typename config_t::population_context_t;
       using reproduction_context_t = typename config_t::reproduction_context_t;
 
     public:
-      inline explicit global_scaler_base(config_t& config)
-          : reproduction_{config.crossover(),
+      inline explicit global_scaler_base(config_t& config,
+                                         population_context_t& context)
+          : reproduction_{context.population(),
+                          context.statistics(),
+                          config.crossover(),
                           config.mutation(),
                           config.evaluator()} {
       }
@@ -168,7 +174,7 @@ namespace alg {
     public:
       inline explicit global_scaler(config_t& config,
                                     population_context_t& context)
-          : global_scaler_base<config_t>{config}
+          : global_scaler_base<config_t>{config, context}
           , context_{context}
           , scaling_{config.scaling(context)} {
       }
@@ -197,8 +203,8 @@ namespace alg {
 
     public:
       inline explicit disabled_scaler(config_t& config,
-                                      population_context_t& /*unused*/)
-          : global_scaler_base<config_t>{config} {
+                                      population_context_t& context)
+          : global_scaler_base<config_t>{config, context} {
       }
 
       inline void operator()() const noexcept {
@@ -229,10 +235,6 @@ namespace alg {
 
     using reproduction_context_t = typename config_t::reproduction_context_t;
 
-    template<typename Tag>
-    using tagged_t = stat::tagged_counter<Tag>;
-    using input_t = coupling_metadata const&;
-
   public:
     inline explicit basic(config_t const& config)
         : config_{config}
@@ -256,24 +258,6 @@ namespace alg {
 
         auto offspring = couple(selected, coupling, statistics);
         stat::count_range<stat::coupling_count_t>(statistics, offspring);
-        stat::compute_composite(
-            statistics,
-            offspring |
-                std::views::transform([](auto const& item) -> decltype(auto) {
-                  return get_metadata(item);
-                }),
-
-            [](input_t i, tagged_t<stat::corssover_count_t> s) {
-              return decltype(s){s.value + i.crossover_performed};
-            },
-
-            [](input_t i, tagged_t<stat::mutation_tried_count_t> s) {
-              return decltype(s){s.value + i.mutation_tried};
-            },
-
-            [](input_t i, tagged_t<stat::mutation_accepted_count_t> s) {
-              return decltype(s){s.value + i.mutation_accepted};
-            });
 
         auto replaced = replace(offspring, statistics);
         stat::count_range<stat::selection_count_t>(statistics, replaced);

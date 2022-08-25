@@ -56,12 +56,14 @@ namespace couple {
     inline constexpr auto has_scaling_v =
         has_scaling<Context, Population>::value;
 
-    template<typename Population, typename Context, typename Params>
+    template<typename Context, typename Params>
     class incubator {
     public:
-      using population_t = Population;
       using context_t = Context;
       using params_t = Params;
+
+      using population_t = typename Context::population_t;
+      using statistics_t = typename Context::statistics_t;
 
       using chromosome_t = typename population_t::chromosome_t;
       using parent_iterator_t = typename population_t::iterator_t;
@@ -74,9 +76,10 @@ namespace couple {
       using improve_t = typename params_t::mutation_improve_only_t;
 
     public:
-      inline incubator(context_t const& context,
+      inline incubator(context_t& context,
                        params_t const& params,
-                       std::size_t size)
+                       std::size_t size,
+                       statistics_t& statistics_)
           : context_{&context}
           , params_{&params} {
         results_.reserve(size);
@@ -94,10 +97,6 @@ namespace couple {
         return std::move(results_);
       }
 
-      inline auto const& metadata() const noexcept {
-        return metadata_;
-      }
-
     private:
       auto reproduce_impl(chromosome_t const& parent1,
                           chromosome_t const& parent2) {
@@ -106,7 +105,7 @@ namespace couple {
             do_cross ? std::invoke(context_->crossover(), parent1, parent2)
                      : std::pair{parent1, parent2};
 
-        metadata_.crossover_performed += do_cross;
+        increment_if<stat::crossover_count_t>(do_cross);
 
         std::pair offspring{try_mutate(produced.first),
                             try_mutate(produced.second)};
@@ -129,7 +128,7 @@ namespace couple {
 
         auto mutated_fitness = std::invoke(context_->evaluator(), mutated);
 
-        metadata_.mutation_tried += do_mutate;
+        increment_if<stat::mutation_tried_count_t>(do_mutate);
 
         if constexpr (improve_t::value) {
           if (do_mutate) {
@@ -137,13 +136,13 @@ namespace couple {
                 std::invoke(context_->evaluator(), original);
 
             if (original_fitness > mutated_fitness) {
-              metadata_.mutation_accepted += 1;
+              increment<stat::mutation_accepted_count_t>();
               return {std::move(original), {std::move(original_fitness)}};
             }
           }
         }
         else {
-          metadata_.mutation_accepted += do_mutate;
+          increment_if<stat::mutation_accepted_count_t>(do_mutate);
         }
 
         return {std::move(mutated), {std::move(mutated_fitness)}};
@@ -169,10 +168,20 @@ namespace couple {
         }
       }
 
+      template<typename Tag>
+      inline void increment() {
+        stat::increment_count<Tag>(*statistics_);
+      }
+
+      template<typename Tag>
+      inline void increment_if(bool executed) {
+        stat::increment_count<Tag>(*statistics_, {executed});
+      }
+
     private:
-      context_t const* context_;
+      context_t* context_;
       params_t const* params_;
-      coupling_metadata metadata_{};
+      statistics_t* statistics_;
 
       std::vector<parentship_t> results_;
     };
@@ -198,7 +207,7 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
-      details::incubator<population_t, context_t, params_t> incubate{
+      details::incubator incubate{
           *context_, params_, std::ranges::size(parents)};
 
       for (auto it = std::ranges::begin(parents);

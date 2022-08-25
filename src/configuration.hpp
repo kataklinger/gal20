@@ -322,7 +322,9 @@ namespace config {
 
     template<typename Builder, typename = typename Builder::is_global_scaling_t>
     struct build_reproduction_context {
-      using type = reproduction_context<typename Builder::crossover_t,
+      using type = reproduction_context<typename Builder::population_t,
+                                        typename Builder::statistics_t,
+                                        typename Builder::crossover_t,
                                         typename Builder::mutation_t,
                                         typename Builder::evaluator_t>;
     };
@@ -330,7 +332,9 @@ namespace config {
     template<typename Builder>
     struct build_reproduction_context<Builder, std::false_type> {
       using type =
-          reproduction_context_with_scaling<typename Builder::crossover_t,
+          reproduction_context_with_scaling<typename Builder::population_t,
+                                            typename Builder::statistics_t,
+                                            typename Builder::crossover_t,
                                             typename Builder::mutation_t,
                                             typename Builder::evaluator_t,
                                             typename Builder::scaling_t>;

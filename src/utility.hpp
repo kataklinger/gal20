@@ -85,9 +85,6 @@ namespace details {
   };
 
   template<typename Replaced, typename Replacement>
-  parentship(Replaced&, Replacement&) -> parentship<Replaced&, Replacement&>;
-
-  template<typename Replaced, typename Replacement>
   auto& get_parent(parentship<Replaced, Replacement>& pair) {
     return std::get<0>(pair);
   }
