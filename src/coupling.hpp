@@ -7,10 +7,10 @@
 namespace gal {
 namespace couple {
 
-  template<typename Generator,
-           auto Crossover,
+  template<auto Crossover,
            auto Mutation,
-           traits::boolean_flag MutationImproveOnly>
+           traits::boolean_flag MutationImproveOnly,
+           typename Generator>
   requires(probability<Crossover>&&
                probability<Mutation>) class reproduction_params {
   public:

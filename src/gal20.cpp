@@ -63,6 +63,23 @@ std::vector<pop_t::individual_t> r(pop_t& p,
   return {};
 }
 
+struct test_crossover {
+  std::pair<int, int> operator()(int, int) {
+    return {0, 0};
+  }
+};
+
+struct test_mutation {
+  void operator()(int&) {
+  }
+};
+
+struct test_evaluator {
+  double operator()(int) {
+    return 0.0;
+  }
+};
+
 int main() {
 
   std::vector<parent_replacement_t> x{};
@@ -131,6 +148,20 @@ int main() {
   gal::scale::linear<ctx_t, 1.0025> sc7{ctx};
   sc7();
   sc7(0, p.individuals()[0]);
+
+  using rtx_t =
+      gal::reproduction_context_with_scaling<pop_t,
+                                             stat_t,
+                                             test_crossover,
+                                             test_mutation,
+                                             test_evaluator,
+                                             gal::scale::top<ctx_t, 5, 1.5>>;
+  rtx_t rtx{p, stat, test_crossover{}, test_mutation{}, test_evaluator{}, sc1};
+
+  auto cp0 = gal::couple::make_factory<gal::couple::exclusive>(
+      gal::couple::
+          reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>{gen})(
+      rtx);
 
   return 0;
 }

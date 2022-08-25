@@ -50,13 +50,16 @@ public:
   using mutation_t = Mutation;
   using evaluator_t = Evaluator;
 
+private:
+  using base_t = population_context<Population, Statistics>;
+
 public:
   constexpr inline reproduction_context(population_t& population,
                                         statistics_t& statistics,
                                         crossover_t const& crossover,
                                         mutation_t const& mutation,
                                         evaluator_t const& evaluator)
-      : population_context{population, statistics}
+      : base_t{population, statistics}
       , crossover_{crossover}
       , mutation_{mutation}
       , evaluator_{evaluator} {
@@ -100,6 +103,13 @@ public:
   using evaluator_t = Evaluator;
   using scaling_t = Scaling;
 
+private:
+  using base_t = reproduction_context<Population,
+                                      Statistics,
+                                      Crossover,
+                                      Mutation,
+                                      Evaluator>;
+
 public:
   constexpr inline reproduction_context_with_scaling(
       population_t& population,
@@ -108,11 +118,7 @@ public:
       mutation_t const& mutation,
       evaluator_t const& evaluator,
       scaling_t const& scaling) noexcept
-      : reproduction_context_with_scaling{population,
-                                          statistics,
-                                          crossover,
-                                          mutation,
-                                          evaluator}
+      : base_t{population, statistics, crossover, mutation, evaluator}
       , scaling_{scaling} {
   }
 

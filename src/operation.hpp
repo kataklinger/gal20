@@ -153,7 +153,7 @@ public:
 
 public:
   inline explicit probabilistic_operation(generator_t& generator) noexcept
-      : generator_{&generator_}
+      : generator_{&generator}
       , distribution_{0.f, 1.f} {
   }
 
