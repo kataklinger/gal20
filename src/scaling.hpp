@@ -203,7 +203,7 @@ namespace scale {
     inline explicit power(context_t& context) {
     }
 
-    inline void operator()(individual_t& individual) {
+    inline void operator()(individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(scaled_fitness_t{std::pow(eval.raw(), Power)});
     }
