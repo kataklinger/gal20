@@ -167,5 +167,8 @@ int main() {
   auto cp1 = gal::couple::make_factory<gal::couple::overlapping>(rep_p)(rtx);
   cp1(std::vector<pop_t::iterator_t>{});
 
+  auto cp2 = gal::couple::make_factory<gal::couple::field>(rep_p)(rtx);
+  cp2(std::vector<pop_t::iterator_t>{});
+
   return 0;
 }

@@ -274,7 +274,39 @@ namespace couple {
     params_t params_;
   };
 
-  class field {};
+  template<typename Context, typename Params>
+  class field {
+  public:
+    using context_t = Context;
+    using params_t = Params;
+
+    using population_t = typename context_t::population_t;
+
+  public:
+    inline explicit field(context_t& context, params_t const& params)
+        : context_{&context}
+        , params_{params} {
+    }
+
+    template<parents_range<population_t> Parents>
+    inline auto operator()(Parents&& parents) {
+      details::incubator incubate{
+          *context_, params_, std::ranges::size(parents), std::true_type{}};
+
+      auto end = std::ranges::end(parents);
+      for (auto fst = std::ranges::begin(parents); fst != end; ++fst) {
+        for (auto snd = fst + 1; fst != end; ++snd) {
+          incubate(*fst, *snd);
+        }
+      }
+
+      return incubate.take();
+    }
+
+  private:
+    context_t* context_;
+    params_t params_;
+  };
 
   template<template<typename, typename> class Coupling, typename Params>
   class factory {
