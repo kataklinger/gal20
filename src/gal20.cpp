@@ -162,8 +162,10 @@ int main() {
       rep_p{gen};
 
   auto cp0 = gal::couple::make_factory<gal::couple::exclusive>(rep_p)(rtx);
-
   cp0(std::vector<pop_t::iterator_t>{});
+
+  auto cp1 = gal::couple::make_factory<gal::couple::overlapping>(rep_p)(rtx);
+  cp1(std::vector<pop_t::iterator_t>{});
 
   return 0;
 }

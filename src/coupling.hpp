@@ -56,11 +56,12 @@ namespace couple {
     inline constexpr auto has_scaling_v =
         has_scaling<Context, Population>::value;
 
-    template<typename Context, typename Params>
+    template<typename Context, typename Params, traits::boolean_flag Pairing>
     class incubator {
     public:
       using context_t = Context;
       using params_t = Params;
+      using pairing_t = Pairing;
 
       using population_t = typename Context::population_t;
       using statistics_t = typename Context::statistics_t;
@@ -72,13 +73,16 @@ namespace couple {
       using parentship_t =
           gal::details::parentship<parent_iterator_t, individual_t>;
 
+      inline static constexpr auto pairing = pairing_t::value;
+
     private:
       using improve_t = typename params_t::mutation_improve_only_t;
 
     public:
       inline incubator(context_t& context,
                        params_t const& params,
-                       std::size_t size)
+                       std::size_t size,
+                       pairing_t /*unused*/)
           : context_{&context}
           , params_{&params}
           , statistics_{&context.statistics()} {
@@ -87,10 +91,21 @@ namespace couple {
 
       inline void operator()(parent_iterator_t parent1,
                              parent_iterator_t parent2) {
-        auto offspring =
+        auto [child1, child2] =
             reproduce_impl(parent1->chromosome(), parent2->chromosome());
-        results_.emplace_back(parent1, std::move(offspring.first));
-        results_.emplace_back(parent2, std::move(offspring.second));
+
+        if constexpr (pairing) {
+          results_.emplace_back(parent1, std::move(child1));
+          results_.emplace_back(parent2, std::move(child2));
+        }
+        else {
+          if (child1.evaluation().raw() >= child2.evaluation().raw()) {
+            results_.emplace_back(parent1, std::move(child1));
+          }
+          else {
+            results_.emplace_back(parent1, std::move(child2));
+          }
+        }
       }
 
       inline auto&& take() noexcept {
@@ -156,7 +171,7 @@ namespace couple {
           if constexpr (std::is_lvalue_reference_v<Chromosome>) {
             chromosome_t mutated{chromosome};
             std::invoke(mutation, mutated);
-            return std::move(mutated);
+            return mutated;
           }
           else {
             std::invoke(mutation, chromosome);
@@ -209,7 +224,7 @@ namespace couple {
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
       details::incubator incubate{
-          *context_, params_, std::ranges::size(parents)};
+          *context_, params_, std::ranges::size(parents), std::true_type{}};
 
       for (auto it = std::ranges::begin(parents);
            it != std::ranges::end(parents);
@@ -225,7 +240,39 @@ namespace couple {
     params_t params_;
   };
 
-  class overlapping {};
+  template<typename Context, typename Params>
+  class overlapping {
+  public:
+    using context_t = Context;
+    using params_t = Params;
+
+    using population_t = typename context_t::population_t;
+
+  public:
+    inline explicit overlapping(context_t& context, params_t const& params)
+        : context_{&context}
+        , params_{params} {
+    }
+
+    template<parents_range<population_t> Parents>
+    inline auto operator()(Parents&& parents) {
+      details::incubator incubate{
+          *context_, params_, std::ranges::size(parents), std::false_type{}};
+
+      auto fst = std::ranges::begin(parents), prev = fst, cur = prev + 1;
+      for (; cur != std::ranges::end(parents); prev = cur++) {
+        incubate(*prev, *cur);
+      }
+
+      incubate(*prev, *fst);
+
+      return incubate.take();
+    }
+
+  private:
+    context_t* context_;
+    params_t params_;
+  };
 
   class field {};
 
