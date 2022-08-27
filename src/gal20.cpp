@@ -95,6 +95,16 @@ int main() {
 
   std::mt19937 gen{};
 
+  gal::select::best<2, gal::scaled_fitness_tag> sl1{};
+  sl1(p);
+
+  gal::select::random<2, true, std::mt19937> sl2{gen};
+  sl2(p);
+
+  gal::select::roulette<2, true, gal::scaled_fitness_tag, std::mt19937> sl3{
+      gen};
+  sl3(p);
+
   gal::replace::random<10, std::mt19937> ro1{gen};
   ro1(p, std::vector<parent_replacement_t>{});
 

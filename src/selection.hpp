@@ -99,13 +99,13 @@ namespace select {
       using fitness_t = get_fitness_t<fitness_tag_t, Population>;
       using state_t = typename fitness_traits<fitness_t>::totalizator_t;
 
-      auto wheel =
-          population.individuals() |
-          std::ranges::views::transform([state = state_t{}](auto& ind) {
-            state = state.add(ind.evaluation().get(fitness_tag));
-            return state.sum();
-          }) |
-          std::views::common;
+      state_t state{};
+      auto wheel = population.individuals() |
+                   std::ranges::views::transform([&state](auto& ind) {
+                     state = state.add(ind.evaluation().get(fitness_tag));
+                     return state.sum();
+                   }) |
+                   std::views::common;
 
       return std::vector<fitness_t>{wheel.begin(), wheel.end()};
     }
