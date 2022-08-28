@@ -54,9 +54,15 @@ namespace replace {
              std::views::transform([](auto& o) { return get_child(o); });
     }
 
+    template<typename Population, std::ranges::sized_range Offspring>
+    auto get_size(Population const& population,
+                  Offspring const& offspring) noexcept {
+      return std::min(population.current_size(), std::ranges::size(offspring));
+    }
+
   } // namespace details
 
-  template<std::size_t Size, typename Generator>
+  template<typename Generator>
   class random {
   public:
     using generator_t = Generator;
@@ -75,7 +81,8 @@ namespace replace {
     inline auto operator()(Population& population, Offspring&& offspring) {
       auto to_replace = gal::details::select_many(
           population,
-          state_,
+          std::true_type{},
+          gal::details::unique_state{details::get_size(population, offspring)},
           [dist = distribution_t{0, population.current_size() - 1}, this]() {
             return dist(*generator_);
           });
@@ -85,10 +92,9 @@ namespace replace {
 
   private:
     generator_t* generator_;
-    gal::details::unique_state<Size> state_{};
   };
 
-  template<std::size_t Size, typename FitnessTag>
+  template<typename FitnessTag>
   class worst {
   public:
     using fitness_tag_t = FitnessTag;
@@ -103,10 +109,12 @@ namespace replace {
     inline auto operator()(Population& population, Offspring&& offspring) {
       population.sort(fitness_tag);
 
-      std::size_t idx{population.current_size() - Size};
+      auto size = details::get_size(population, offspring);
+      std::size_t idx{population.current_size() - size};
       auto to_replace =
           gal::details::select_many(population,
-                                    gal::details::nonunique_state<Size>{},
+                                    std::true_type{},
+                                    gal::details::nonunique_state{size},
                                     [&idx]() { return idx++; });
 
       return population.replace(details::apply_replaced(to_replace, offspring));
@@ -126,7 +134,6 @@ namespace replace {
              replacement_range<typename Population::iterator_t,
                                typename Population::individual_t> Offspring>
     inline auto operator()(Population& population, Offspring&& offspring) {
-
       population.insert(details::extract_children(offspring));
       population.sort(fitness_tag);
       return population.trim();

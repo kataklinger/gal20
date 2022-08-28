@@ -12,18 +12,20 @@ namespace select {
     using generator_t = Generator;
 
   private:
-    using state_t = details::state_t<Size, Unique>;
+    using state_t = details::state_t<Unique>;
     using distribution_t = std::uniform_int_distribution<std::size_t>;
 
   public:
     inline explicit random(generator_t& generator) noexcept
-        : generator_{&generator} {
+        : generator_{&generator}
+        , state_{Size} {
     }
 
     template<typename Population>
     inline auto operator()(Population& population) {
       return details::select_many(
           population,
+          std::false_type{},
           state_,
           [dist = distribution_t{0, population.current_size() - 1}, this]() {
             return dist(*generator_);
@@ -39,7 +41,6 @@ namespace select {
   class best {
   private:
     using fitness_tag_t = FitnessTag;
-    using state_t = details::nonunique_state<Size>;
 
   public:
     template<ordered_population<fitness_tag_t> Population>
@@ -47,8 +48,10 @@ namespace select {
       population.sort(fitness_tag_t{});
 
       std::size_t idx{};
-      return details::select_many(
-          population, state_t{}, [&idx]() { return idx++; });
+      return details::select_many(population,
+                                  std::false_type{},
+                                  details::nonunique_state{Size},
+                                  [&idx]() { return idx++; });
     }
   };
 
@@ -62,14 +65,15 @@ namespace select {
 
   private:
     using fitness_tag_t = FitnessTag;
-    using state_t = details::state_t<Size, Unique>;
+    using state_t = details::state_t<Unique>;
 
   private:
     inline static constexpr fitness_tag_t fitness_tag{};
 
   public:
     inline explicit roulette(generator_t& generator) noexcept
-        : generator_{&generator} {
+        : generator_{&generator}
+        , state_{Size} {
     }
 
     template<typename Population>
@@ -86,6 +90,7 @@ namespace select {
 
       return details::select_many(
           population,
+          std::false_type{},
           state_,
           [&wheel, dist = distribution_t{{}, wheel.back()}, this]() {
             return std::ranges::lower_bound(wheel, dist(*generator_)) -
@@ -112,7 +117,7 @@ namespace select {
 
   private:
     generator_t* generator_;
-    [[no_unique_address]] state_t state_{};
+    [[no_unique_address]] state_t state_;
   };
 
 } // namespace select

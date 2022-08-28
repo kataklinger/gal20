@@ -105,10 +105,10 @@ int main() {
       gen};
   sl3(p);
 
-  gal::replace::random<10, std::mt19937> ro1{gen};
+  gal::replace::random<std::mt19937> ro1{gen};
   ro1(p, std::vector<parent_replacement_t>{});
 
-  gal::replace::worst<10, gal::raw_fitness_tag> ro2{};
+  gal::replace::worst<gal::raw_fitness_tag> ro2{};
   ro2(p, std::vector<parent_replacement_t>{});
 
   gal::replace::crowd<gal::raw_fitness_tag> ro3{};

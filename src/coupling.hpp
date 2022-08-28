@@ -4,6 +4,8 @@
 #include "operation.hpp"
 #include "utility.hpp"
 
+#include <cassert>
+
 namespace gal {
 namespace couple {
 
@@ -223,13 +225,21 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
+      assert(std::ranges::size(parents) > 1);
+
       details::incubator incubate{
           *context_, params_, std::ranges::size(parents), std::true_type{}};
 
-      for (auto it = std::ranges::begin(parents);
-           it != std::ranges::end(parents);
-           it += 2) {
-        incubate(*it, *(it + 1));
+      auto it = std::ranges::begin(parents);
+      if (auto size = std::ranges::size(parents); size % 2 == 0) {
+        for (auto end = it + (size - 1); it != end; it += 2) {
+          incubate(*it, *(it + 1));
+        }
+      }
+      else {
+        for (auto end = std::ranges::end(parents); it != end; it += 2) {
+          incubate(*it, *(it + 1));
+        }
       }
 
       return incubate.take();
@@ -256,6 +266,8 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
+      assert(std::ranges::size(parents) > 0);
+
       details::incubator incubate{
           *context_, params_, std::ranges::size(parents), std::false_type{}};
 
@@ -290,6 +302,8 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
+      assert(std::ranges::size(parents) > 1);
+
       details::incubator incubate{
           *context_, params_, std::ranges::size(parents), std::true_type{}};
 

@@ -7,8 +7,9 @@ List of task to implement or improve
 
 ## Basic Operations
  - [ ] initializator to produce tags
- - [ ] verify population size for selection/replacement operations
  - [ ] constraints on fitness types for scaling
+ - [ ] verify duplicates parents for parent replacement
+ - [x] verify population size for selection/replacement operations
  - [x] case where scaling does not change the ordering
  - [x] preparation step for global scaling (e.g. sorting for ranking based scaling)
 

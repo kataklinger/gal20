@@ -1,31 +1,37 @@
 
 #pragma once
 
-#include <array>
+#include "operation.hpp"
+
+#include <cassert>
 #include <random>
 #include <unordered_set>
-
-#include "operation.hpp"
+#include <vector>
 
 namespace gal {
 namespace details {
 
-  template<std::size_t Size>
   struct nonunique_state {
-    inline static constexpr std::size_t size = Size;
+    inline explicit nonunique_state(std::size_t size) noexcept
+        : size_{size} {
+    }
 
     inline void begin() const noexcept {
     }
+
+    inline auto size() const noexcept {
+      return size_;
+    }
+
+  private:
+    std::size_t size_;
   };
 
-  template<std::size_t Size>
   class unique_state {
   public:
-    inline static constexpr std::size_t size = Size;
-
-  public:
-    inline unique_state() {
-      existing_.reserve(Size);
+    inline explicit unique_state(std::size_t size) noexcept
+        : size_{size} {
+      existing_.reserve(size);
     }
 
     inline void begin() noexcept {
@@ -36,15 +42,20 @@ namespace details {
       return existing_.insert(selected).second;
     }
 
+    inline auto size() const noexcept {
+      return size_;
+    }
+
   private:
+    std::size_t size_;
     std::unordered_set<std::size_t> existing_{};
   };
 
   template<typename Fn>
   concept index_producer = std::is_invocable_r_v<std::size_t, Fn>;
 
-  template<std::size_t Size, index_producer Fn>
-  std::size_t select_single(unique_state<Size>& s, Fn&& produce) {
+  template<index_producer Fn>
+  std::size_t select_single(unique_state& s, Fn&& produce) {
     std::size_t idx{};
     do {
       idx = std::invoke(produce);
@@ -53,18 +64,38 @@ namespace details {
     return idx;
   }
 
-  template<std::size_t Size, index_producer Fn>
-  std::size_t select_single(nonunique_state<Size> /*unused*/, Fn&& produce) {
+  template<index_producer Fn>
+  std::size_t select_single(nonunique_state /*unused*/, Fn&& produce) {
     return std::invoke(std::forward<Fn>(produce));
   }
 
-  template<typename Population, typename State, index_producer Fn>
-  auto select_many(Population& population, State&& state, Fn&& produce) {
-    constexpr auto size = std::remove_cvref_t<State>::size;
+  template<typename Population, typename Respect, typename State>
+  inline auto get_size(Population const& population,
+                       Respect /*unused*/,
+                       State const& state) noexcept {
+    if constexpr (Respect::value) {
+      return state.size();
+    }
+
+    return std::min(state.size(), population.current_size());
+  }
+
+  template<typename Population,
+           typename Respect,
+           typename State,
+           index_producer Fn>
+  auto select_many(Population& population,
+                   Respect respect_size,
+                   State&& state,
+                   Fn&& produce) {
+    assert(population.current_size() > 0);
+    assert(!respect_size || population.current_size() >= state.size());
 
     state.begin();
 
-    std::array<typename Population::iterator_t, size> result{};
+    auto size = get_size(population, respect_size, state);
+    std::vector<typename Population::iterator_t> result{size};
+
     std::ranges::generate_n(
         result.begin(),
         size,
@@ -75,9 +106,8 @@ namespace details {
     return result;
   }
 
-  template<std::size_t Size, bool Unique>
-  using state_t =
-      std::conditional_t<Unique, unique_state<Size>, nonunique_state<Size>>;
+  template<bool Unique>
+  using state_t = std::conditional_t<Unique, unique_state, nonunique_state>;
 
   template<typename Replaced, typename Replacement>
   struct parentship : std::tuple<Replaced, Replacement> {
