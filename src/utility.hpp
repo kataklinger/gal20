@@ -69,12 +69,8 @@ namespace details {
     return std::invoke(std::forward<Fn>(produce));
   }
 
-  template<typename Population,
-           typename State,
-           index_producer Fn>
-  auto select_many(Population& population,
-                   State&& state,
-                   Fn&& produce) {
+  template<typename Population, typename State, index_producer Fn>
+  auto select_many(Population& population, State&& state, Fn&& produce) {
     state.begin();
 
     auto size = std::min(state.size(), population.current_size());
@@ -99,13 +95,23 @@ namespace details {
   };
 
   template<typename Replaced, typename Replacement>
+  auto const& get_parent(parentship<Replaced, Replacement> const& pair) {
+    return std::get<0>(pair);
+  }
+
+  template<typename Replaced, typename Replacement>
   auto& get_parent(parentship<Replaced, Replacement>& pair) {
     return std::get<0>(pair);
   }
 
   template<typename Replaced, typename Replacement>
-  auto& get_parent(parentship<Replaced, Replacement>&& pair) {
-    return std::get<0>(pair);
+  auto&& get_parent(parentship<Replaced, Replacement>&& pair) {
+    return std::move(std::get<0>(pair));
+  }
+
+  template<typename Replaced, typename Replacement>
+  auto const& get_child(parentship<Replaced, Replacement> const& pair) {
+    return std::get<1>(pair);
   }
 
   template<typename Replaced, typename Replacement>
@@ -114,8 +120,8 @@ namespace details {
   }
 
   template<typename Replaced, typename Replacement>
-  auto& get_child(parentship<Replaced, Replacement>&& pair) {
-    return std::get<1>(pair);
+  auto&& get_child(parentship<Replaced, Replacement>&& pair) {
+    return std::move(std::get<1>(pair));
   }
 
 } // namespace details
