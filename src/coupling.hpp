@@ -4,7 +4,7 @@
 #include "operation.hpp"
 #include "utility.hpp"
 
-#include <cassert>
+#include <unordered_set>
 
 namespace gal {
 namespace couple {
@@ -290,6 +290,9 @@ namespace couple {
 
     using population_t = typename context_t::population_t;
 
+  private:
+    using parent_t = typename population_t::individual_t*;
+
   public:
     inline explicit field(context_t& context, params_t const& params)
         : context_{&context}
@@ -298,8 +301,10 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
+      auto count = std::ranges::size(parents);
+
       details::incubator incubate{
-          *context_, params_, std::ranges::size(parents), std::true_type{}};
+          *context_, params_, count * (count - 1), std::true_type{}};
 
       auto end = std::ranges::end(parents);
       for (auto fst = std::ranges::begin(parents); fst != end; ++fst) {
@@ -308,7 +313,22 @@ namespace couple {
         }
       }
 
-      return incubate.take();
+      auto all = incubate.take();
+      std::ranges::sort(all, std::ranges::greater{}, [](auto const& item) {
+        return get_child(item).evaluation().raw();
+      });
+
+      decltype(all) results{};
+      results.reserve(count);
+
+      std::unordered_set<parent_t> processed{};
+      for (auto& item : all) {
+        if (auto [it, fresh] = processed.insert(&*get_parent(item)); fresh) {
+          results.push_back(std::move(item));
+        }
+      }
+
+      return results;
     }
 
   private:

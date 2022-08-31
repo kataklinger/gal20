@@ -3,7 +3,6 @@
 
 #include "operation.hpp"
 
-#include <cassert>
 #include <random>
 #include <unordered_set>
 #include <vector>
