@@ -81,7 +81,6 @@ namespace replace {
     inline auto operator()(Population& population, Offspring&& offspring) {
       auto to_replace = gal::details::select_many(
           population,
-          std::true_type{},
           gal::details::unique_state{details::get_size(population, offspring)},
           [dist = distribution_t{0, population.current_size() - 1}, this]() {
             return dist(*generator_);
@@ -113,7 +112,6 @@ namespace replace {
       std::size_t idx{population.current_size() - size};
       auto to_replace =
           gal::details::select_many(population,
-                                    std::true_type{},
                                     gal::details::nonunique_state{size},
                                     [&idx]() { return idx++; });
 

@@ -25,7 +25,6 @@ namespace select {
     inline auto operator()(Population& population) {
       return details::select_many(
           population,
-          std::false_type{},
           state_,
           [dist = distribution_t{0, population.current_size() - 1}, this]() {
             return dist(*generator_);
@@ -49,7 +48,6 @@ namespace select {
 
       std::size_t idx{};
       return details::select_many(population,
-                                  std::false_type{},
                                   details::nonunique_state{Size},
                                   [&idx]() { return idx++; });
     }
@@ -90,7 +88,6 @@ namespace select {
 
       return details::select_many(
           population,
-          std::false_type{},
           state_,
           [&wheel, dist = distribution_t{{}, wheel.back()}, this]() {
             return std::ranges::lower_bound(wheel, dist(*generator_)) -

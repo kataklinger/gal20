@@ -225,8 +225,6 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
-      assert(std::ranges::size(parents) > 1);
-
       details::incubator incubate{
           *context_, params_, std::ranges::size(parents), std::true_type{}};
 
@@ -266,8 +264,6 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
-      assert(std::ranges::size(parents) > 0);
-
       details::incubator incubate{
           *context_, params_, std::ranges::size(parents), std::false_type{}};
 
@@ -302,8 +298,6 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
-      assert(std::ranges::size(parents) > 1);
-
       details::incubator incubate{
           *context_, params_, std::ranges::size(parents), std::true_type{}};
 

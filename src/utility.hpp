@@ -69,31 +69,15 @@ namespace details {
     return std::invoke(std::forward<Fn>(produce));
   }
 
-  template<typename Population, typename Respect, typename State>
-  inline auto get_size(Population const& population,
-                       Respect /*unused*/,
-                       State const& state) noexcept {
-    if constexpr (Respect::value) {
-      return state.size();
-    }
-
-    return std::min(state.size(), population.current_size());
-  }
-
   template<typename Population,
-           typename Respect,
            typename State,
            index_producer Fn>
   auto select_many(Population& population,
-                   Respect respect_size,
                    State&& state,
                    Fn&& produce) {
-    assert(population.current_size() > 0);
-    assert(!respect_size || population.current_size() >= state.size());
-
     state.begin();
 
-    auto size = get_size(population, respect_size, state);
+    auto size = std::min(state.size(), population.current_size());
     std::vector<typename Population::iterator_t> result{size};
 
     std::ranges::generate_n(
