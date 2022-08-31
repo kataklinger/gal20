@@ -322,6 +322,8 @@ namespace couple {
       results.reserve(count);
 
       std::unordered_set<parent_t> processed{};
+      processed.reserve(count);
+
       for (auto& item : all) {
         if (auto [it, fresh] = processed.insert(&*get_parent(item)); fresh) {
           results.push_back(std::move(item));
