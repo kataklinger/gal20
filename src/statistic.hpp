@@ -526,6 +526,17 @@ namespace stat {
   inline constexpr auto tracks_statistic_v =
       tracks_statistic<Statistics, Value>::value;
 
+  template<typename Statistics, typename... Values>
+  struct tracks_all_statistic
+      : std::conjunction<tracks_statistic<Statistics, Values>...> {};
+
+  template<typename Statistics, typename... Values>
+  inline constexpr auto tracks_all_statistic_v =
+      tracks_all_statistic<Statistics, Values...>::value;
+
+  template<typename Statistics, typename... Values>
+  concept tracked_values = tracks_all_statistic_v<Statistics, Values...>;
+
   template<typename Statistics>
   concept statistical = requires(Statistics s) {
     typename Statistics::population_t;
