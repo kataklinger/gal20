@@ -12,6 +12,7 @@ namespace scale {
       std::floating_point<decltype(Constant)>;
 
   namespace details {
+
     using linear_coefficients = std::pair<double, double>;
 
     inline bool approaching_zero(double delta) noexcept {
@@ -41,9 +42,22 @@ namespace scale {
         return {a, -fmin * a};
       }
     }
+
   } // namespace details
 
-  template<typename Context, auto Preassure>
+  template<typename Fitness>
+  concept linear_fitness = arithmetic_fitness<Fitness> && requires(Fitness f) {
+    { 1.0 * f } -> std::convertible_to<double>;
+  };
+
+  template<typename Context>
+  concept linear_context =
+      linear_fitness<typename Context::population_t::raw_fitness_t> &&
+      stat::tracked_models<typename Context::statistics_t,
+                           stat::extreme_fitness<raw_fitness_tag>,
+                           stat::average_fitness<raw_fitness_tag>>;
+
+  template<linear_context Context, auto Preassure>
   requires(scaling_constant<Preassure>) class linear {
   public:
     using is_stable_t = std::true_type;
@@ -99,7 +113,18 @@ namespace scale {
     statistics_t* statistics_;
   };
 
+  template<typename Fitness>
+  concept sigma_fitness = linear_fitness<Fitness> && requires(Fitness f) {
+    { 1.0 + f } -> std::convertible_to<double>;
+  };
+
   template<typename Context>
+  concept sigma_context =
+      sigma_fitness<typename Context::population_t::raw_fitness_t> &&
+      stat::tracked_models<typename Context::statistics_t,
+                           stat::fitness_deviation<raw_fitness_tag>>;
+
+  template<sigma_context Context>
   class sigma {
   public:
     using context_t = Context;
@@ -149,7 +174,11 @@ namespace scale {
     statistics_t* statistics_;
   };
 
-  template<typename Context, auto Preassure>
+  template<typename Context>
+  concept ranked_context =
+      ordered_fitness<typename Context::population_t::raw_fitness_t>;
+
+  template<ranked_context Context, auto Preassure>
   requires(scaling_constant<Preassure>) class ranked {
   public:
     using is_stable_t = std::true_type;
@@ -185,31 +214,7 @@ namespace scale {
     population_t* population_;
   };
 
-  template<typename Context, auto Power>
-  requires(scaling_constant<Power>) class power {
-  public:
-    using is_stable_t = std::true_type;
-
-    using context_t = Context;
-
-  private:
-    using population_t = typename context_t::population_t;
-    using scaled_fitness_t = typename population_t::scaled_fitness_t;
-
-  public:
-    using individual_t = typename population_t::individual_t;
-
-  public:
-    inline explicit power(context_t& context) {
-    }
-
-    inline void operator()(individual_t& individual) const {
-      auto eval = individual.evaluation();
-      eval.set_scaled(scaled_fitness_t{std::pow(eval.raw(), Power)});
-    }
-  };
-
-  template<typename Context, auto Base>
+  template<ranked_context Context, auto Base>
   requires(scaling_constant<Base>) class exponential {
   public:
     using is_stable_t = std::true_type;
@@ -243,8 +248,21 @@ namespace scale {
     population_t* population_;
   };
 
+  template<typename Fitness, typename Proportion, typename Output>
+  concept proportional_fitness = ordered_fitness<Fitness> &&
+      requires(Fitness f, Proportion p) {
+    { p* f } -> std::convertible_to<Output>;
+  };
+
+  template<typename Context, typename Proportion>
+  concept proportional_context =
+      proportional_fitness<typename Context::population_t::raw_fitness_t,
+                           Proportion,
+                           typename Context::population_t::scaled_fitness_t>;
+
   template<typename Context, auto RankCutoff, auto Proportion>
-  requires(std::integral<decltype(RankCutoff)>&& RankCutoff > 0 &&
+  requires(proportional_context<Context, decltype(Proportion)>&&
+                   std::integral<decltype(RankCutoff)>&& RankCutoff > 0 &&
            scaling_constant<Proportion>) class top {
   public:
     using is_stable_t = std::true_type;
@@ -279,7 +297,49 @@ namespace scale {
     population_t* population_;
   };
 
+  template<typename Fitness, typename Power, typename Output>
+  concept power_fitness = requires(Fitness f, Power p) {
+    { std::pow(f, p) } -> std::convertible_to<Output>;
+  };
+
+  template<typename Context, typename Power>
+  concept power_context =
+      power_fitness<typename Context::population_t::raw_fitness_t,
+                    Power,
+                    typename Context::population_t::scaled_fitness_t>;
+
+  template<typename Context, auto Power>
+  requires(power_context<Context, decltype(Power)>&&
+               scaling_constant<Power>) class power {
+  public:
+    using is_stable_t = std::true_type;
+
+    using context_t = Context;
+
+  private:
+    using population_t = typename context_t::population_t;
+    using scaled_fitness_t = typename population_t::scaled_fitness_t;
+
+  public:
+    using individual_t = typename population_t::individual_t;
+
+  public:
+    inline explicit power(context_t& context) {
+    }
+
+    inline void operator()(individual_t& individual) const {
+      auto eval = individual.evaluation();
+      eval.set_scaled(scaled_fitness_t{std::pow(eval.raw(), Power)});
+    }
+  };
+
   template<typename Context>
+  concept window_context =
+      arithmetic_fitness<typename Context::population_t::raw_fitness_t> &&
+      stat::tracked_models<typename Context::statistics_t,
+                           stat::extreme_fitness<raw_fitness_tag>>;
+
+  template<window_context Context>
   class window {
   public:
     using is_stable_t = std::true_type;
