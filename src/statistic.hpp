@@ -111,10 +111,10 @@ namespace stat {
 
   } // namespace details
 
-  template<typename Value, typename Population>
-  concept model = std::semiregular<typename Value::template body<Population>> &&
-                  !std::is_final_v<typename Value::template body<Population>> &&
-                  details::is_model_constructor_v<Value, Population>;
+  template<typename Model, typename Population>
+  concept model = std::semiregular<typename Model::template body<Population>> &&
+                  !std::is_final_v<typename Model::template body<Population>> &&
+                  details::is_model_constructor_v<Model, Population>;
 
   namespace details {
 
@@ -516,26 +516,25 @@ namespace stat {
     }
   };
 
-  template<typename Statistics, typename Value>
-  struct tracks_statistic
+  template<typename Statistics, typename Model>
+  struct tracks_model
       : std::is_base_of<
-            typename Value::template body<typename Statistics::population_t>,
+            typename Model::template body<typename Statistics::population_t>,
             Statistics> {};
 
-  template<typename Statistics, typename Value>
-  inline constexpr auto tracks_statistic_v =
-      tracks_statistic<Statistics, Value>::value;
+  template<typename Statistics, typename Model>
+  inline constexpr auto tracks_model_v = tracks_model<Statistics, Model>::value;
 
-  template<typename Statistics, typename... Values>
-  struct tracks_all_statistic
-      : std::conjunction<tracks_statistic<Statistics, Values>...> {};
+  template<typename Statistics, typename... Models>
+  struct tracks_models : std::conjunction<tracks_model<Statistics, Models>...> {
+  };
 
-  template<typename Statistics, typename... Values>
-  inline constexpr auto tracks_all_statistic_v =
-      tracks_all_statistic<Statistics, Values...>::value;
+  template<typename Statistics, typename... Models>
+  inline constexpr auto tracks_models_v =
+      tracks_models<Statistics, Models...>::value;
 
-  template<typename Statistics, typename... Values>
-  concept tracked_values = tracks_all_statistic_v<Statistics, Values...>;
+  template<typename Statistics, typename... Models>
+  concept tracked_models = tracks_models_v<Statistics, Models...>;
 
   template<typename Statistics>
   concept statistical = requires(Statistics s) {
@@ -596,7 +595,7 @@ namespace stat {
   inline auto start_timer(Statistics& statistics) {
     using timer_t = generic_timer<Tag>;
 
-    if constexpr (tracks_statistic_v<Statistics, timer_t>) {
+    if constexpr (tracks_model_v<Statistics, timer_t>) {
       return enabled_timer<Statistics, timer_t>{statistics};
     }
     else {
@@ -608,7 +607,7 @@ namespace stat {
   inline void count_range(Statistics& statistics, Range const& range) {
     using counter_t = generic_counter<Tag>;
 
-    if constexpr (tracks_statistic_v<Statistics, counter_t>) {
+    if constexpr (tracks_model_v<Statistics, counter_t>) {
       statistics.get<counter_t>().set_generic_value(std::ranges::size(range));
     }
   }
@@ -618,7 +617,7 @@ namespace stat {
                               std::size_t increment = 1) {
     using counter_t = generic_counter<Tag>;
 
-    if constexpr (tracks_statistic_v<Statistics, counter_t>) {
+    if constexpr (tracks_model_v<Statistics, counter_t>) {
       auto& model = statistics.get<counter_t>();
       model.set_generic_value(model.get_generic_value() + increment);
     }
@@ -637,7 +636,7 @@ namespace stat {
   inline void compute_simple(Statistics& statistics, Fn&& fn) {
     using value_t = generic_value<details::compute_result_t<Fn>, Tag>;
 
-    if constexpr (tracks_statistic_v<Statistics, value_t>) {
+    if constexpr (tracks_model_v<Statistics, value_t>) {
       statistics.get<value_t>().set_generic_value(
           std::invoke(std::forward<Fn>(fn)));
     }
@@ -938,7 +937,7 @@ namespace stat {
                                            std::index_sequence<Idxs...>,
                                            std::tuple<Values...>>;
       using type = std::conditional_t<
-          tracks_statistic_v<Statistics, generic_value<Value, Tag>>,
+          tracks_model_v<Statistics, generic_value<Value, Tag>>,
           add_index_sequence_t<Idx, rest_t>,
           rest_t>;
     };
