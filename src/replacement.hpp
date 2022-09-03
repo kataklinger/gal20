@@ -82,8 +82,9 @@ namespace replace {
       auto to_replace = gal::details::select_many(
           population,
           gal::details::unique_state{details::get_size(population, offspring)},
-          [dist = distribution_t{0, population.current_size() - 1}, this]() {
-            return dist(*generator_);
+          [&population, this]() {
+            return distribution_t{0,
+                                  population.current_size() - 1}(*generator_);
           });
 
       return population.replace(details::apply_replaced(to_replace, offspring));

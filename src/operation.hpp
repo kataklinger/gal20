@@ -154,8 +154,7 @@ public:
 
 public:
   inline explicit probabilistic_operation(generator_t& generator) noexcept
-      : generator_{&generator}
-      , distribution_{0.f, 1.f} {
+      : generator_{&generator} {
   }
 
   inline bool operator()() const {
@@ -166,12 +165,11 @@ public:
       return true;
     }
 
-    return distribution_(*generator_) < Probability;
+    return distribution_t{0.f, 1.f}(*generator_) < Probability;
   }
 
 private:
   generator_t* generator_;
-  distribution_t distribution_;
 };
 
 } // namespace gal

@@ -23,12 +23,9 @@ namespace select {
 
     template<typename Population>
     inline auto operator()(Population& population) {
-      return details::select_many(
-          population,
-          state_,
-          [dist = distribution_t{0, population.current_size() - 1}, this]() {
-            return dist(*generator_);
-          });
+      return details::select_many(population, state_, [&population, this]() {
+        return distribution_t{0, population.current_size() - 1}(*generator_);
+      });
     }
 
   private:
@@ -86,13 +83,10 @@ namespace select {
 
       auto wheel = get_wheel(population);
 
-      return details::select_many(
-          population,
-          state_,
-          [&wheel, dist = distribution_t{{}, wheel.back()}, this]() {
-            return std::ranges::lower_bound(wheel, dist(*generator_)) -
-                   wheel.begin();
-          });
+      return details::select_many(population, state_, [&wheel, this]() {
+        auto selected = distribution_t{{}, wheel.back()}(*generator_);
+        return std::ranges::lower_bound(wheel, selected) - wheel.begin();
+      });
     }
 
   private:
