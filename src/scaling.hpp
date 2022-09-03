@@ -53,6 +53,8 @@ namespace scale {
   template<typename Context>
   concept linear_context =
       linear_fitness<typename Context::population_t::raw_fitness_t> &&
+      std::constructible_from<typename Context::population_t::scaled_fitness_t,
+                              double> &&
       stat::tracked_models<typename Context::statistics_t,
                            stat::extreme_fitness<raw_fitness_tag>,
                            stat::average_fitness<raw_fitness_tag>>;
@@ -121,6 +123,8 @@ namespace scale {
   template<typename Context>
   concept sigma_context =
       sigma_fitness<typename Context::population_t::raw_fitness_t> &&
+      std::constructible_from<typename Context::population_t::scaled_fitness_t,
+                              double> &&
       stat::tracked_models<typename Context::statistics_t,
                            stat::fitness_deviation<raw_fitness_tag>>;
 
@@ -176,7 +180,9 @@ namespace scale {
 
   template<typename Context>
   concept ranked_context =
-      ordered_fitness<typename Context::population_t::raw_fitness_t>;
+      ordered_fitness<typename Context::population_t::raw_fitness_t> &&
+      std::constructible_from<typename Context::population_t::scaled_fitness_t,
+                              double>;
 
   template<ranked_context Context, auto Preassure>
   requires(scaling_constant<Preassure>) class ranked {
@@ -214,8 +220,15 @@ namespace scale {
     population_t* population_;
   };
 
-  template<ranked_context Context, auto Base>
-  requires(scaling_constant<Base>) class exponential {
+  template<typename Context, typename Base>
+  concept exponential_context =
+      ordered_fitness<typename Context::population_t::raw_fitness_t> &&
+      std::constructible_from<typename Context::population_t::scaled_fitness_t,
+                              Base>;
+
+  template<typename Context, auto Base>
+  requires(exponential_context<Context, decltype(Base)>&&
+               scaling_constant<Base>) class exponential {
   public:
     using is_stable_t = std::true_type;
 
@@ -336,6 +349,8 @@ namespace scale {
   template<typename Context>
   concept window_context =
       arithmetic_fitness<typename Context::population_t::raw_fitness_t> &&
+      std::constructible_from<typename Context::population_t::scaled_fitness_t,
+                              typename Context::population_t::raw_fitness_t> &&
       stat::tracked_models<typename Context::statistics_t,
                            stat::extreme_fitness<raw_fitness_tag>>;
 
