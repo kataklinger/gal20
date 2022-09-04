@@ -174,17 +174,32 @@ private:
 
 struct scaling_time_t {};
 
+inline constexpr scaling_time_t scaling_time_tag{};
+
 struct selection_time_t {};
 struct selection_count_t {};
+
+inline constexpr selection_time_t selection_time_tag{};
+inline constexpr selection_count_t selection_count_tag{};
 
 struct crossover_count_t {};
 struct mutation_tried_count_t {};
 struct mutation_accepted_count_t {};
 
+inline constexpr crossover_count_t crossover_count_tag{};
+inline constexpr mutation_tried_count_t mutation_tried_count_tag{};
+inline constexpr mutation_accepted_count_t mutation_accepted_count_tag{};
+
 struct coupling_count_t {};
 struct coupling_time_t {};
 
+inline constexpr coupling_count_t coupling_count_tag{};
+inline constexpr coupling_time_t coupling_time_tag{};
+
 struct replacement_time_t {};
 struct replacement_count_t {};
+
+inline constexpr replacement_time_t replacement_time_tag{};
+inline constexpr replacement_count_t replacement_count_tag{};
 
 } // namespace gal

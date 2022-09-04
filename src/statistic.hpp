@@ -612,7 +612,7 @@ namespace stat {
   };
 
   template<typename Tag, typename Statistics>
-  inline auto start_timer(Statistics& statistics) {
+  inline auto start_timer(Statistics& statistics, Tag /*unused*/) {
     using timer_t = generic_timer<Tag>;
 
     if constexpr (tracks_model_v<Statistics, timer_t>) {
@@ -624,7 +624,8 @@ namespace stat {
   }
 
   template<typename Tag, typename Statistics, std::ranges::sized_range Range>
-  inline void count_range(Statistics& statistics, Range const& range) {
+  inline void
+      count_range(Statistics& statistics, Tag /*unused*/, Range const& range) {
     using counter_t = generic_counter<Tag>;
 
     if constexpr (tracks_model_v<Statistics, counter_t>) {
@@ -634,6 +635,7 @@ namespace stat {
 
   template<typename Tag, typename Statistics>
   inline void increment_count(Statistics& statistics,
+                              Tag /*unused*/,
                               std::size_t increment = 1) {
     using counter_t = generic_counter<Tag>;
 
@@ -653,7 +655,7 @@ namespace stat {
       !std::is_same_v<details::compute_result_t<Fn>, void>;
 
   template<typename Tag, typename Statistics, simple_computation Fn>
-  inline void compute_simple(Statistics& statistics, Fn&& fn) {
+  inline void compute_simple(Statistics& statistics, Tag /*unused*/, Fn&& fn) {
     using value_t = generic_value<details::compute_result_t<Fn>, Tag>;
 
     if constexpr (tracks_model_v<Statistics, value_t>) {
