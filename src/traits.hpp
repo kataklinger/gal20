@@ -57,6 +57,9 @@ namespace traits {
   template<typename From, typename To>
   concept decays_to = std::same_as<std::decay_t<From>, To>;
 
+  template<typename Value>
+  concept arithmetic = std::integral<Value> || std::floating_point<Value>;
+
   template<typename Ty, boolean_flag Condition>
   inline decltype(auto) move_if(Ty&& value, Condition /*unused*/) noexcept {
     if constexpr (Condition::value) {
