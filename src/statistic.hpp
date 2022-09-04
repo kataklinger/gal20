@@ -427,12 +427,30 @@ namespace stat {
   template<typename Value>
   using square_root_result_t = typename square_root<Value>::result_t;
 
+  template<typename Fitness>
+  concept deviation_fitness = arithmetic_fitness<Fitness> && requires {
+    typename square_root<Fitness>::result_t;
+    typename square_root<Fitness>::result_t;
+  };
+
+  template<deviation_fitness Fitness>
+  struct fitness_deviation_types {
+    using variance_t = square_power_result_t<Fitness>;
+    using deviation_t = square_root_result_t<variance_t>;
+  };
+
+  template<deviation_fitness Fitness>
+  using fitness_variance_t =
+      typename fitness_deviation_types<Fitness>::variance_t;
+
+  template<deviation_fitness Fitness>
+  using fitness_deviation_t = typename fitness_deviation_types<
+      fitness_variance_t<Fitness>>::deviation_t;
+
   template<typename Population, typename FitnessTag>
   concept deviable_population =
-      averageable_population<Population, FitnessTag> && requires {
-    typename square_root<get_fitness_t<FitnessTag, Population>>::result_t;
-    typename square_root<get_fitness_t<FitnessTag, Population>>::result_t;
-  };
+      averageable_population<Population, FitnessTag> &&
+      deviation_fitness<get_fitness_t<FitnessTag, Population>>;
 
   template<typename FitnessTag>
   struct fitness_deviation {
@@ -450,8 +468,8 @@ namespace stat {
     private:
       using fitness_t = get_fitness_t<FitnessTag, Population>;
 
-      using variance_t = square_power_result_t<fitness_t>;
-      using deviation_t = square_root_result_t<variance_t>;
+      using variance_t = fitness_variance_t<fitness_t>;
+      using deviation_t = fitness_deviation_t<fitness_t>;
 
       using state_t = typename fitness_traits<fitness_t>::totalizator_t;
 
