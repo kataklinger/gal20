@@ -254,24 +254,24 @@ namespace alg {
         scale(scaler, statistics);
 
         auto selected = select(statistics);
-        stat::count_range<stat::selection_count_t>(statistics, selected);
+        stat::count_range<selection_count_t>(statistics, selected);
 
         auto offspring = couple(selected, coupling, statistics);
-        stat::count_range<stat::coupling_count_t>(statistics, offspring);
+        stat::count_range<coupling_count_t>(statistics, offspring);
 
         auto replaced = replace(offspring, statistics);
-        stat::count_range<stat::selection_count_t>(statistics, replaced);
+        stat::count_range<selection_count_t>(statistics, replaced);
       }
     }
 
   private:
     inline void scale(scaler_t& scaler, statistics_t& current) {
-      auto timer = stat::start_timer<stat::scaling_time_t>(current);
+      auto timer = stat::start_timer<scaling_time_t>(current);
       scaler();
     }
 
     inline auto select(statistics_t& current) {
-      auto timer = stat::start_timer<stat::selection_time_t>(current);
+      auto timer = stat::start_timer<selection_time_t>(current);
       return std::invoke(config_.selection(), population_);
     }
 
@@ -280,14 +280,14 @@ namespace alg {
     inline auto couple(Selected&& selected,
                        Coupling&& coupling,
                        statistics_t& current) {
-      auto coupling_time = stat::start_timer<stat::coupling_time_t>(current);
+      auto coupling_time = stat::start_timer<coupling_time_t>(current);
       return std::invoke(std::forward<Coupling>(coupling),
                          std::forward<Selected>(selected));
     }
 
     template<std::ranges::range Offspring>
     inline auto replace(Offspring&& offspring, statistics_t& current) {
-      auto timer = stat::start_timer<stat::replacement_time_t>(current);
+      auto timer = stat::start_timer<replacement_time_t>(current);
       return std::invoke(config_.replacement(),
                          population_,
                          std::forward<Offspring>(offspring));

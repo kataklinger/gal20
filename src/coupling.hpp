@@ -122,7 +122,7 @@ namespace couple {
             do_cross ? std::invoke(context_->crossover(), parent1, parent2)
                      : std::pair{parent1, parent2};
 
-        increment_if<stat::crossover_count_t>(do_cross);
+        increment_if<crossover_count_t>(do_cross);
 
         std::pair offspring{try_mutate(produced.first),
                             try_mutate(produced.second)};
@@ -145,7 +145,7 @@ namespace couple {
 
         auto mutated_fitness = std::invoke(context_->evaluator(), mutated);
 
-        increment_if<stat::mutation_tried_count_t>(do_mutate);
+        increment_if<mutation_tried_count_t>(do_mutate);
 
         if constexpr (improve_t::value) {
           if (do_mutate) {
@@ -153,13 +153,13 @@ namespace couple {
                 std::invoke(context_->evaluator(), original);
 
             if (original_fitness > mutated_fitness) {
-              increment<stat::mutation_accepted_count_t>();
+              increment<mutation_accepted_count_t>();
               return {std::move(original), std::move(original_fitness)};
             }
           }
         }
         else {
-          increment_if<stat::mutation_accepted_count_t>(do_mutate);
+          increment_if<mutation_accepted_count_t>(do_mutate);
         }
 
         return {std::move(mutated), std::move(mutated_fitness)};

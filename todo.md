@@ -15,7 +15,7 @@ List of task to implement or improve
 
 ## Statistics Tracking
  - [ ] refreshing statistics (e.g. before/after global scaling operation)
- - [ ] move statistical values tags from statistics header
+ - [x] move statistical values tags from statistics header
  - [x] statistic that counts operation effects and timings (mutations/crossovers/replacements)
  - [x] optimize summation stats (simple summing for integers)
  - [x] split average and sum statistics

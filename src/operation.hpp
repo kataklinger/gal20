@@ -172,4 +172,19 @@ private:
   generator_t* generator_;
 };
 
+struct scaling_time_t {};
+
+struct selection_time_t {};
+struct selection_count_t {};
+
+struct crossover_count_t {};
+struct mutation_tried_count_t {};
+struct mutation_accepted_count_t {};
+
+struct coupling_count_t {};
+struct coupling_time_t {};
+
+struct replacement_time_t {};
+struct replacement_count_t {};
+
 } // namespace gal

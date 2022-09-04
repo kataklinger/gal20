@@ -611,21 +611,6 @@ namespace stat {
     value_t* value_;
   };
 
-  struct scaling_time_t {};
-
-  struct selection_time_t {};
-  struct selection_count_t {};
-
-  struct crossover_count_t {};
-  struct mutation_tried_count_t {};
-  struct mutation_accepted_count_t {};
-
-  struct coupling_count_t {};
-  struct coupling_time_t {};
-
-  struct replacement_time_t {};
-  struct replacement_count_t {};
-
   template<typename Tag, typename Statistics>
   inline auto start_timer(Statistics& statistics) {
     using timer_t = generic_timer<Tag>;
