@@ -8,8 +8,7 @@ namespace gal {
 namespace scale {
 
   template<auto Constant>
-  concept scaling_constant = std::integral<decltype(Constant)> ||
-      std::floating_point<decltype(Constant)>;
+  concept scaling_constant = traits::arithmetic<decltype(Constant)>;
 
   namespace details {
 

@@ -396,26 +396,43 @@ namespace stat {
   };
 
   template<typename Value>
-  struct square_power {
+  struct square_power;
+
+  template<traits::arithmetic Value>
+  struct square_power<Value> {
+    using result_t = Value;
+
+    inline static constexpr Value power = 2;
+
     auto operator()(Value const& value) const {
-      return std::pow(value, 2);
+      return std::pow(value, power);
     }
   };
 
   template<typename Value>
-  using square_power_result_t =
-      std::decay_t<std::invoke_result_t<square_power<Value>, Value>>;
+  using square_power_result_t = typename square_power<Value>::result_t;
 
   template<typename Value>
-  struct square_root {
+  struct square_root;
+
+  template<traits::arithmetic Value>
+  struct square_root<Value> {
+    using result_t = Value;
+
     auto operator()(Value const& value) const {
       return std::sqrt(value);
     }
   };
 
   template<typename Value>
-  using square_root_result_t =
-      std::decay_t<std::invoke_result_t<square_root<Value>, Value>>;
+  using square_root_result_t = typename square_root<Value>::result_t;
+
+  template<typename Population, typename FitnessTag>
+  concept deviable_population =
+      averageable_population<Population, FitnessTag> && requires {
+    typename square_root<get_fitness_t<FitnessTag, Population>>::result_t;
+    typename square_root<get_fitness_t<FitnessTag, Population>>::result_t;
+  };
 
   template<typename FitnessTag>
   struct fitness_deviation {
@@ -424,7 +441,7 @@ namespace stat {
 
     using required_t = dependencies<average_fitness_t>;
 
-    template<averageable_population<fitness_tag_t> Population>
+    template<deviable_population<fitness_tag_t> Population>
     class body {
     public:
       using pack_t = dependencies_pack<Population, required_t>;
