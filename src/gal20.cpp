@@ -5,6 +5,7 @@
 
 #include "basic.hpp"
 #include "coupling.hpp"
+#include "criteria.hpp"
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"
@@ -122,6 +123,7 @@ int main() {
 
   using stat_t =
       gal::stat::statistics<pop_t,
+                            gal::stat::generation,
                             gal::stat::extreme_fitness<gal::raw_fitness_tag>,
                             gal::stat::total_fitness<gal::raw_fitness_tag>,
                             gal::stat::average_fitness<gal::raw_fitness_tag>,
@@ -179,6 +181,19 @@ int main() {
 
   auto cp2 = gal::couple::make_factory<gal::couple::field>(rep_p)(rtx);
   cp2(std::vector<pop_t::iterator_t>{});
+
+  gal::stat::history<decltype(stat)> hist{2};
+  gal::stat::get_fitness_best_value<gal::raw_fitness_tag> getter{};
+
+  gal::criteria::generation cr1{2};
+  cr1(p, hist);
+
+  gal::criteria::value_limit cr2{getter,
+                                 [](double fitness) { return fitness >= 10; }};
+  cr2(p, hist);
+
+  gal::criteria::value_progress cr3{getter, 2};
+  cr3(p, hist);
 
   return 0;
 }

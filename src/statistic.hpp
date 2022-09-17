@@ -990,97 +990,110 @@ namespace stat {
   }
 
   struct get_generation {
-    template<tracked_models<generation> Statistics>
+    using model_t = generation;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<generation>().generation_value();
+      return statistics.template get<model_t>().generation_value();
     }
   };
 
   struct get_population_size {
-    template<tracked_models<population_size> Statistics>
+    using model_t = population_size;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<population_size>().population_size_value();
+      return statistics.template get<model_t>().population_size_value();
     }
   };
 
   template<std::semiregular Value, typename Tag>
   struct get_generic_value {
-    template<tracked_models<generic_value<Value, Tag>> Statistics>
+    using model_t = generic_value<Value, Tag>;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<generic_value<Value, Tag>>()
-          .generic_value();
+      return statistics.template get<model_t>().generic_value();
     }
   };
 
   template<typename Tag>
   struct get_timer_value {
-    template<tracked_models<generic_timer<Tag>> Statistics>
+    using model_t = generic_timer<Tag>;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<generic_timer<Tag>>().elapsed_value();
+      return statistics.template get<model_t>().elapsed_value();
     }
   };
 
   template<typename FitnessTag>
   struct get_fitness_worst_value {
-    template<tracked_models<extreme_fitness<FitnessTag>> Statistics>
+    using model_t = extreme_fitness<FitnessTag>;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<extreme_fitness<FitnessTag>>()
-          .fitness_worst_value();
+      return statistics.template get<model_t>().fitness_worst_value();
     }
   };
 
   template<typename FitnessTag>
   struct get_fitness_best_value {
-    template<tracked_models<extreme_fitness<FitnessTag>> Statistics>
+    using model_t = extreme_fitness<FitnessTag>;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<extreme_fitness<FitnessTag>>()
-          .fitness_best_value();
+      return statistics.template get<model_t>().fitness_best_value();
     }
   };
 
   template<typename FitnessTag>
   struct get_fitness_total_value {
-    template<tracked_models<total_fitness<FitnessTag>> Statistics>
+    using model_t = total_fitness<FitnessTag>;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<total_fitness<FitnessTag>>()
-          .fitness_total_value();
+      return statistics.template get<model_t>().fitness_total_value();
     }
   };
 
   template<typename FitnessTag>
   struct get_fitness_average_value {
-    template<tracked_models<average_fitness<FitnessTag>> Statistics>
+    using model_t = average_fitness<FitnessTag>;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<average_fitness<FitnessTag>>()
-          .fitness_average_value();
+      return statistics.template get<model_t>().fitness_average_value();
     }
   };
 
   template<typename FitnessTag>
   struct get_fitness_variance_value {
-    template<tracked_models<fitness_deviation<FitnessTag>> Statistics>
+    using model_t = fitness_deviation<FitnessTag>;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<fitness_deviation<FitnessTag>>()
-          .fitness_variance_value();
+      return statistics.template get<model_t>().fitness_variance_value();
     }
   };
 
   template<typename FitnessTag>
   struct get_fitness_deviation_value {
-    template<tracked_models<fitness_deviation<FitnessTag>> Statistics>
+    using model_t = fitness_deviation<FitnessTag>;
+
+    template<tracked_models<model_t> Statistics>
     inline decltype(auto)
         operator()(Statistics const& statistics) const noexcept {
-      return statistics.template get<fitness_deviation<FitnessTag>>()
-          .fitness_deviation_value();
+      return statistics.template get<model_t>().fitness_deviation_value();
     }
   };
 
