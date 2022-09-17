@@ -373,9 +373,10 @@ namespace config {
       : public details::ptype_base<Builder, criterion_ptype> {
     using population_t = typename Builder::population_t;
     using statistics_t = typename Builder::statistics_t;
+    using history_t = stat::history<statistics_t>;
 
   public:
-    template<criterion<population_t, statistics_t> Criterion>
+    template<criterion<population_t, history_t> Criterion>
     constexpr inline auto stop_when(Criterion const& criterion) const {
       class body {
       public:

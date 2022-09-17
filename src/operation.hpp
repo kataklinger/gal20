@@ -118,9 +118,8 @@ concept replacement =
 
 // clang-format on
 
-template<typename Operation, typename Population, typename Statistics>
-concept criterion =
-    std::is_invocable_r_v<bool, Operation, Population, Statistics>;
+template<typename Operation, typename Population, typename History>
+concept criterion = std::is_invocable_r_v<bool, Operation, Population, History>;
 
 // clang-format off
 
