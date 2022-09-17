@@ -1093,15 +1093,15 @@ namespace stat {
   public:
     inline explicit history(std::size_t depth)
         : depth_{depth} {
-      values_.push(statistics_t{});
+      values_.push_back(statistics_t{});
     }
 
     inline auto const& next(population_t const& population) {
       if (values_.size() >= depth_) {
-        values_.pop();
+        values_.pop_front();
       }
 
-      return values_.push(current().next(population));
+      return values_.push_back(current().next(population));
     }
 
     inline auto& current() noexcept {
@@ -1112,9 +1112,17 @@ namespace stat {
       return values_.back();
     }
 
+    inline auto& previous() noexcept {
+      return *(values_.rbegin() + 1);
+    }
+
+    inline auto const& previous() const noexcept {
+      return *(values_.rbegin() + 1);
+    }
+
   private:
     std::size_t depth_;
-    std::queue<statistics_t> values_;
+    std::deque<statistics_t> values_;
   };
 
 } // namespace stat
