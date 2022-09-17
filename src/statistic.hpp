@@ -26,12 +26,12 @@ namespace stat {
     using type = std::tuple<element_t<Dependencies>...>;
 
     template<typename Source>
-    auto pack(Source const& source) {
+    static inline auto pack(Source const& source) {
       return type{static_cast<element_t<Dependencies>>(source)...};
     }
 
     template<typename Dependency>
-    decltype(auto) unpack(type const& pack) {
+    static inline decltype(auto) unpack(type const& pack) {
       return std::get<element_t<Dependency>>(pack);
     }
   };
@@ -76,8 +76,9 @@ namespace stat {
                                    typename Model::required_t>::type;
 
     template<typename Population, typename Model, typename Source>
-    auto pack_dependencies(Source const& source) {
-      return dependencies_pack<Population, Model>::pack(source);
+    inline auto pack_dependencies(Source const& source) {
+      return dependencies_pack<Population,
+                               get_model_dependencies_t<Model>>::pack(source);
     }
 
     template<typename Model, typename Population>
@@ -987,6 +988,101 @@ namespace stat {
           details::pack_helper(std::invoke(std::forward<Fn>(fn)), indices_t{}));
     }
   }
+
+  struct get_generation {
+    template<tracked_models<generation> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<generation>().generation_value();
+    }
+  };
+
+  struct get_population_size {
+    template<tracked_models<population_size> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<population_size>().population_size_value();
+    }
+  };
+
+  template<std::semiregular Value, typename Tag>
+  struct get_generic_value {
+    template<tracked_models<generic_value<Value, Tag>> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<generic_value<Value, Tag>>()
+          .generic_value();
+    }
+  };
+
+  template<typename Tag>
+  struct get_timer_value {
+    template<tracked_models<generic_timer<Tag>> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<generic_timer<Tag>>().elapsed_value();
+    }
+  };
+
+  template<typename FitnessTag>
+  struct get_fitness_worst_value {
+    template<tracked_models<extreme_fitness<FitnessTag>> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<extreme_fitness<FitnessTag>>()
+          .fitness_worst_value();
+    }
+  };
+
+  template<typename FitnessTag>
+  struct get_fitness_best_value {
+    template<tracked_models<extreme_fitness<FitnessTag>> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<extreme_fitness<FitnessTag>>()
+          .fitness_best_value();
+    }
+  };
+
+  template<typename FitnessTag>
+  struct get_fitness_total_value {
+    template<tracked_models<total_fitness<FitnessTag>> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<total_fitness<FitnessTag>>()
+          .fitness_total_value();
+    }
+  };
+
+  template<typename FitnessTag>
+  struct get_fitness_average_value {
+    template<tracked_models<average_fitness<FitnessTag>> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<average_fitness<FitnessTag>>()
+          .fitness_average_value();
+    }
+  };
+
+  template<typename FitnessTag>
+  struct get_fitness_variance_value {
+    template<tracked_models<fitness_deviation<FitnessTag>> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<fitness_deviation<FitnessTag>>()
+          .fitness_variance_value();
+    }
+  };
+
+  template<typename FitnessTag>
+  struct get_fitness_deviation_value {
+    template<tracked_models<fitness_deviation<FitnessTag>> Statistics>
+    inline decltype(auto)
+        operator()(Statistics const& statistics) const noexcept {
+      return statistics.template get<fitness_deviation<FitnessTag>>()
+          .fitness_deviation_value();
+    }
+  };
 
   template<statistical Statistics>
   class history {
