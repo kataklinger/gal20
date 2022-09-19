@@ -41,7 +41,7 @@ namespace criteria {
 
     template<typename Population, tracked_history<model_t> History>
     inline bool operator()(Population const& /*unused*/,
-                           History const& history) const noexcept {
+                           History const& history) const {
       return comparer_(getter_(history.current()));
     }
 
@@ -65,13 +65,10 @@ namespace criteria {
 
     template<typename Population, tracked_history<model_t> History>
     inline bool operator()(Population const& /*unused*/,
-                           History const& history) noexcept {
-      if (getter_(history.current()) > getter_(history.previous())) {
-        stagnated_ = 0;
-      }
-      else {
-        ++stagnated_;
-      }
+                           History const& history) {
+      stagnated_ = getter_(history.current()) > getter_(history.previous())
+                       ? 0
+                       : stagnated_ + 1;
 
       return stagnated_ >= limit_;
     }
