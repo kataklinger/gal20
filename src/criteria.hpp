@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "statistic.hpp"
 
 namespace gal {
