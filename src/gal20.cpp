@@ -9,6 +9,7 @@
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"
+#include "crossover.hpp"
 
 #include <tuple>
 
@@ -194,6 +195,9 @@ int main() {
 
   gal::criteria::value_progress cr3{getter, 2};
   cr3(p, hist);
+
+  gal::cross::symmetric_singlepoint<std::mt19937> cs1{gen};
+  cs1(std::vector<int>{}, std::vector<int>{});
 
   return 0;
 }
