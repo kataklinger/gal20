@@ -39,6 +39,25 @@ namespace cross {
     }
   };
 
+  namespace details {
+
+    using distribution_t = std::uniform_int_distribution<std::size_t>;
+
+    template<std::ranges::sized_range Chromosome>
+    inline auto distribute(Chromosome const& parent) noexcept {
+      return distribution_t{1, std::ranges::size(parent) - 1};
+    }
+
+    template<std::ranges::sized_range Chromosome>
+    inline auto distribute(Chromosome const& parent1,
+                           Chromosome const& parent2) noexcept {
+      return distribution_t{
+          1,
+          std::min(std::ranges::size(parent1), std::ranges::size(parent2)) - 1};
+    }
+
+  } // namespace details
+
   template<typename Generator>
   class symmetric_singlepoint {
   public:
@@ -57,13 +76,10 @@ namespace cross {
                     Chromosome const& parent2) const {
       using init = chromsome_init<Chromosome>;
 
-      std::pair<Chromosome, Chromosome> children{};
-
-      auto limit =
-               std::min(std::ranges::size(parent1), std::ranges::size(parent2)),
-           point = distribution_t{1, limit - 1}(*generator_);
-
+      auto point = details::distribute(parent1, parent2)(*generator_);
       auto in1 = std::begin(parent1) + point, in2 = std::begin(parent2) + point;
+
+      std::pair<Chromosome, Chromosome> children{};
 
       std::copy(in1,
                 std::end(parent1),
