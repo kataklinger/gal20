@@ -9,7 +9,7 @@ namespace cross {
   template<typename Chromosome>
   struct chromsome_init {
     using type = Chromosome;
-    inline static auto prepare(type& target, type const& /*unused*/) noexcept {
+    inline static auto prepare(type& target, std::size_t /*unused*/) noexcept {
       return std::back_inserter(target);
     }
   };
@@ -17,7 +17,7 @@ namespace cross {
   template<typename Value, std::size_t Size>
   struct chromsome_init<std::array<Value, Size>> {
     using type = std::array<Value, Size>;
-    inline static auto prepare(type& target, type const& /*unused*/) noexcept {
+    inline static auto prepare(type& target, std::size_t /*unused*/) noexcept {
       return std::begin(target);
     }
   };
@@ -25,7 +25,7 @@ namespace cross {
   template<typename Value, std::size_t Size>
   struct chromsome_init<Value[Size]> {
     using type = Value[Size];
-    inline static auto prepare(type& target, type const& /*unused*/) noexcept {
+    inline static auto prepare(type& target, std::size_t /*unused*/) noexcept {
       return std::begin(target);
     }
   };
@@ -33,8 +33,8 @@ namespace cross {
   template<typename... Tys>
   struct chromsome_init<std::vector<Tys...>> {
     using type = std::vector<Tys...>;
-    inline static auto prepare(type& target, type const& source) {
-      target.reserve(source.size());
+    inline static auto prepare(type& target, std::size_t size) {
+      target.reserve(size);
       return std::back_inserter(target);
     }
   };
@@ -56,6 +56,25 @@ namespace cross {
           std::min(std::ranges::size(parent1), std::ranges::size(parent2)) - 1};
     }
 
+    template<std::ranges::sized_range Chromosome>
+    inline void splice(Chromosome& dest,
+                       Chromosome const& left,
+                       std::size_t point_left,
+                       Chromosome const& right,
+                       std::size_t point_right) {
+      using init = chromsome_init<Chromosome>;
+
+      auto size = point_left + std::ranges::size(right) - point_right;
+
+      auto right_it = std::begin(right);
+      std::advance(right_it, point_right);
+
+      std::copy(
+          right_it,
+          std::end(right),
+          std::copy_n(std::begin(left), point_left, init::prepare(dest, size)));
+    }
+
   } // namespace details
 
   template<typename Generator>
@@ -63,35 +82,19 @@ namespace cross {
   public:
     using generator_t = Generator;
 
-  private:
-    using distribution_t = std::uniform_int_distribution<std::size_t>;
-
   public:
     inline explicit symmetric_singlepoint(generator_t& generator)
         : generator_{&generator} {
     }
 
     template<std::ranges::sized_range Chromosome>
-    auto operator()(Chromosome const& parent1,
-                    Chromosome const& parent2) const {
-      using init = chromsome_init<Chromosome>;
-
-      auto point = details::distribute(parent1, parent2)(*generator_);
-      auto in1 = std::begin(parent1) + point, in2 = std::begin(parent2) + point;
+    auto operator()(Chromosome const& p1, Chromosome const& p2) const {
+      auto pt = details::distribute(p1, p2)(*generator_);
 
       std::pair<Chromosome, Chromosome> children{};
 
-      std::copy(in1,
-                std::end(parent1),
-                std::copy(std::begin(parent2),
-                          in2,
-                          init::prepare(children.first, parent1)));
-
-      std::copy(in2,
-                std::end(parent2),
-                std::copy(std::begin(parent1),
-                          in1,
-                          init::prepare(children.second, parent2)));
+      details::splice(children.first, p1, pt, p2, pt);
+      details::splice(children.second, p2, pt, p1, pt);
 
       return children;
     }
@@ -101,7 +104,31 @@ namespace cross {
   };
 
   template<typename Generator>
-  class asymmetric_singlepoint {};
+  class asymmetric_singlepoint {
+  public:
+    using generator_t = Generator;
+
+  public:
+    inline explicit asymmetric_singlepoint(generator_t& generator)
+        : generator_{&generator} {
+    }
+
+    template<std::ranges::sized_range Chromosome>
+    auto operator()(Chromosome const& p1, Chromosome const& p2) const {
+      auto pt1 = details::distribute(p1)(*generator_),
+           pt2 = details::distribute(p2)(*generator_);
+
+      std::pair<Chromosome, Chromosome> children{};
+
+      details::splice(children.first, p1, pt1, p2, pt2);
+      details::splice(children.second, p2, pt2, p1, pt1);
+
+      return children;
+    }
+
+  private:
+    generator_t* generator_;
+  };
 
   template<typename Generator, std::size_t Points>
   class symmetric_multipoint {};
