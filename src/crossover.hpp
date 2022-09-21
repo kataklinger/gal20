@@ -159,8 +159,8 @@ namespace cross {
 
     template<std::ranges::sized_range Chromosome>
     auto operator()(Chromosome const& p1, Chromosome const& p2) const {
-      auto count = std::min(
-          {points, std::ranges::size(p1) - 1, std::ranges::size(p2) - 1});
+      auto size1 = std::ranges::size(p1), size2 = std::ranges::size(p2);
+      auto count = std::min({points, size1 - 1, size2 - 1});
 
       if (count == 0) {
         return std::pair<Chromosome, Chromosome>{p1, p2};
@@ -173,13 +173,11 @@ namespace cross {
 
       std::ranges::sort(selected);
 
-      std::pair<Chromosome, Chromosome> children{};
-
-      auto size1 = std::ranges::size(p1), size2 = std::ranges::size(p2);
       if (selected.size() % 2 == 1) {
         std::swap(size1, size2);
       }
 
+      std::pair<Chromosome, Chromosome> children{};
       auto out1 = prepare_chromosome(children.first, size1),
            out2 = prepare_chromosome(children.second, size2);
 
@@ -250,7 +248,48 @@ namespace cross {
 
     template<std::ranges::sized_range Chromosome>
     auto operator()(Chromosome const& p1, Chromosome const& p2) const {
+      auto size1 = std::ranges::size(p1), size2 = std::ranges::size(p2);
+      auto count = std::min({points, size1 - 1, size2 - 1});
+
+      if (count == 0) {
+        return std::pair<Chromosome, Chromosome>{p1, p2};
+      }
+
+      auto selected1 = gal::details::selecte_many(
+          gal::details::unique_state{count},
+          [&p1, this] { return details::distribute(p1)(*generator_); });
+
+      std::ranges::sort(selected1);
+
+      auto selected2 = gal::details::selecte_many(
+          gal::details::unique_state{count},
+          [&p2, this] { return details::distribute(p2)(*generator_); });
+
+      std::ranges::sort(selected2);
+
       std::pair<Chromosome, Chromosome> children{};
+
+      auto out1 = prepare_chromosome(children.first, 0),
+           out2 = prepare_chromosome(children.second, 0);
+
+      auto in1 = std::begin(p1), in2 = std::begin(p2);
+
+      std::size_t current1 = 0, current2 = 0;
+      for (int i = 0; i < count; ++i) {
+        for (; current1 < selected1[i]; ++current1) {
+          *(out1++) = *(in1++);
+        }
+
+        for (; current2 < selected2[i]; ++current2) {
+          *(out2++) = *(in2++);
+        }
+
+        std::swap(out1, out2);
+      }
+
+      std::copy(in1, std::end(p1), out1);
+      std::copy(in2, std::end(p2), out2);
+
       return children;
     }
 
