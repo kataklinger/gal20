@@ -79,8 +79,20 @@ namespace details {
         result.begin(),
         size,
         [first = population.individuals().begin(), &state, &produce] {
-          return first + select_single(state, std::forward<Fn>(produce));
+          return first + select_single(state, produce);
         });
+
+    return result;
+  }
+
+  template<typename State, index_producer Fn>
+  std::vector<std::size_t> selecte_many(State&& state, Fn&& produce) {
+    std::vector<std::size_t> result{state.size(),
+                                    std::allocator<std::size_t>{}};
+
+    std::ranges::generate_n(result.begin(), state.size(), [&state, &produce] {
+      return select_single(state, produce);
+    });
 
     return result;
   }

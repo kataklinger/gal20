@@ -11,7 +11,8 @@
 #include "scaling.hpp"
 #include "selection.hpp"
 
-#include <tuple>
+
+#include <list>
 
 using pop_t = gal::population<int, double, double, int>;
 
@@ -201,6 +202,10 @@ int main() {
 
   gal::cross::asymmetric_singlepoint<std::mt19937> cs2{gen};
   cs2(std::vector<int>{}, std::vector<int>{});
+
+  gal::cross::symmetric_multipoint<std::mt19937, 2> cs3{gen};
+  cs3(std::vector<int>{}, std::vector<int>{});
+  cs3(std::list<int>{}, std::list<int>{});
 
   return 0;
 }
