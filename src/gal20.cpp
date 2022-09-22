@@ -7,6 +7,7 @@
 #include "coupling.hpp"
 #include "criteria.hpp"
 #include "crossover.hpp"
+#include "mutation.hpp"
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"
@@ -213,6 +214,13 @@ int main() {
   gal::cross::blend cs5{[](int a, int b) { return std::pair{a + b, a - b}; }};
   cs5(std::vector<int>{}, std::vector<int>{});
   cs5(std::list<int>{}, std::list<int>{});
+
+  std::vector<int> vec_chromo{};
+  std::vector<int> lst_chromo{};
+
+  auto mu1 = gal::mutate::make_flip<2>(gen, [](int& a) { a = 1; });
+  mu1(vec_chromo);
+  mu1(lst_chromo);
 
   return 0;
 }
