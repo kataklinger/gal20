@@ -297,5 +297,50 @@ namespace cross {
     generator_t* generator_;
   };
 
+  template<typename Blender>
+  class blend {
+    using blender_r = Blender;
+
+  public:
+    inline explicit blend(blender_r&& blender)
+        : blender_{std::move(blender)} {
+    }
+
+    inline explicit blend(blender_r const& blender)
+        : blender_{blender} {
+    }
+
+    template<std::ranges::sized_range Chromosome>
+    auto operator()(Chromosome const& p1, Chromosome const& p2) const {
+      auto size1 = std::ranges::size(p1), size2 = std::ranges::size(p2);
+
+      std::pair<Chromosome, Chromosome> children{};
+
+      auto out1 = prepare_chromosome(children.first, size1),
+           out2 = prepare_chromosome(children.second, size2);
+
+      auto in1 = std::begin(p1), in2 = std::begin(p2);
+
+      auto [short_it, short_end, long_it, long_end] =
+          size1 < size2 ? std::tuple{in1, std::end(p1), in2, std::end(p2)}
+                        : std::tuple{in2, std::end(p2), in1, std::end(p1)};
+
+      for (; short_it != short_end; ++in1, ++in2, ++short_it, ++long_it) {
+        auto [v1, v2] = blender_(*in1, *in2);
+        *(out1++) = std::move(v1);
+        *(out2++) = std::move(v2);
+      }
+
+      for (; long_it != long_end; ++long_it) {
+        *(out2++) = *long_it;
+      }
+
+      return children;
+    }
+
+  private:
+    blender_r blender_;
+  };
+
 } // namespace cross
 } // namespace gal

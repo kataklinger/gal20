@@ -210,5 +210,9 @@ int main() {
   cs4(std::vector<int>{}, std::vector<int>{});
   cs4(std::list<int>{}, std::list<int>{});
 
+  gal::cross::blend cs5{[](int a, int b) { return std::pair{a + b, a - b}; }};
+  cs5(std::vector<int>{}, std::vector<int>{});
+  cs5(std::list<int>{}, std::list<int>{});
+
   return 0;
 }
