@@ -45,6 +45,10 @@ namespace details {
       return size_;
     }
 
+    inline bool full() const noexcept {
+      return existing_.size() == size_;
+    }
+
   private:
     std::size_t size_;
     std::unordered_set<std::size_t> existing_{};
