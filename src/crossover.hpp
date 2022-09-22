@@ -321,9 +321,10 @@ namespace cross {
 
       auto in1 = std::begin(p1), in2 = std::begin(p2);
 
-      auto [short_it, short_end, long_it, long_end] =
-          size1 < size2 ? std::tuple{in1, std::end(p1), in2, std::end(p2)}
-                        : std::tuple{in2, std::end(p2), in1, std::end(p1)};
+      auto [short_it, short_end, long_it, long_end, long_out] =
+          size1 < size2
+              ? std::tuple{in1, std::end(p1), in2, std::end(p2), out2}
+              : std::tuple{in2, std::end(p2), in1, std::end(p1), out1};
 
       for (; short_it != short_end; ++in1, ++in2, ++short_it, ++long_it) {
         auto [v1, v2] = blender_(*in1, *in2);
@@ -332,7 +333,7 @@ namespace cross {
       }
 
       for (; long_it != long_end; ++long_it) {
-        *(out2++) = *long_it;
+        *(long_out++) = *long_it;
       }
 
       return children;
