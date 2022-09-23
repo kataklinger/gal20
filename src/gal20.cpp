@@ -227,8 +227,12 @@ int main() {
   mu2(lst_chromo);
 
   gal::mutate::destroy<std::mt19937, 2> mu3{gen};
-  mu2(vec_chromo);
-  mu2(lst_chromo);
+  mu3(vec_chromo);
+  mu3(lst_chromo);
+
+  gal::mutate::shuffle<std::mt19937, 2> mu4{gen};
+  mu4(vec_chromo);
+  mu4(lst_chromo);
 
   return 0;
 }

@@ -21,7 +21,7 @@ namespace mutate {
         return std::min(count, size);
       }
 
-      return 0;
+      return std::size_t{};
     }
 
     template<typename Generator, std::ranges::sized_range Chromosome>
@@ -31,13 +31,54 @@ namespace mutate {
           0, std::ranges::size(chromosome) - 1}(generator);
     }
 
+    template<std::ranges::sized_range Chromosome>
+    inline auto get_iter(Chromosome& target, std::size_t index) noexcept {
+      auto it = std::begin(target);
+      std::advance(it, index);
+      return it;
+    }
+
+    template<std::ranges::sized_range Chromosome, typename Generator>
+    inline auto get_random_iter(Chromosome& target,
+                                Generator& generator) noexcept {
+      return get_iter(target, details::select(generator, target));
+    }
+
   } // namespace details
 
   template<typename Generator, std::size_t Count>
   requires(Count > 0) class swap {};
 
   template<typename Generator, std::size_t Count>
-  requires(Count > 0) class move {};
+  requires(Count > 0) class shuffle {
+  public:
+    using generator_t = Generator;
+
+    inline static constexpr auto count = Count;
+
+  public:
+    inline explicit shuffle(generator_t& generator)
+        : generator_{&generator} {
+    }
+
+    template<std::ranges::sized_range Chromosome>
+    void operator()(Chromosome& target) {
+      if (std::ranges::size(target) > 2) {
+        for (auto i = count; i > 0;) {
+          auto from = details::get_random_iter(target, *generator_),
+               to = details::get_random_iter(target, *generator_);
+
+          if (from != to) {
+            std::move(from, std::next(from), to);
+            --i;
+          }
+        }
+      }
+    }
+
+  private:
+    generator_t* generator_;
+  };
 
   template<typename Generator, std::size_t Count>
   requires(Count > 0) class destroy {
@@ -53,11 +94,8 @@ namespace mutate {
 
     template<std::ranges::sized_range Chromosome>
     void operator()(Chromosome& target) {
-      for (auto i = get_count_min(count, target); i > 0; --i) {
-        auto it = std::begin(target);
-        std::advance(it, details::select(*generator_, target));
-
-        target.erase(it);
+      for (auto i = details::get_count_min(count, target); i > 0; --i) {
+        target.erase(details::get_random_iter(target, *generator_));
       }
     }
 
@@ -81,10 +119,7 @@ namespace mutate {
     template<std::ranges::sized_range Chromosome>
     void operator()(Chromosome& target) {
       for (auto i = count; i > 0; --i) {
-        auto it = std::begin(target);
-        std::advance(it, details::select(*generator_, target));
-
-        target.insert(it, fn_());
+        target.insert(details::get_random_iter(target, *generator_), fn_());
       }
     }
 
@@ -115,10 +150,7 @@ namespace mutate {
           idx = details::select(*generator_, target);
         } while (!state.update(idx));
 
-        auto it = std::begin(target);
-        std::advance(it, idx);
-
-        fn_(*it);
+        fn_(*details::get_iter(target, idx));
       }
     }
 
