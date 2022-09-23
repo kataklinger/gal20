@@ -222,5 +222,13 @@ int main() {
   mu1(vec_chromo);
   mu1(lst_chromo);
 
+  auto mu2 = gal::mutate::make_create<2>(gen, []() { return 1; });
+  mu2(vec_chromo);
+  mu2(lst_chromo);
+
+  gal::mutate::destroy<std::mt19937, 2> mu3{gen};
+  mu2(vec_chromo);
+  mu2(lst_chromo);
+
   return 0;
 }
