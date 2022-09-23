@@ -234,5 +234,9 @@ int main() {
   mu4(vec_chromo);
   mu4(lst_chromo);
 
+  gal::mutate::interchange<std::mt19937, 2> mu5{gen};
+  mu5(vec_chromo);
+  mu5(lst_chromo);
+
   return 0;
 }

@@ -47,7 +47,35 @@ namespace mutate {
   } // namespace details
 
   template<typename Generator, std::size_t Count>
-  requires(Count > 0) class swap {};
+  requires(Count > 0) class interchange {
+  public:
+    using generator_t = Generator;
+
+    inline static constexpr auto count = Count;
+
+  public:
+    inline explicit interchange(generator_t& generator)
+        : generator_{&generator} {
+    }
+
+    template<std::ranges::sized_range Chromosome>
+    void operator()(Chromosome& target) {
+      if (std::ranges::size(target) > 2) {
+        for (auto i = count; i > 0; --i) {
+          auto left = details::get_random_iter(target, *generator_),
+               right = details::get_random_iter(target, *generator_);
+
+          if (left != right) {
+            std::iter_swap(left, right);
+            --i;
+          }
+        }
+      }
+    }
+
+  private:
+    generator_t* generator_;
+  };
 
   template<typename Generator, std::size_t Count>
   requires(Count > 0) class shuffle {
