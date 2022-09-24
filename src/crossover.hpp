@@ -8,63 +8,18 @@ namespace cross {
 
   namespace details {
 
-    template<typename Chromosome>
-    struct chromsome_init {
-      using type = Chromosome;
-      inline static auto prepare(type& target,
-                                 std::size_t /*unused*/) noexcept {
-        return std::back_inserter(target);
-      }
-    };
-
-    template<typename Value, std::size_t Size>
-    struct chromsome_init<std::array<Value, Size>> {
-      using type = std::array<Value, Size>;
-      inline static auto prepare(type& target,
-                                 std::size_t /*unused*/) noexcept {
-        return std::begin(target);
-      }
-    };
-
-    template<typename Value, std::size_t Size>
-    struct chromsome_init<Value[Size]> {
-      using type = Value[Size];
-      inline static auto prepare(type& target,
-                                 std::size_t /*unused*/) noexcept {
-        return std::begin(target);
-      }
-    };
-
-    template<typename... Tys>
-    struct chromsome_init<std::vector<Tys...>> {
-      using type = std::vector<Tys...>;
-      inline static auto prepare(type& target, std::size_t size) {
-        target.reserve(size);
-        return std::back_inserter(target);
-      }
-    };
-
-  } // namespace details
-
-  template<std::ranges::sized_range Chromosome>
-  inline auto prepare_chromosome(Chromosome& chromosome, std::size_t size) {
-    return details::chromsome_init<Chromosome>::prepare(chromosome, size);
-  }
-
-  namespace details {
-
     using distribution_t = std::uniform_int_distribution<std::size_t>;
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     using get_iterator_type = std::remove_reference_t<decltype(std::begin(
         std::declval<std::add_lvalue_reference_t<Chromosome>>()))>;
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     inline auto distribute(Chromosome const& parent) noexcept {
       return distribution_t{1, std::ranges::size(parent) - 1};
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     inline auto distribute(Chromosome const& parent1,
                            Chromosome const& parent2) noexcept {
       return distribution_t{
@@ -72,7 +27,7 @@ namespace cross {
           std::min(std::ranges::size(parent1), std::ranges::size(parent2)) - 1};
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     inline void splice(Chromosome& dest,
                        Chromosome const& left,
                        std::size_t point_left,
@@ -85,9 +40,7 @@ namespace cross {
 
       std::copy(right_it,
                 std::end(right),
-                std::copy_n(std::begin(left),
-                            point_left,
-                            prepare_chromosome(dest, size)));
+                std::copy_n(std::begin(left), point_left, draft(dest, size)));
     }
 
   } // namespace details
@@ -102,7 +55,7 @@ namespace cross {
         : generator_{&generator} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     inline auto operator()(Chromosome const& p1, Chromosome const& p2) const {
       auto pt = details::distribute(p1, p2)(*generator_);
 
@@ -128,7 +81,7 @@ namespace cross {
         : generator_{&generator} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     inline auto operator()(Chromosome const& p1, Chromosome const& p2) const {
       auto pt1 = details::distribute(p1)(*generator_),
            pt2 = details::distribute(p2)(*generator_);
@@ -157,7 +110,7 @@ namespace cross {
         : generator_{&generator} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     auto operator()(Chromosome const& p1, Chromosome const& p2) const {
       auto size1 = std::ranges::size(p1), size2 = std::ranges::size(p2);
       auto count = std::min({points, size1 - 1, size2 - 1});
@@ -178,8 +131,8 @@ namespace cross {
       }
 
       std::pair<Chromosome, Chromosome> children{};
-      auto out1 = prepare_chromosome(children.first, size1),
-           out2 = prepare_chromosome(children.second, size2);
+      auto out1 = draft(children.first, size1),
+           out2 = draft(children.second, size2);
 
       splice(p1, p2, selected, out1, out2);
 
@@ -246,7 +199,7 @@ namespace cross {
         : generator_{&generator} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     auto operator()(Chromosome const& p1, Chromosome const& p2) const {
       auto size1 = std::ranges::size(p1), size2 = std::ranges::size(p2);
       auto count = std::min({points, size1 - 1, size2 - 1});
@@ -269,8 +222,7 @@ namespace cross {
 
       std::pair<Chromosome, Chromosome> children{};
 
-      auto out1 = prepare_chromosome(children.first, 0),
-           out2 = prepare_chromosome(children.second, 0);
+      auto out1 = draft(children.first, 0), out2 = draft(children.second, 0);
 
       auto in1 = std::begin(p1), in2 = std::begin(p2);
 
@@ -310,14 +262,14 @@ namespace cross {
         : blender_{blender} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     auto operator()(Chromosome const& p1, Chromosome const& p2) const {
       auto size1 = std::ranges::size(p1), size2 = std::ranges::size(p2);
 
       std::pair<Chromosome, Chromosome> children{};
 
-      auto out1 = prepare_chromosome(children.first, size1),
-           out2 = prepare_chromosome(children.second, size2);
+      auto out1 = draft(children.first, size1),
+           out2 = draft(children.second, size2);
 
       auto in1 = std::begin(p1), in2 = std::begin(p2);
 

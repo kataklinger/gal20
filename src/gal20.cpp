@@ -12,6 +12,7 @@
 #include "scaling.hpp"
 #include "selection.hpp"
 
+#include <deque>
 #include <list>
 
 using pop_t = gal::population<int, double, double, int>;
@@ -206,37 +207,46 @@ int main() {
   gal::cross::symmetric_multipoint<std::mt19937, 2> cs3{gen};
   cs3(std::vector<int>{}, std::vector<int>{});
   cs3(std::list<int>{}, std::list<int>{});
+  cs3(std::deque<int>{}, std::deque<int>{});
 
   gal::cross::asymmetric_multipoint<std::mt19937, 2> cs4{gen};
   cs4(std::vector<int>{}, std::vector<int>{});
   cs4(std::list<int>{}, std::list<int>{});
+  cs4(std::deque<int>{}, std::deque<int>{});
 
   gal::cross::blend cs5{[](int a, int b) { return std::pair{a + b, a - b}; }};
   cs5(std::vector<int>{}, std::vector<int>{});
   cs5(std::list<int>{}, std::list<int>{});
+  cs5(std::deque<int>{}, std::deque<int>{});
 
   std::vector<int> vec_chromo{};
-  std::vector<int> lst_chromo{};
+  std::list<int> lst_chromo{};
+  std::deque<int> deq_chromo{};
 
   auto mu1 = gal::mutate::make_flip<2>(gen, [](int& a) { a = 1; });
   mu1(vec_chromo);
   mu1(lst_chromo);
+  mu1(deq_chromo);
 
   auto mu2 = gal::mutate::make_create<2>(gen, []() { return 1; });
   mu2(vec_chromo);
   mu2(lst_chromo);
+  mu2(deq_chromo);
 
   gal::mutate::destroy<std::mt19937, 2> mu3{gen};
   mu3(vec_chromo);
   mu3(lst_chromo);
+  mu3(deq_chromo);
 
   gal::mutate::shuffle<std::mt19937, 2> mu4{gen};
   mu4(vec_chromo);
   mu4(lst_chromo);
+  mu4(deq_chromo);
 
   gal::mutate::interchange<std::mt19937, 2> mu5{gen};
   mu5(vec_chromo);
   mu5(lst_chromo);
+  mu5(deq_chromo);
 
   return 0;
 }

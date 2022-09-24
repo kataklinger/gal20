@@ -8,13 +8,13 @@ namespace mutate {
 
   namespace details {
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     inline auto get_count(std::size_t count,
                           Chromosome const& target) noexcept {
       return std::min(count, std::ranges::size(target));
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     inline auto get_count_min(std::size_t count,
                               Chromosome const& target) noexcept {
       if (auto size = std::ranges::size(target); size > 0) {
@@ -24,21 +24,21 @@ namespace mutate {
       return std::size_t{};
     }
 
-    template<typename Generator, std::ranges::sized_range Chromosome>
+    template<typename Generator, range_chromosome Chromosome>
     inline auto select(Generator& generator,
                        Chromosome const& chromosome) noexcept {
       return std::uniform_int_distribution<std::size_t>{
           0, std::ranges::size(chromosome) - 1}(generator);
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     inline auto get_iter(Chromosome& target, std::size_t index) noexcept {
       auto it = std::begin(target);
       std::advance(it, index);
       return it;
     }
 
-    template<std::ranges::sized_range Chromosome, typename Generator>
+    template<range_chromosome Chromosome, typename Generator>
     inline auto get_random_iter(Chromosome& target,
                                 Generator& generator) noexcept {
       return get_iter(target, details::select(generator, target));
@@ -58,7 +58,7 @@ namespace mutate {
         : generator_{&generator} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     void operator()(Chromosome& target) {
       if (std::ranges::size(target) > 2) {
         for (auto i = count; i > 0; --i) {
@@ -89,7 +89,7 @@ namespace mutate {
         : generator_{&generator} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     void operator()(Chromosome& target) {
       if (std::ranges::size(target) > 2) {
         for (auto i = count; i > 0;) {
@@ -120,7 +120,7 @@ namespace mutate {
         : generator_{&generator} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     void operator()(Chromosome& target) {
       for (auto i = details::get_count_min(count, target); i > 0; --i) {
         target.erase(details::get_random_iter(target, *generator_));
@@ -144,7 +144,7 @@ namespace mutate {
         , fn_{std::move(fn)} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     void operator()(Chromosome& target) {
       for (auto i = count; i > 0; --i) {
         target.insert(details::get_random_iter(target, *generator_), fn_());
@@ -169,7 +169,7 @@ namespace mutate {
         , fn_{std::move(fn)} {
     }
 
-    template<std::ranges::sized_range Chromosome>
+    template<range_chromosome Chromosome>
     void operator()(Chromosome& target) {
       gal::details::unique_state state{details::get_count(count, target)};
       while (!state.full()) {
