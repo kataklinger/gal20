@@ -248,5 +248,11 @@ int main() {
   mu5(lst_chromo);
   mu5(deq_chromo);
 
+  using builder_t =
+      gal::config::builder<gal::config::root_ptype, gal::alg::basic_config_map>;
+  ;
+  builder_t b{};
+  b.begin();
+
   return 0;
 }

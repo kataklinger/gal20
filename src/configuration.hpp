@@ -26,7 +26,7 @@ namespace config {
 
   namespace details {
 
-    template<typename Entry, typename Builder>
+    template<typename Entry, typename Defined>
     struct eval_entry_if {
       using type = Entry;
     };
@@ -34,19 +34,19 @@ namespace config {
     template<template<typename> class Condition,
              typename Then,
              typename Else,
-             typename Builder>
-    struct eval_entry_if<entry_if<Condition, Then, Else>, Builder> {
-      using type = std::conditional_t<Condition<Builder>::value, Then, Else>;
+             typename Defined>
+    struct eval_entry_if<entry_if<Condition, Then, Else>, Defined> {
+      using type = std::conditional_t<Condition<Defined>::value, Then, Else>;
     };
 
-    template<typename Entry, typename Builder>
-    using eval_entry_if_t = typename eval_entry_if<Entry, Builder>::type;
+    template<typename Entry, typename Defined>
+    using eval_entry_if_t = typename eval_entry_if<Entry, Defined>::type;
 
-    template<typename Map, template<typename> class Match, typename Builder>
+    template<typename Map, template<typename> class Match, typename Defined>
     struct entry_map_match;
 
-    template<template<typename> class Match, typename Builder>
-    struct entry_map_match<entry_map<>, Match, Builder> {
+    template<template<typename> class Match, typename Defined>
+    struct entry_map_match<entry_map<>, Match, Defined> {
       using unlocked_t = plist<>;
       using required_t = plist<>;
     };
@@ -56,31 +56,43 @@ namespace config {
              typename... Rest,
              template<typename>
              class Match,
-             typename Builder>
+             typename Defined>
     struct entry_map_match<entry_map<entry<Match, Unlocked, Required>, Rest...>,
                            Match,
-                           Builder> {
-      using unlocked_t = eval_entry_if_t<Unlocked, Builder>;
-      using required_t = eval_entry_if_t<Required, Builder>;
+                           Defined> {
+      using unlocked_t = eval_entry_if_t<Unlocked, Defined>;
+      using required_t = eval_entry_if_t<Required, Defined>;
     };
 
-    template<typename Map,
+    template<typename Entry,
              typename... Rest,
              template<typename>
              class Match,
-             typename Builder>
-    struct entry_map_match<entry_map<Map, Rest...>, Match, Builder>
-        : entry_map_match<entry_map<Rest...>, Match, Builder> {};
+             typename Defined>
+    struct entry_map_match<entry_map<Entry, Rest...>, Match, Defined>
+        : entry_map_match<entry_map<Rest...>, Match, Defined> {};
 
     class empty_section {};
     class empty_ptype {};
-    class empty_builder {};
 
     template<section... Sections>
     class section_node;
 
     template<>
     class section_node<> {};
+
+    template<>
+    class section_node<details::empty_section> : public details::empty_section {
+    public:
+      using section_t = details::empty_section;
+
+      constexpr inline section_node() noexcept {
+      }
+
+      constexpr inline section_node(section_t const& section,
+                                    section_node<> const& /*unused*/) noexcept {
+      }
+    };
 
     template<section Section>
     class section_node<Section> : public Section {
@@ -209,7 +221,7 @@ namespace config {
 
     template<typename Used, typename Interface>
     constexpr inline auto is_ptype_satisfied_v =
-        is_ptype_satisfied<Used, Interface>;
+        is_ptype_satisfied<Used, Interface>::value;
 
     template<typename Used, typename Interface>
     struct ptype_inherit
@@ -220,34 +232,67 @@ namespace config {
     template<typename Used, typename Interface>
     using ptype_inherit_t = typename ptype_inherit<Used, Interface>::type;
 
-    template<typename Builder, typename Used, typename Interfaces>
+    template<typename Defined, typename Used, typename Interfaces>
     class ptype_node {};
 
-    template<typename Builder, typename Used>
-    class ptype_node<Builder, Used, plist<>> {};
+    template<typename Defined, typename Used>
+    class ptype_node<Defined, Used, plist<>> {};
 
-    template<typename Builder,
+    template<typename Defined,
              typename Used,
              template<typename>
              class Interface,
              template<typename>
              class... Interfaces>
-    class ptype_node<Builder, Used, plist<Interface, Interfaces...>>
-        : public ptype_inherit_t<Used, Interface<Builder>>,
-          public ptype_node<Builder, Used, plist<Interfaces...>> {};
+    class ptype_node<Defined, Used, plist<Interface, Interfaces...>>
+        : public ptype_inherit_t<Used, Interface<Defined>>,
+          public ptype_node<Defined, Used, plist<Interfaces...>> {};
 
-    template<typename Available, typename Used, section... Sections>
+    template<typename Entries,
+             typename Available,
+             typename Used,
+             section... Sections>
     class builder_node;
 
-    template<typename Available, typename Used>
-    class builder_node<Available, Used> {};
+    template<typename Entries,
+             typename Available,
+             typename Used,
+             typename... Sections>
+    class defined : public section_node<Sections...> {
+    public:
+      using entries_t = Entries;
+      using section_t = section_node<Sections...>;
 
-    template<typename Available,
+      template<typename Builder>
+      inline constexpr static decltype(auto)
+          to_section(Builder const& builder) noexcept {
+        if constexpr (std::is_same_v<section_t, section_node<>>) {
+          return section_t{};
+        }
+        else {
+          return static_cast<section_t const&>(builder);
+        }
+      }
+
+      template<template<typename> class This, typename Added, typename Section>
+      using builder_t =
+          builder_node<entries_t,
+                       plist_remove_t<This, plist_merge_t<Added, Available>>,
+                       plist_add_t<This, Used>,
+                       Section,
+                       Sections...>;
+    };
+
+    template<typename Entries, typename Available, typename Used>
+    class builder_node<Entries, Available, Used> {};
+
+    template<typename Entries,
+             typename Available,
              typename Used,
              section Section,
              section... Rest>
-    class builder_node<Available, Used, Section, Rest...>
-        : public ptype_node<builder_node<Available, Used, Section, Rest...>,
+    class builder_node<Entries, Available, Used, Section, Rest...>
+        : public ptype_node<defined<Entries, Available, Used, Rest...>,
                             Used,
                             Available>,
           public section_node<Section, Rest...> {
@@ -257,7 +302,12 @@ namespace config {
       using previous_t = section_node<Rest...>;
 
     public:
-      constexpr inline builder_node(section_t const& section,
+      template<
+          typename = std::enable_if_t<std::is_same_v<section_t, empty_section>>>
+      inline constexpr builder_node() noexcept {
+      }
+
+      inline constexpr builder_node(section_t const& section,
                                     previous_t const& previous)
           : base_t{section, previous} {
       }
@@ -267,44 +317,28 @@ namespace config {
       }
     };
 
-    template<typename Builder,
+    template<typename Defined,
              section Section,
              template<typename>
              class This,
              typename Added>
-    struct next_builder;
-
-    template<typename Available,
-             typename Used,
-             typename... Sections,
-             section Section,
-             template<typename>
-             class This,
-             typename Added>
-    struct next_builder<builder_node<Available, Used, Sections...>,
-                        Section,
-                        This,
-                        Added> {
-      using type =
-          builder_node<plist_remove_t<This, plist_merge_t<Added, Available>>,
-                       plist_add_t<This, Used>,
-                       Section,
-                       Sections...>;
+    struct next_builder {
+      using type = Defined::template builder_t<This, Added, Section>;
     };
 
-    template<typename Builder,
+    template<typename Defined,
              template<typename>
              class Current,
              section Section,
              typename Added>
     using next_builder_t =
-        typename next_builder<Builder, Section, Current, Added>::type;
+        typename next_builder<Defined, Section, Current, Added>::type;
 
-    template<typename Builder, template<typename> class Derived>
+    template<typename Defined, template<typename> class Derived>
     class ptype_base {
     private:
       using entry_map_t =
-          entry_map_match<typename Builder::entries_t, Derived, Builder>;
+          entry_map_match<typename Defined::entries_t, Derived, Defined>;
 
     public:
       using required_t = typename entry_map_t::required_t;
@@ -312,42 +346,42 @@ namespace config {
     protected:
       template<section Section>
       constexpr inline auto next(Section&& section) const {
-        return next_builder_t<Builder,
+        return next_builder_t<Defined,
                               Derived,
                               Section,
                               typename entry_map_t::unlocked_t>{
-            static_cast<Builder const&>(*this), std::forward<Section>(section)};
+            std::forward<Section>(section), Defined::to_section(*this)};
       }
     };
 
-    template<typename Builder, typename = typename Builder::is_global_scaling_t>
+    template<typename Defined, typename = typename Defined::is_global_scaling_t>
     struct build_reproduction_context {
-      using type = reproduction_context<typename Builder::population_t,
-                                        typename Builder::statistics_t,
-                                        typename Builder::crossover_t,
-                                        typename Builder::mutation_t,
-                                        typename Builder::evaluator_t>;
+      using type = reproduction_context<typename Defined::population_t,
+                                        typename Defined::statistics_t,
+                                        typename Defined::crossover_t,
+                                        typename Defined::mutation_t,
+                                        typename Defined::evaluator_t>;
     };
 
-    template<typename Builder>
-    struct build_reproduction_context<Builder, std::false_type> {
+    template<typename Defined>
+    struct build_reproduction_context<Defined, std::false_type> {
       using type =
-          reproduction_context_with_scaling<typename Builder::population_t,
-                                            typename Builder::statistics_t,
-                                            typename Builder::crossover_t,
-                                            typename Builder::mutation_t,
-                                            typename Builder::evaluator_t,
-                                            typename Builder::scaling_t>;
+          reproduction_context_with_scaling<typename Defined::population_t,
+                                            typename Defined::statistics_t,
+                                            typename Defined::crossover_t,
+                                            typename Defined::mutation_t,
+                                            typename Defined::evaluator_t,
+                                            typename Defined::scaling_t>;
     };
 
-    template<typename Builder>
+    template<typename Defined>
     using build_reproduction_context_t =
-        typename build_reproduction_context<Builder>::type;
+        typename build_reproduction_context<Defined>::type;
 
   } // namespace details
 
-  template<typename Builder>
-  struct tags_ptype : public details::ptype_base<Builder, tags_ptype> {
+  template<typename Defined>
+  struct tags_ptype : public details::ptype_base<Defined, tags_ptype> {
     template<typename Tags>
     constexpr inline auto tag_with() const {
       class body {
@@ -368,11 +402,11 @@ namespace config {
     }
   };
 
-  template<typename Builder>
+  template<typename Defined>
   struct criterion_ptype
-      : public details::ptype_base<Builder, criterion_ptype> {
-    using population_t = typename Builder::population_t;
-    using statistics_t = typename Builder::statistics_t;
+      : public details::ptype_base<Defined, criterion_ptype> {
+    using population_t = typename Defined::population_t;
+    using statistics_t = typename Defined::statistics_t;
     using history_t = stat::history<statistics_t>;
 
   public:
@@ -399,10 +433,10 @@ namespace config {
     }
   };
 
-  template<typename Builder>
-  struct replace_ptype : public details::ptype_base<Builder, replace_ptype> {
-    using population_t = typename Builder::population_t;
-    using copuling_result_t = typename Builder::copuling_result_t;
+  template<typename Defined>
+  struct replace_ptype : public details::ptype_base<Defined, replace_ptype> {
+    using population_t = typename Defined::population_t;
+    using copuling_result_t = typename Defined::copuling_result_t;
 
     template<replacement<population_t, copuling_result_t> Replacement>
     constexpr inline auto replace_with(Replacement const& replacement) const {
@@ -427,11 +461,11 @@ namespace config {
     }
   };
 
-  template<typename Builder>
-  struct couple_ptype : public details::ptype_base<Builder, couple_ptype> {
+  template<typename Defined>
+  struct couple_ptype : public details::ptype_base<Defined, couple_ptype> {
     using internal_reproduction_context_t =
-        details::build_reproduction_context_t<Builder>;
-    using selection_result_t = typename Builder::selection_result_t;
+        details::build_reproduction_context_t<Defined>;
+    using selection_result_t = typename Defined::selection_result_t;
 
     template<coupling_factory<internal_reproduction_context_t,
                               selection_result_t> Factory>
@@ -463,9 +497,9 @@ namespace config {
     }
   };
 
-  template<typename Builder>
-  struct select_ptype : public details::ptype_base<Builder, select_ptype> {
-    using population_t = typename Builder::population_t;
+  template<typename Defined>
+  struct select_ptype : public details::ptype_base<Defined, select_ptype> {
+    using population_t = typename Defined::population_t;
 
     template<selection<population_t> Selection>
     constexpr inline auto select_using(Selection const& selection) const {
@@ -493,16 +527,16 @@ namespace config {
     }
   };
 
-  template<typename Builder>
-  struct scale_ptype : public details::ptype_base<Builder, scale_ptype> {
-    using population_context_t = typename Builder::population_context_t;
+  template<typename Defined>
+  struct scale_ptype : public details::ptype_base<Defined, scale_ptype> {
+    using population_context_t = typename Defined::population_context_t;
 
     template<scaling_factory<population_context_t> Factory>
     constexpr inline auto scale_as(Factory const& scaling) const {
       using factory_t = Factory;
-      using chromosome_t = typename Builder::chromosome_t;
-      using raw_fitness_t = typename Builder::raw_fitness_t;
-      using population_t = typename Builder::population_t;
+      using chromosome_t = typename Defined::chromosome_t;
+      using raw_fitness_t = typename Defined::raw_fitness_t;
+      using population_t = typename Defined::population_t;
 
       class body {
       public:
@@ -528,14 +562,14 @@ namespace config {
     }
   };
 
-  template<typename Builder>
+  template<typename Defined>
   struct reproduce_ptype
-      : public details::ptype_base<Builder, reproduce_ptype> {
-    template<crossover<typename Builder::chromosome_t> Crossover,
-             mutation<typename Builder::chromosome_t> Mutation>
+      : public details::ptype_base<Defined, reproduce_ptype> {
+    template<crossover<typename Defined::chromosome_t> Crossover,
+             mutation<typename Defined::chromosome_t> Mutation>
     constexpr inline auto reproduce_using(Crossover const& crossover,
                                           Mutation const& mutation) const {
-      using chromosome_t = typename Builder::chromosome_t;
+      using chromosome_t = typename Defined::chromosome_t;
 
       class body {
       public:
@@ -566,13 +600,13 @@ namespace config {
     }
   };
 
-  template<typename Builder>
+  template<typename Defined>
   struct statistics_ptype
-      : public details::ptype_base<Builder, statistics_ptype> {
-    using internal_population_t = population<typename Builder::chromosome_t,
-                                             typename Builder::raw_fitness_t,
-                                             typename Builder::scaled_fitness_t,
-                                             typename Builder::tags_t>;
+      : public details::ptype_base<Defined, statistics_ptype> {
+    using internal_population_t = population<typename Defined::chromosome_t,
+                                             typename Defined::raw_fitness_t,
+                                             typename Defined::scaled_fitness_t,
+                                             typename Defined::tags_t>;
 
     template<stat::model<internal_population_t>... Models>
     constexpr inline auto track_these(std::size_t depth) const {
@@ -600,9 +634,9 @@ namespace config {
     }
   };
 
-  template<typename Builder>
+  template<typename Defined>
   class scale_fitness_ptype
-      : public details::ptype_base<Builder, scale_fitness_ptype> {
+      : public details::ptype_base<Defined, scale_fitness_ptype> {
   private:
     class body_base {};
     class body_base_none {
@@ -632,11 +666,11 @@ namespace config {
     }
   };
 
-  template<typename Builder>
-  struct evaluate_ptype : public details::ptype_base<Builder, evaluate_ptype> {
-    template<evaluator<typename Builder::chromosome_t> Evaluator>
+  template<typename Defined>
+  struct evaluate_ptype : public details::ptype_base<Defined, evaluate_ptype> {
+    template<evaluator<typename Defined::chromosome_t> Evaluator>
     constexpr inline auto evaluate_against(Evaluator const& evaluator) const {
-      using chromosome_t = typename Builder::chromosome_t;
+      using chromosome_t = typename Defined::chromosome_t;
 
       class body {
       public:
@@ -662,8 +696,8 @@ namespace config {
     }
   };
 
-  template<typename Builder>
-  struct init_ptype : public details::ptype_base<Builder, init_ptype> {
+  template<typename Defined>
+  struct init_ptype : public details::ptype_base<Defined, init_ptype> {
     template<initializator Initializator>
     constexpr inline auto make_like(Initializator const& initializator) const {
       class body {
@@ -688,8 +722,8 @@ namespace config {
     }
   };
 
-  template<typename Builder>
-  struct size_ptype : public details::ptype_base<Builder, init_ptype> {
+  template<typename Defined>
+  struct size_ptype : public details::ptype_base<Defined, init_ptype> {
     constexpr inline auto limit_to(size_t size) const {
       class body {
       public:
@@ -709,17 +743,19 @@ namespace config {
     }
   };
 
-  template<typename Builder>
-  struct root_ptype : public details::ptype_base<Builder, root_ptype> {
+  template<typename Defined>
+  struct root_ptype : public details::ptype_base<Defined, root_ptype> {
     constexpr inline auto begin() const {
       return this->template next<>(details::empty_section{});
     }
   };
 
   template<template<typename> class Root, typename Entries>
-  struct builder
-      : details::builder_node<plist<Root>, plist<>, details::empty_builder> {
-    using entries_t = Entries;
+  struct builder : details::builder_node<Entries,
+                                         plist<Root>,
+                                         plist<>,
+                                         details::empty_section> {
+    // using entries_t = Entries;
   };
 
 } // namespace config
