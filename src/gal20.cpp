@@ -84,6 +84,44 @@ struct test_evaluator {
   }
 };
 
+namespace example {
+using random_gen = std::mt19937;
+using chromosome = std::vector<double>;
+
+class initializator {
+public:
+  inline explicit initializator(random_gen& generator) noexcept
+      : generator_{&generator} {
+  }
+
+  inline auto operator()() noexcept {
+    std::uniform_real_distribution<> dist{-10.0, 10.0};
+    return chromosome{dist(*generator_), dist(*generator_)};
+  }
+
+private:
+  random_gen* generator_;
+};
+
+struct evaluator {
+  inline auto operator()(chromosome const& ch) noexcept {
+    return std::pow(ch[0] + ch[1], 2.0);
+  }
+};
+
+} // namespace example
+
+void setup_alg() {
+  example::random_gen gen{};
+
+  gal::config::builder<gal::config::root_ptype, gal::alg::basic_config_map>
+      builder{};
+
+  builder.begin().limit_to(10).tag_nothing().make_like(
+      example::initializator{gen});
+      //.evaluate_against(example::evaluator{});
+}
+
 int main() {
 
   std::vector<parent_replacement_t> x{};
@@ -247,13 +285,6 @@ int main() {
   mu5(vec_chromo);
   mu5(lst_chromo);
   mu5(deq_chromo);
-
-  using builder_t =
-      gal::config::builder<gal::config::root_ptype, gal::alg::basic_config_map>;
-  ;
-  builder_t b{};
-  b.begin().limit_to(10).tag_nothing();
-  //.evaluate_against();
 
   return 0;
 }

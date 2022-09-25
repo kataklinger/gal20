@@ -318,21 +318,12 @@ namespace config {
     };
 
     template<typename Built,
-             section Section,
-             template<typename>
-             class This,
-             typename Added>
-    struct next_builder {
-      using type = Built::template builder_t<This, Added, Section>;
-    };
-
-    template<typename Built,
              template<typename>
              class Current,
              section Section,
              typename Added>
     using next_builder_t =
-        typename next_builder<Built, Section, Current, Added>::type;
+        typename Built::template builder_t<Current, Added, Section>;
 
     template<typename Built, template<typename> class Derived>
     class ptype_base {
@@ -721,7 +712,7 @@ namespace config {
   };
 
   template<typename Built>
-  struct size_ptype : public details::ptype_base<Built, init_ptype> {
+  struct size_ptype : public details::ptype_base<Built, size_ptype> {
     constexpr inline auto limit_to(size_t size) const {
       class body {
       public:
