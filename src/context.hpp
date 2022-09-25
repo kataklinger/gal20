@@ -10,7 +10,7 @@ public:
   using statistics_t = Statistics;
 
 public:
-  constexpr inline population_context(population_t& population,
+  inline constexpr population_context(population_t& population,
                                       statistics_t& statistics) noexcept
       : population_{&population}
       , statistics_{&statistics} {
@@ -54,7 +54,7 @@ private:
   using base_t = population_context<Population, Statistics>;
 
 public:
-  constexpr inline reproduction_context(population_t& population,
+  inline constexpr reproduction_context(population_t& population,
                                         statistics_t& statistics,
                                         crossover_t const& crossover,
                                         mutation_t const& mutation,
@@ -111,7 +111,7 @@ private:
                                       Evaluator>;
 
 public:
-  constexpr inline reproduction_context_with_scaling(
+  inline constexpr reproduction_context_with_scaling(
       population_t& population,
       statistics_t& statistics,
       crossover_t const& crossover,

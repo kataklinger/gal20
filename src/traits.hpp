@@ -19,7 +19,7 @@ namespace traits {
       : std::is_nothrow_move_constructible<std::decay_t<Ty>> {};
 
   template<typename Ty>
-  constexpr inline auto is_nothrow_forward_constructible_v =
+  inline constexpr auto is_nothrow_forward_constructible_v =
       is_nothrow_forward_constructible<Ty>::value;
 
   template<typename... Tys>
@@ -27,7 +27,7 @@ namespace traits {
       : std::conjunction<is_nothrow_forward_constructible<Tys>...> {};
 
   template<typename... Tys>
-  constexpr inline auto is_nothrow_forward_constructibles_v =
+  inline constexpr auto is_nothrow_forward_constructibles_v =
       is_nothrow_forward_constructibles<Tys...>::value;
 
   template<typename Ty>
@@ -39,7 +39,7 @@ namespace traits {
       : std::is_nothrow_move_assignable<std::decay_t<Ty>> {};
 
   template<typename Ty>
-  constexpr inline auto is_nothrow_forward_assignable_v =
+  inline constexpr auto is_nothrow_forward_assignable_v =
       is_nothrow_forward_assignable<Ty>::value;
 
   template<typename... Tys>
@@ -47,7 +47,7 @@ namespace traits {
       : std::conjunction<is_nothrow_forward_assignable<Tys>...> {};
 
   template<typename... Tys>
-  constexpr inline auto is_nothrow_forward_assignables_v =
+  inline constexpr auto is_nothrow_forward_assignables_v =
       is_nothrow_forward_assignables<Tys...>::value;
 
   template<typename Ty>
