@@ -86,20 +86,6 @@ namespace config {
     template<>
     class section_node<> {};
 
-    template<>
-    class section_node<details::empty_section> : public details::empty_section,
-                                                 public section_node<> {
-    public:
-      using section_t = details::empty_section;
-
-      constexpr inline section_node() noexcept {
-      }
-
-      constexpr inline section_node(section_t const& section,
-                                    section_node<> const& /*unused*/) noexcept {
-      }
-    };
-
     template<section Section>
     class section_node<Section> : public Section, public section_node<> {
     public:
@@ -109,6 +95,21 @@ namespace config {
       constexpr inline section_node(section_t const& section,
                                     section_node<> const& /*unused*/)
           : section_t{section} {
+      }
+    };
+
+    template<section... Sections>
+    class section_node<details::empty_section, Sections...>
+        : public section_node<Sections...> {
+    public:
+      using section_t = details::empty_section;
+      using base_t = section_node<Sections...>;
+
+      constexpr inline section_node() noexcept {
+      }
+
+      constexpr inline section_node(section_t const& section,
+                                    base_t const& /*unused*/) noexcept {
       }
     };
 
@@ -294,11 +295,14 @@ namespace config {
           : base_t{section, previous} {
       }
 
-      template<template<typename> class This, typename Added, typename Section>
+      template<template<typename> class This,
+               typename Unlocked,
+               section Appended>
       using builder_t =
           builder_node<entries_t,
-                       plist_remove_t<This, plist_merge_t<Added, Available>>,
+                       plist_remove_t<This, plist_merge_t<Unlocked, Available>>,
                        plist_add_t<This, Used>,
+                       Appended,
                        Section,
                        Sections...>;
     };
@@ -346,10 +350,10 @@ namespace config {
     template<typename Built,
              template<typename>
              class Current,
-             section Section,
-             typename Added>
+             section Appended,
+             typename Unlocked>
     using next_builder_t =
-        typename Built::template builder_t<Current, Added, Section>;
+        typename Built::template builder_t<Current, Unlocked, Appended>;
 
     template<typename Built, template<typename> class Derived>
     class ptype_base {
@@ -366,13 +370,13 @@ namespace config {
       }
 
     protected:
-      template<section Section>
-      constexpr inline auto next(Section&& section) const {
+      template<section Appended>
+      constexpr inline auto next(Appended&& section) const {
         return next_builder_t<Built,
                               Derived,
-                              Section,
+                              Appended,
                               typename entry_map_t::unlocked_t>{
-            std::forward<Section>(section), *current_};
+            std::forward<Appended>(section), *current_};
       }
 
     private:

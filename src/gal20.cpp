@@ -132,8 +132,12 @@ void setup_alg() {
                .limit_to(10)
                .tag_nothing()
                .make_like(example::initializator{gen})
-               .evaluate_against(example::evaluator{});
-               //.scale_none();
+               .evaluate_against(example::evaluator{})
+               .reproduce_using(
+                   gal::cross::symmetric_singlepoint<example::random_gen>{gen},
+                   gal::mutate::shuffle<example::random_gen, 1>{gen})
+               .scale_none();
+
 }
 
 int main() {
