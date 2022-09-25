@@ -322,7 +322,7 @@ namespace config {
                             Available> {
     public:
       using built_base_t = built<Entries, Available, Used, Section, Rest...>;
-      using proto_base_t =
+      using ptype_base_t =
           ptype_node<built<Entries, Available, Used, Section, Rest...>,
                      Used,
                      Available>;
@@ -333,13 +333,13 @@ namespace config {
       template<typename = std::enable_if_t<
                    std::is_same_v<current_section_t, empty_section>>>
       inline constexpr builder_node() noexcept
-          : proto_base_t{this} {
+          : ptype_base_t{this} {
       }
 
       inline constexpr builder_node(current_section_t const& current,
                                     previous_section_t const& previous)
           : built_base_t{current, previous}
-          , proto_base_t{this} {
+          , ptype_base_t{this} {
       }
 
       inline constexpr auto build() const {
