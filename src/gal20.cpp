@@ -252,7 +252,8 @@ int main() {
       gal::config::builder<gal::config::root_ptype, gal::alg::basic_config_map>;
   ;
   builder_t b{};
-  b.begin();
+  b.begin().limit_to(10).tag_nothing();
+  //.evaluate_against();
 
   return 0;
 }

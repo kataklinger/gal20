@@ -8,7 +8,7 @@ namespace gal {
 namespace config {
 
   template<typename Section>
-  concept section = !std::is_final_v<Section> && std::semiregular<Section>;
+  concept section = !std::is_final_v<Section> && std::copyable<Section>;
 
   template<template<typename> class... Interfaces>
   struct plist {};
