@@ -73,7 +73,12 @@ namespace config {
         : entry_map_match<entry_map<Rest...>, Match, Built> {};
 
     class empty_section {};
-    class empty_ptype {};
+
+    class empty_ptype {
+      template<typename Sink>
+      inline constexpr explicit empty_ptype(Sink const* /*unused*/) noexcept {
+      }
+    };
 
     template<section... Sections>
     class section_node;
@@ -82,7 +87,8 @@ namespace config {
     class section_node<> {};
 
     template<>
-    class section_node<details::empty_section> : public details::empty_section {
+    class section_node<details::empty_section> : public details::empty_section,
+                                                 public section_node<> {
     public:
       using section_t = details::empty_section;
 
@@ -95,7 +101,7 @@ namespace config {
     };
 
     template<section Section>
-    class section_node<Section> : public Section {
+    class section_node<Section> : public Section, public section_node<> {
     public:
       using section_t = Section;
 
@@ -236,7 +242,11 @@ namespace config {
     class ptype_node {};
 
     template<typename Built, typename Used>
-    class ptype_node<Built, Used, plist<>> {};
+    class ptype_node<Built, Used, plist<>> {
+    public:
+      inline constexpr explicit ptype_node(Built const* /*unused*/) noexcept {
+      }
+    };
 
     template<typename Built,
              typename Used,
@@ -246,7 +256,13 @@ namespace config {
              class... Interfaces>
     class ptype_node<Built, Used, plist<Interface, Interfaces...>>
         : public ptype_inherit_t<Used, Interface<Built>>,
-          public ptype_node<Built, Used, plist<Interfaces...>> {};
+          public ptype_node<Built, Used, plist<Interfaces...>> {
+    public:
+      inline constexpr explicit ptype_node(Built const* current)
+          : ptype_inherit_t<Used, Interface<Built>>{current}
+          , ptype_node<Built, Used, plist<Interfaces...>>{current} {
+      }
+    };
 
     template<typename Entries,
              typename Available,
@@ -257,21 +273,25 @@ namespace config {
     template<typename Entries,
              typename Available,
              typename Used,
+             typename Section,
              typename... Sections>
-    class built : public section_node<Sections...> {
+    class built : public section_node<Section, Sections...> {
     public:
       using entries_t = Entries;
-      using section_t = section_node<Sections...>;
+      using section_t = Section;
 
-      template<typename Builder>
-      inline constexpr static decltype(auto)
-          to_section(Builder const& builder) noexcept {
-        if constexpr (std::is_same_v<section_t, section_node<>>) {
-          return section_t{};
-        }
-        else {
-          return static_cast<section_t const&>(builder);
-        }
+      using previous_t = section_node<Sections...>;
+      using base_t = section_node<Section, Sections...>;
+
+    public:
+      template<
+          typename = std::enable_if_t<std::is_same_v<section_t, empty_section>>>
+      inline constexpr built() noexcept {
+      }
+
+      inline constexpr built(section_t const& section,
+                             previous_t const& previous)
+          : base_t{section, previous} {
       }
 
       template<template<typename> class This, typename Added, typename Section>
@@ -292,28 +312,34 @@ namespace config {
              section Section,
              section... Rest>
     class builder_node<Entries, Available, Used, Section, Rest...>
-        : public ptype_node<built<Entries, Available, Used, Rest...>,
+        : public built<Entries, Available, Used, Section, Rest...>,
+          public ptype_node<built<Entries, Available, Used, Section, Rest...>,
                             Used,
-                            Available>,
-          public section_node<Section, Rest...> {
+                            Available> {
     public:
-      using section_t = Section;
-      using base_t = section_node<section_t, Rest...>;
-      using previous_t = section_node<Rest...>;
+      using built_base_t = built<Entries, Available, Used, Section, Rest...>;
+      using proto_base_t =
+          ptype_node<built<Entries, Available, Used, Section, Rest...>,
+                     Used,
+                     Available>;
+      using current_section_t = typename built_base_t::section_t;
+      using previous_section_t = typename built_base_t::previous_t;
 
     public:
-      template<
-          typename = std::enable_if_t<std::is_same_v<section_t, empty_section>>>
-      inline constexpr builder_node() noexcept {
+      template<typename = std::enable_if_t<
+                   std::is_same_v<current_section_t, empty_section>>>
+      inline constexpr builder_node() noexcept
+          : proto_base_t{this} {
       }
 
-      inline constexpr builder_node(section_t const& section,
-                                    previous_t const& previous)
-          : base_t{section, previous} {
+      inline constexpr builder_node(current_section_t const& current,
+                                    previous_section_t const& previous)
+          : built_base_t{current, previous}
+          , proto_base_t{this} {
       }
 
       constexpr inline auto build() const {
-        return static_cast<base_t>(*this);
+        return static_cast<built_base_t>(*this);
       }
     };
 
@@ -334,6 +360,11 @@ namespace config {
     public:
       using required_t = typename entry_map_t::required_t;
 
+    public:
+      inline constexpr explicit ptype_base(Built const* current)
+          : current_{current} {
+      }
+
     protected:
       template<section Section>
       constexpr inline auto next(Section&& section) const {
@@ -341,8 +372,11 @@ namespace config {
                               Derived,
                               Section,
                               typename entry_map_t::unlocked_t>{
-            std::forward<Section>(section), Built::to_section(*this)};
+            std::forward<Section>(section), *current_};
       }
+
+    private:
+      Built const* current_;
     };
 
     template<typename Built, typename = typename Built::is_global_scaling_t>
@@ -373,6 +407,10 @@ namespace config {
 
   template<typename Built>
   struct tags_ptype : public details::ptype_base<Built, tags_ptype> {
+    inline constexpr explicit tags_ptype(Built const* current)
+        : details::ptype_base<Built, tags_ptype>{current} {
+    }
+
     template<typename Tags>
     constexpr inline auto tag_with() const {
       class body {
@@ -399,7 +437,10 @@ namespace config {
     using statistics_t = typename Built::statistics_t;
     using history_t = stat::history<statistics_t>;
 
-  public:
+    inline constexpr explicit criterion_ptype(Built const* current)
+        : details::ptype_base<Built, criterion_ptype>{current} {
+    }
+
     template<criterion<population_t, history_t> Criterion>
     constexpr inline auto stop_when(Criterion const& criterion) const {
       class body {
@@ -427,6 +468,10 @@ namespace config {
   struct replace_ptype : public details::ptype_base<Built, replace_ptype> {
     using population_t = typename Built::population_t;
     using copuling_result_t = typename Built::copuling_result_t;
+
+    inline constexpr explicit replace_ptype(Built const* current)
+        : details::ptype_base<Built, replace_ptype>{current} {
+    }
 
     template<replacement<population_t, copuling_result_t> Replacement>
     constexpr inline auto replace_with(Replacement const& replacement) const {
@@ -456,6 +501,10 @@ namespace config {
     using internal_reproduction_context_t =
         details::build_reproduction_context_t<Built>;
     using selection_result_t = typename Built::selection_result_t;
+
+    inline constexpr explicit couple_ptype(Built const* current)
+        : details::ptype_base<Built, couple_ptype>{current} {
+    }
 
     template<coupling_factory<internal_reproduction_context_t,
                               selection_result_t> Factory>
@@ -491,6 +540,10 @@ namespace config {
   struct select_ptype : public details::ptype_base<Built, select_ptype> {
     using population_t = typename Built::population_t;
 
+    inline constexpr explicit select_ptype(Built const* current)
+        : details::ptype_base<Built, select_ptype>{current} {
+    }
+
     template<selection<population_t> Selection>
     constexpr inline auto select_using(Selection const& selection) const {
       class body {
@@ -520,6 +573,10 @@ namespace config {
   template<typename Built>
   struct scale_ptype : public details::ptype_base<Built, scale_ptype> {
     using population_context_t = typename Built::population_context_t;
+
+    inline constexpr explicit scale_ptype(Built const* current)
+        : details::ptype_base<Built, scale_ptype>{current} {
+    }
 
     template<scaling_factory<population_context_t> Factory>
     constexpr inline auto scale_as(Factory const& scaling) const {
@@ -554,6 +611,10 @@ namespace config {
 
   template<typename Built>
   struct reproduce_ptype : public details::ptype_base<Built, reproduce_ptype> {
+    inline constexpr explicit reproduce_ptype(Built const* current)
+        : details::ptype_base<Built, reproduce_ptype>{current} {
+    }
+
     template<crossover<typename Built::chromosome_t> Crossover,
              mutation<typename Built::chromosome_t> Mutation>
     constexpr inline auto reproduce_using(Crossover const& crossover,
@@ -597,6 +658,10 @@ namespace config {
                                              typename Built::scaled_fitness_t,
                                              typename Built::tags_t>;
 
+    inline constexpr explicit statistics_ptype(Built const* current)
+        : details::ptype_base<Built, statistics_ptype>{current} {
+    }
+
     template<stat::model<internal_population_t>... Models>
     constexpr inline auto track_these(std::size_t depth) const {
       class body {
@@ -634,6 +699,11 @@ namespace config {
       using is_stable_scaling_t = std::true_type;
     };
 
+  public:
+    inline constexpr explicit scale_fitness_ptype(Built const* current)
+        : details::ptype_base<Built, scale_fitness_ptype>{current} {
+    }
+
     template<fitness Scaled>
     constexpr inline auto scale_to() const {
       return scale_impl<Scaled, body_base>();
@@ -657,6 +727,10 @@ namespace config {
 
   template<typename Built>
   struct evaluate_ptype : public details::ptype_base<Built, evaluate_ptype> {
+    inline constexpr explicit evaluate_ptype(Built const* current)
+        : details::ptype_base<Built, evaluate_ptype>{current} {
+    }
+
     template<evaluator<typename Built::chromosome_t> Evaluator>
     constexpr inline auto evaluate_against(Evaluator const& evaluator) const {
       using chromosome_t = typename Built::chromosome_t;
@@ -687,6 +761,10 @@ namespace config {
 
   template<typename Built>
   struct init_ptype : public details::ptype_base<Built, init_ptype> {
+    inline constexpr explicit init_ptype(Built const* current)
+        : details::ptype_base<Built, init_ptype>{current} {
+    }
+
     template<initializator Initializator>
     constexpr inline auto make_like(Initializator const& initializator) const {
       class body {
@@ -713,6 +791,10 @@ namespace config {
 
   template<typename Built>
   struct size_ptype : public details::ptype_base<Built, size_ptype> {
+    inline constexpr explicit size_ptype(Built const* current)
+        : details::ptype_base<Built, size_ptype>{current} {
+    }
+
     constexpr inline auto limit_to(size_t size) const {
       class body {
       public:
@@ -734,6 +816,10 @@ namespace config {
 
   template<typename Built>
   struct root_ptype : public details::ptype_base<Built, root_ptype> {
+    inline constexpr explicit root_ptype(Built const* current)
+        : details::ptype_base<Built, root_ptype>{current} {
+    }
+
     constexpr inline auto begin() const {
       return this->template next<>(details::empty_section{});
     }
@@ -743,9 +829,7 @@ namespace config {
   struct builder : details::builder_node<Entries,
                                          plist<Root>,
                                          plist<>,
-                                         details::empty_section> {
-    // using entries_t = Entries;
-  };
+                                         details::empty_section> {};
 
 } // namespace config
 } // namespace gal

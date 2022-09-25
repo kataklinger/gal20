@@ -109,6 +109,17 @@ struct evaluator {
   }
 };
 
+template<gal::evaluator<chromosome> X>
+struct test1 {};
+
+struct test2 {
+  using type2 = void;
+};
+
+struct test3 {
+  using type3 = void;
+};
+
 } // namespace example
 
 void setup_alg() {
@@ -117,9 +128,12 @@ void setup_alg() {
   gal::config::builder<gal::config::root_ptype, gal::alg::basic_config_map>
       builder{};
 
-  builder.begin().limit_to(10).tag_nothing().make_like(
-      example::initializator{gen});
-      //.evaluate_against(example::evaluator{});
+  auto c = builder.begin()
+               .limit_to(10)
+               .tag_nothing()
+               .make_like(example::initializator{gen})
+               .evaluate_against(example::evaluator{});
+               //.scale_none();
 }
 
 int main() {
