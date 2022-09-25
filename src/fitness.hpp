@@ -113,6 +113,17 @@ struct fitness_traits<Fitness> {
 };
 
 struct empty_fitness {};
+
+inline constexpr auto operator==(empty_fitness const& /*unused*/,
+                                 empty_fitness const& /*unused*/) noexcept {
+  return true;
+}
+
+inline constexpr auto operator!=(empty_fitness const& /*unused*/,
+                                 empty_fitness const& /*unused*/) noexcept {
+  return false;
+}
+
 struct empty_tags {};
 
 template<typename Fitness>
