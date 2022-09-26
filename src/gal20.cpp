@@ -117,10 +117,6 @@ void setup_alg() {
   gal::config::builder<gal::config::root_ptype, gal::alg::basic_config_map>
       builder{};
 
-  auto x = gal::couple::make_factory<gal::couple::exclusive>(
-      gal::couple::
-          reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>{gen});
-
   auto c =
       builder.begin()
           .limit_to(20)
@@ -131,15 +127,21 @@ void setup_alg() {
               gal::cross::symmetric_singlepoint<example::random_gen>{gen},
               gal::mutate::shuffle<example::random_gen, 1>{gen})
           .scale_none()
-          .track_these<gal::stat::extreme_fitness<gal::raw_fitness_tag>,
+          .track_these<gal::stat::generation,
+                       gal::stat::extreme_fitness<gal::raw_fitness_tag>,
                        gal::stat::total_fitness<gal::raw_fitness_tag>,
                        gal::stat::average_fitness<gal::raw_fitness_tag>,
                        gal::stat::fitness_deviation<gal::raw_fitness_tag>>(10)
+          .stop_when(gal::criteria::generation{100})
           .select_using(
               gal::select::
                   roulette<4, true, gal::raw_fitness_tag, example::random_gen>{
                       gen})
-          .couple_like(x);
+          .couple_like(gal::couple::make_factory<gal::couple::exclusive>(
+              gal::couple::
+                  reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>{
+                      gen}))
+          .replace_with(gal::replace::worst<gal::raw_fitness_tag>{});
 }
 
 int main() {
