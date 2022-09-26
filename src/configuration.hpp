@@ -347,6 +347,9 @@ namespace config {
       }
     };
 
+    template<typename Built>
+    using get_entry_map = typename Built::entries_t::type;
+
     template<typename Built,
              template<typename>
              class Current,
@@ -358,8 +361,7 @@ namespace config {
     template<typename Built, template<typename> class Derived>
     class ptype_base {
     private:
-      using entry_map_t =
-          entry_map_match<typename Built::entries_t, Derived, Built>;
+      using entry_map_t = entry_map_match<get_entry_map<Built>, Derived, Built>;
 
     public:
       using required_t = typename entry_map_t::required_t;

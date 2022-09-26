@@ -117,7 +117,7 @@ void setup_alg() {
   gal::config::builder<gal::config::root_ptype, gal::alg::basic_config_map>
       builder{};
 
-  auto c =
+  auto cfg =
       builder.begin()
           .limit_to(20)
           .tag_nothing()
@@ -141,7 +141,10 @@ void setup_alg() {
               gal::couple::
                   reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>{
                       gen}))
-          .replace_with(gal::replace::worst<gal::raw_fitness_tag>{});
+          .replace_with(gal::replace::worst<gal::raw_fitness_tag>{})
+          .build();
+
+  //gal::alg::basic alg{cfg};
 }
 
 int main() {
