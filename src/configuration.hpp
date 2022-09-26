@@ -553,9 +553,9 @@ namespace config {
       class body {
       public:
         using selection_t = Selection;
-        using selection_result_t = std::invoke_result_t<
-            selection_t,
-            std::add_lvalue_reference_t<std::add_const_t<population_t>>>;
+        using selection_result_t =
+            std::invoke_result_t<selection_t,
+                                 std::add_lvalue_reference_t<population_t>>;
 
       public:
         inline constexpr explicit body(selection_t const& selection)

@@ -93,7 +93,7 @@ template<typename Operation, typename Population>
 concept selection =
     std::is_invocable_v<
         Operation,
-        std::add_lvalue_reference_t<std::add_const_t<Population>>> &&
+        std::add_lvalue_reference_t<Population>> &&
     selection_range<
         std::invoke_result_t<Operation,
                              std::add_lvalue_reference_t<Population>>,
