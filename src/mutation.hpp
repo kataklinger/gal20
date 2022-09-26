@@ -59,7 +59,7 @@ namespace mutate {
     }
 
     template<range_chromosome Chromosome>
-    void operator()(Chromosome& target) {
+    void operator()(Chromosome& target) const {
       if (std::ranges::size(target) > 2) {
         for (auto i = count; i > 0; --i) {
           auto left = details::get_random_iter(target, *generator_),
@@ -90,7 +90,7 @@ namespace mutate {
     }
 
     template<range_chromosome Chromosome>
-    void operator()(Chromosome& target) {
+    void operator()(Chromosome& target) const {
       if (std::ranges::size(target) > 2) {
         for (auto i = count; i > 0;) {
           auto from = details::get_random_iter(target, *generator_),
@@ -121,7 +121,7 @@ namespace mutate {
     }
 
     template<range_chromosome Chromosome>
-    void operator()(Chromosome& target) {
+    void operator()(Chromosome& target) const {
       for (auto i = details::get_count_min(count, target); i > 0; --i) {
         target.erase(details::get_random_iter(target, *generator_));
       }
@@ -145,7 +145,7 @@ namespace mutate {
     }
 
     template<range_chromosome Chromosome>
-    void operator()(Chromosome& target) {
+    void operator()(Chromosome& target) const {
       for (auto i = count; i > 0; --i) {
         target.insert(details::get_random_iter(target, *generator_), fn_());
       }
@@ -170,7 +170,7 @@ namespace mutate {
     }
 
     template<range_chromosome Chromosome>
-    void operator()(Chromosome& target) {
+    void operator()(Chromosome& target) const {
       gal::details::unique_state state{details::get_count(count, target)};
       while (!state.full()) {
         std::size_t idx = 0;

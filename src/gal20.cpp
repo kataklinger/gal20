@@ -94,7 +94,7 @@ public:
       : generator_{&generator} {
   }
 
-  inline auto operator()() noexcept {
+  inline auto operator()() const noexcept {
     std::uniform_real_distribution<> dist{-10.0, 10.0};
     return chromosome{dist(*generator_), dist(*generator_)};
   }
@@ -104,20 +104,9 @@ private:
 };
 
 struct evaluator {
-  inline auto operator()(chromosome const& ch) noexcept {
-    return std::pow(ch[0] + ch[1], 2.0);
+  inline auto operator()(chromosome const& ch) const noexcept {
+    return -std::pow(ch[0], 2.0) - std::pow(ch[1], 2.0);
   }
-};
-
-template<gal::evaluator<chromosome> X>
-struct test1 {};
-
-struct test2 {
-  using type2 = void;
-};
-
-struct test3 {
-  using type3 = void;
 };
 
 } // namespace example
@@ -128,16 +117,29 @@ void setup_alg() {
   gal::config::builder<gal::config::root_ptype, gal::alg::basic_config_map>
       builder{};
 
-  auto c = builder.begin()
-               .limit_to(10)
-               .tag_nothing()
-               .make_like(example::initializator{gen})
-               .evaluate_against(example::evaluator{})
-               .reproduce_using(
-                   gal::cross::symmetric_singlepoint<example::random_gen>{gen},
-                   gal::mutate::shuffle<example::random_gen, 1>{gen})
-               .scale_none();
+  auto x = gal::couple::make_factory<gal::couple::exclusive>(
+      gal::couple::
+          reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>{gen});
 
+  auto c =
+      builder.begin()
+          .limit_to(20)
+          .tag_nothing()
+          .make_like(example::initializator{gen})
+          .evaluate_against(example::evaluator{})
+          .reproduce_using(
+              gal::cross::symmetric_singlepoint<example::random_gen>{gen},
+              gal::mutate::shuffle<example::random_gen, 1>{gen})
+          .scale_none()
+          .track_these<gal::stat::extreme_fitness<gal::raw_fitness_tag>,
+                       gal::stat::total_fitness<gal::raw_fitness_tag>,
+                       gal::stat::average_fitness<gal::raw_fitness_tag>,
+                       gal::stat::fitness_deviation<gal::raw_fitness_tag>>(10)
+          .select_using(
+              gal::select::
+                  roulette<4, true, gal::raw_fitness_tag, example::random_gen>{
+                      gen})
+          .couple_like(x);
 }
 
 int main() {
