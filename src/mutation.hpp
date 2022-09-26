@@ -188,13 +188,13 @@ namespace mutate {
   };
 
   template<std::size_t Count, typename Generator, typename Flop>
-  inline auto make_create(Generator& generator, Flop&& flop) {
+  inline constexpr auto make_create(Generator& generator, Flop&& flop) {
     return create<Generator, std::remove_reference_t<Flop>, Count>{
         generator, std::forward<Flop>(flop)};
   }
 
   template<std::size_t Count, typename Generator, typename Flop>
-  inline auto make_flip(Generator& generator, Flop&& flop) {
+  inline constexpr auto make_flip(Generator& generator, Flop&& flop) {
     return flip<Generator, std::remove_reference_t<Flop>, Count>{
         generator, std::forward<Flop>(flop)};
   }

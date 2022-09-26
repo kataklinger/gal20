@@ -344,12 +344,12 @@ namespace couple {
     using params_t = Params;
 
   public:
-    inline explicit factory(params_t const& params)
+    inline constexpr explicit factory(params_t const& params)
         : params_{params} {
     }
 
     template<typename Context>
-    auto operator()(Context& context) {
+    inline constexpr auto operator()(Context& context) const {
       return Coupling<Context, params_t>{context, params_};
     }
 
@@ -358,7 +358,7 @@ namespace couple {
   };
 
   template<template<typename, typename> class Coupling, typename Params>
-  inline auto make_factory(Params const& params) {
+  inline constexpr auto make_factory(Params const& params) {
     return factory<Coupling, Params>{params};
   }
 
