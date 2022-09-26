@@ -125,21 +125,27 @@ concept criterion = std::is_invocable_r_v<bool, Operation, Population, History>;
 
 template<typename Factory, typename Context>
 concept scaling_factory =
-    std::is_invocable_v<Factory, Context> &&
-        scaling<std::invoke_result_t<Factory, Context>,
-                typename Context::population_t>;
+    std::is_invocable_v<std::add_const_t<Factory>,
+                        std::add_lvalue_reference_t<Context>> &&
+    scaling<std::invoke_result_t<std::add_const_t<Factory>,
+                                 std::add_lvalue_reference_t<Context>>,
+            typename Context::population_t>;
 
 template<typename Factory, typename Context, typename Parents>
 concept coupling_factory =
-    std::is_invocable_v<Factory, Context> &&
-        coupling<std::invoke_result_t<Factory, Context>,
-                typename Context::population_t,
-                Parents>;
+    std::is_invocable_v<std::add_const_t<Factory>,
+                        std::add_lvalue_reference_t<Context>> &&
+    coupling<std::invoke_result_t<std::add_const_t<Factory>,
+                                  std::add_lvalue_reference_t<Context>>,
+             typename Context::population_t,
+             Parents>;
 
 // clang-format on
 
 template<typename Factory, typename Context>
-using factory_result_t = std::invoke_result_t<Factory, Context>;
+using factory_result_t =
+    std::invoke_result_t<std::add_const_t<Factory>,
+                         std::add_lvalue_reference_t<Context>>;
 
 template<auto Probability>
 concept probability = Probability >= 0.f && Probability <= 1.f &&
