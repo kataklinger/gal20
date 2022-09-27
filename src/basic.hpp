@@ -70,10 +70,6 @@ namespace alg {
     mutation<typename Config::mutation_t, typename Config::chromosome_t>;
     evaluator<typename Config::evaluator_t, typename Config::chromosome_t>;
 
-    std::derived_from<typename Config::improving_mutation_t, std::true_type> ||
-        std::derived_from<typename Config::improving_mutation_t,
-                          std::false_type>;
-
     traits::boolean_flag<typename Config::is_global_scaling_t>;
     traits::boolean_flag<typename Config::is_stable_scaling_t>;
 
@@ -104,10 +100,12 @@ namespace alg {
     { c.selection() } -> std::convertible_to<typename Config::selection_t>;
 
     {
-      c.coupling(std::declval<typename Config::reproduction_context_t>())
+      c.coupling(std::declval<typename Config::reproduction_context_t&>())
       } -> std::convertible_to<typename Config::coupling_t>;
 
     { c.criterion() } -> std::convertible_to<typename Config::criterion_t>;
+
+    { c.statistics_depth() } -> std::convertible_to<std::size_t>;
   };
 
   namespace details {
@@ -241,8 +239,9 @@ namespace alg {
   public:
     inline explicit basic(config_t const& config)
         : config_{config}
-        , population_{population_.population_size(),
-                      config_t::is_stable_scaling_t::value} {
+        , population_{population_.current_size(),
+                      config_t::is_stable_scaling_t::value}
+        , statistics_{config.statistics_depth()} {
     }
 
     void run(std::stop_token token) {

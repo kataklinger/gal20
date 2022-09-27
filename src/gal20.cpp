@@ -144,7 +144,8 @@ void setup_alg() {
           .replace_with(gal::replace::worst<gal::raw_fitness_tag>{})
           .build();
 
-  //gal::alg::basic alg{cfg};
+
+  gal::alg::basic alg{cfg};
 }
 
 int main() {

@@ -668,7 +668,7 @@ namespace config {
         : depth_{depth} {
     }
 
-    inline auto depth() const noexcept {
+    inline auto statistics_depth() const noexcept {
       return depth_;
     }
 
