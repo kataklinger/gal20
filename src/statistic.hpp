@@ -1114,7 +1114,7 @@ namespace stat {
         values_.pop_front();
       }
 
-      return values_.push_back(current().next(population));
+      return values_.emplace_back(current().next(population));
     }
 
     inline auto& current() noexcept {
