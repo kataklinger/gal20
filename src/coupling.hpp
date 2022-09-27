@@ -87,7 +87,7 @@ namespace couple {
                        pairing_t /*unused*/)
           : context_{&context}
           , params_{&params}
-          , statistics_{&context.statistics()} {
+          , statistics_{&context.history()} {
         results_.reserve(size);
       }
 
@@ -187,18 +187,22 @@ namespace couple {
 
       template<typename Tag>
       inline void increment(Tag tag) const {
-        stat::increment_count(*statistics_, tag);
+        stat::increment_count(get_stats(), tag);
       }
 
       template<typename Tag>
       inline void increment_if(bool executed, Tag tag) const {
-        stat::increment_count<Tag>(*statistics_, tag, {executed});
+        stat::increment_count<Tag>(get_stats(), tag, {executed});
+      }
+
+      inline auto& get_stats() const noexcept {
+        return statistics_->current();
       }
 
     private:
       context_t* context_;
       params_t const* params_;
-      statistics_t* statistics_;
+      stat::history<statistics_t>* statistics_;
 
       std::vector<parentship_t> results_;
     };

@@ -28,12 +28,12 @@ public:
     return *population_;
   }
 
-  inline statistics_t& statistics() noexcept {
-    return *statistics_->current();
+  inline history_t& history() noexcept {
+    return *statistics_;
   }
 
-  inline statistics_t const& statistics() const noexcept {
-    return statistics_->current();
+  inline history_t const& history() const noexcept {
+    return *statistics_;
   }
 
 private:
@@ -54,12 +54,14 @@ public:
   using mutation_t = Mutation;
   using evaluator_t = Evaluator;
 
+  using history_t = stat::history<statistics_t>;
+
 private:
   using base_t = population_context<Population, Statistics>;
 
 public:
   inline constexpr reproduction_context(population_t& population,
-                                        statistics_t& statistics,
+                                        history_t& statistics,
                                         crossover_t const& crossover,
                                         mutation_t const& mutation,
                                         evaluator_t const& evaluator)
@@ -107,6 +109,8 @@ public:
   using evaluator_t = Evaluator;
   using scaling_t = Scaling;
 
+  using history_t = stat::history<statistics_t>;
+
 private:
   using base_t = reproduction_context<Population,
                                       Statistics,
@@ -117,7 +121,7 @@ private:
 public:
   inline constexpr reproduction_context_with_scaling(
       population_t& population,
-      statistics_t& statistics,
+      history_t& statistics,
       crossover_t const& crossover,
       mutation_t const& mutation,
       evaluator_t const& evaluator,

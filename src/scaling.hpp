@@ -79,7 +79,7 @@ namespace scale {
 
   public:
     inline explicit linear(context_t& context)
-        : statistics_{&context.statistics()} {
+        : statistics_{&context.history()} {
     }
 
     inline void operator()() noexcept {
@@ -98,20 +98,26 @@ namespace scale {
     }
 
     inline auto& get_average() const noexcept {
-      return statistics_->template get<fitness_avg_t>().fitness_average_value();
+      return statistics_->current()
+          .template get<fitness_avg_t>()
+          .fitness_average_value();
     }
 
     inline auto& get_best() const noexcept {
-      return statistics_->template get<fitness_ext_t>().fitness_best_value();
+      return statistics_->current()
+          .template get<fitness_ext_t>()
+          .fitness_best_value();
     }
 
     inline auto& get_worst() const noexcept {
-      return statistics_->template get<fitness_ext_t>().fitness_worst_value();
+      return statistics_->current()
+          .template get<fitness_ext_t>()
+          .fitness_worst_value();
     }
 
   private:
     std::pair<double, double> coefficients_;
-    statistics_t* statistics_;
+    stat::history<statistics_t>* statistics_;
   };
 
   template<typename Fitness>
@@ -148,7 +154,7 @@ namespace scale {
 
   public:
     inline explicit sigma(context_t& context)
-        : statistics_{&context.statistics()} {
+        : statistics_{&context.history()} {
     }
 
     inline void operator()(rank_t /*unused*/, individual_t& individual) const {
@@ -167,16 +173,19 @@ namespace scale {
     }
 
     inline auto& get_average() const noexcept {
-      return statistics_->template get<fitness_avg_t>().fitness_average_value();
+      return statistics_->current()
+          .template get<fitness_avg_t>()
+          .fitness_average_value();
     }
 
     inline auto& get_deviation() const noexcept {
-      return statistics_->template get<fitness_dev_t>()
+      return statistics_->current()
+          .template get<fitness_dev_t>()
           .fitness_deviation_value();
     }
 
   private:
-    statistics_t* statistics_;
+    stat::history<statistics_t>* statistics_;
   };
 
   template<typename Context>
@@ -374,7 +383,7 @@ namespace scale {
 
   public:
     inline explicit window(context_t& context)
-        : statistics_{&context.statistics()} {
+        : statistics_{&context.history()} {
     }
 
     inline void operator()(rank_t /*unused*/, individual_t& individual) const {
@@ -384,11 +393,13 @@ namespace scale {
 
   private:
     inline auto& get_worst() const noexcept {
-      return statistics_->template get<fitness_ext_t>().fitness_worst_value();
+      return statistics_->current()
+          .template get<fitness_ext_t>()
+          .fitness_worst_value();
     }
 
   private:
-    statistics_t* statistics_;
+    stat::history<statistics_t>* statistics_;
   };
 
   template<template<typename, auto...> class Scaling, auto... Parameters>
