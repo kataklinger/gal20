@@ -17,20 +17,20 @@ namespace select {
 
   public:
     inline explicit random(generator_t& generator) noexcept
-        : generator_{&generator}
-        , state_{Size} {
+        : generator_{&generator} {
     }
 
     template<typename Population>
-    inline auto operator()(Population& population) {
-      return details::select_many(population, state_, [&population, this]() {
-        return distribution_t{0, population.current_size() - 1}(*generator_);
-      });
+    inline auto operator()(Population& population) const {
+      return details::select_many(
+          population, state_t{Size}, [&population, this]() {
+            return distribution_t{0,
+                                  population.current_size() - 1}(*generator_);
+          });
     }
 
   private:
     generator_t* generator_;
-    [[no_unique_address]] state_t state_{};
   };
 
   template<std::size_t Size, typename FitnessTag>
@@ -40,7 +40,7 @@ namespace select {
 
   public:
     template<ordered_population<fitness_tag_t> Population>
-    inline auto operator()(Population& population) {
+    inline auto operator()(Population& population) const {
       population.sort(fitness_tag_t{});
 
       std::size_t idx{};
@@ -67,12 +67,11 @@ namespace select {
 
   public:
     inline explicit roulette(generator_t& generator) noexcept
-        : generator_{&generator}
-        , state_{Size} {
+        : generator_{&generator} {
     }
 
     template<typename Population>
-    inline auto operator()(Population& population) requires
+    inline auto operator()(Population& population) const requires
         ordered_population<Population, FitnessTag> &&
         averageable_population<Population, FitnessTag> {
       using fitness_t = get_fitness_t<fitness_tag_t, Population>;
@@ -83,7 +82,7 @@ namespace select {
 
       auto wheel = get_wheel(population);
 
-      return details::select_many(population, state_, [&wheel, this]() {
+      return details::select_many(population, state_t{Size}, [&wheel, this]() {
         auto selected = distribution_t{{}, wheel.back()}(*generator_);
         return std::ranges::lower_bound(wheel, selected) - wheel.begin();
       });
@@ -108,7 +107,6 @@ namespace select {
 
   private:
     generator_t* generator_;
-    [[no_unique_address]] state_t state_;
   };
 
 } // namespace select
