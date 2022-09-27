@@ -78,7 +78,8 @@ namespace replace {
     template<typename Population,
              replacement_range<typename Population::iterator_t,
                                typename Population::individual_t> Offspring>
-    inline auto operator()(Population& population, Offspring&& offspring) {
+    inline auto operator()(Population& population,
+                           Offspring&& offspring) const {
       auto to_replace = gal::details::select_many(
           population,
           gal::details::unique_state{details::get_size(population, offspring)},
@@ -106,7 +107,8 @@ namespace replace {
     template<typename Population,
              replacement_range<typename Population::iterator_t,
                                typename Population::individual_t> Offspring>
-    inline auto operator()(Population& population, Offspring&& offspring) {
+    inline auto operator()(Population& population,
+                           Offspring&& offspring) const {
       population.sort(fitness_tag);
 
       auto size = details::get_size(population, offspring);
@@ -132,7 +134,8 @@ namespace replace {
     template<typename Population,
              replacement_range<typename Population::iterator_t,
                                typename Population::individual_t> Offspring>
-    inline auto operator()(Population& population, Offspring&& offspring) {
+    inline auto operator()(Population& population,
+                           Offspring&& offspring) const {
       population.insert(details::extract_children(offspring));
       population.sort(fitness_tag);
       return population.trim();
@@ -145,7 +148,8 @@ namespace replace {
     template<typename Population,
              replacement_range<typename Population::iterator_t,
                                typename Population::individual_t> Offspring>
-    inline auto operator()(Population& population, Offspring&& offspring) {
+    inline auto operator()(Population& population,
+                           Offspring&& offspring) const {
       return population.replace(offspring);
     }
   };
@@ -155,7 +159,8 @@ namespace replace {
     template<typename Population,
              replacement_range<typename Population::iterator_t,
                                typename Population::individual_t> Offspring>
-    inline auto operator()(Population& population, Offspring&& offspring) {
+    inline auto operator()(Population& population,
+                           Offspring&& offspring) const {
       auto removed = population.trim_all();
       population.insert(details::extract_children(offspring));
       return removed;
