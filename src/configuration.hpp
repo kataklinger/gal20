@@ -411,6 +411,11 @@ namespace config {
 
   } // namespace details
 
+  template<typename Tags>
+  struct tags_body {
+    using tags_t = Tags;
+  };
+
   template<typename Built>
   struct tags_ptype : public details::ptype_base<Built, tags_ptype> {
     inline constexpr explicit tags_ptype(Built const* current)
@@ -419,22 +424,30 @@ namespace config {
 
     template<typename Tags>
     inline constexpr auto tag_with() const {
-      class body {
-      public:
-        using tags_t = Tags;
-      };
-
-      return this->template next<>(body{});
+      return this->template next<>(tags_body<Tags>{});
     }
 
     inline constexpr auto tag_nothing() const {
-      class body {
-      public:
-        using tags_t = empty_tags;
-      };
-
-      return this->template next<>(body{});
+      return this->template next<>(tags_body<empty_tags>{});
     }
+  };
+
+  template<typename Criterion>
+  class criterion_body {
+  public:
+    using criterion_t = Criterion;
+
+  public:
+    inline constexpr explicit criterion_body(criterion_t const& criterion)
+        : criterion_{criterion} {
+    }
+
+    inline auto criterion() const {
+      return criterion_;
+    }
+
+  private:
+    criterion_t criterion_;
   };
 
   template<typename Built>
@@ -449,25 +462,26 @@ namespace config {
 
     template<criterion<population_t, history_t> Criterion>
     inline constexpr auto stop_when(Criterion const& criterion) const {
-      class body {
-      public:
-        using criterion_t = Criterion;
-
-      public:
-        inline constexpr explicit body(criterion_t const& criterion)
-            : criterion_{criterion} {
-        }
-
-        inline auto criterion() const {
-          return criterion_;
-        }
-
-      private:
-        criterion_t criterion_;
-      };
-
-      return this->template next<>(body{criterion});
+      return this->template next<>(criterion_body{criterion});
     }
+  };
+
+  template<typename Replacement>
+  class replace_body {
+  public:
+    using replacement_t = Replacement;
+
+  public:
+    inline constexpr explicit replace_body(replacement_t const& replacement)
+        : replacement_{replacement} {
+    }
+
+    inline auto const& replacement() const noexcept {
+      return replacement_;
+    }
+
+  private:
+    replacement_t replacement_;
   };
 
   template<typename Built>
@@ -481,25 +495,30 @@ namespace config {
 
     template<replacement<population_t, copuling_result_t> Replacement>
     inline constexpr auto replace_with(Replacement const& replacement) const {
-      class body {
-      public:
-        using replacement_t = Replacement;
-
-      public:
-        inline constexpr explicit body(replacement_t const& replacement)
-            : replacement_{replacement} {
-        }
-
-        inline auto const& replacement() const noexcept {
-          return replacement_;
-        }
-
-      private:
-        replacement_t replacement_;
-      };
-
-      return this->template next<>(body{replacement});
+      return this->template next<>(replace_body{replacement});
     }
+  };
+
+  template<typename Factory, typename Context, typename Input>
+  class couple_body {
+  public:
+    using reproduction_context_t = Context;
+    using coupling_t = factory_result_t<Factory, reproduction_context_t>;
+    using copuling_result_t = std::invoke_result_t<
+        coupling_t,
+        std::add_lvalue_reference_t<std::add_const_t<Input>>>;
+
+  public:
+    inline constexpr explicit couple_body(Factory const& coupling)
+        : coupling_{coupling} {
+    }
+
+    inline auto coupling(reproduction_context_t& context) const {
+      return coupling_(context);
+    }
+
+  private:
+    Factory coupling_;
   };
 
   template<typename Built>
@@ -515,31 +534,31 @@ namespace config {
     template<coupling_factory<internal_reproduction_context_t,
                               selection_result_t> Factory>
     inline constexpr auto couple_like(Factory const& coupling) const {
-      using factory_t = Factory;
-
-      class body {
-      public:
-        using reproduction_context_t = internal_reproduction_context_t;
-        using coupling_t = factory_result_t<factory_t, reproduction_context_t>;
-        using copuling_result_t = std::invoke_result_t<
-            coupling_t,
-            std::add_lvalue_reference_t<std::add_const_t<selection_result_t>>>;
-
-      public:
-        inline constexpr explicit body(factory_t const& coupling)
-            : coupling_{coupling} {
-        }
-
-        inline auto coupling(reproduction_context_t& context) const {
-          return coupling_(context);
-        }
-
-      private:
-        factory_t coupling_;
-      };
-
-      return this->template next<>(body{coupling});
+      return this->template next<>(couple_body<Factory,
+                                               internal_reproduction_context_t,
+                                               selection_result_t>{coupling});
     }
+  };
+
+  template<typename Selection, typename Population>
+  class select_body {
+  public:
+    using selection_t = Selection;
+    using selection_result_t =
+        std::invoke_result_t<selection_t,
+                             std::add_lvalue_reference_t<Population>>;
+
+  public:
+    inline constexpr explicit select_body(selection_t const& selection)
+        : selection_{selection} {
+    }
+
+    inline auto const& selection() const noexcept {
+      return selection_;
+    }
+
+  private:
+    selection_t selection_;
   };
 
   template<typename Built>
@@ -552,28 +571,32 @@ namespace config {
 
     template<selection<population_t> Selection>
     inline constexpr auto select_using(Selection const& selection) const {
-      class body {
-      public:
-        using selection_t = Selection;
-        using selection_result_t =
-            std::invoke_result_t<selection_t,
-                                 std::add_lvalue_reference_t<population_t>>;
-
-      public:
-        inline constexpr explicit body(selection_t const& selection)
-            : selection_{selection} {
-        }
-
-        inline auto const& selection() const noexcept {
-          return selection_;
-        }
-
-      private:
-        selection_t selection_;
-      };
-
-      return this->template next<>(body{selection});
+      return this->template next<>(
+          select_body<Selection, population_t>{selection});
     }
+  };
+
+  template<typename Factory,
+           typename Scaling,
+           typename Context,
+           typename Population>
+  class scaling_body {
+  public:
+    using scaling_t = factory_result_t<Factory, Context>;
+    using is_global_scaling_t = can_scale_global<scaling_t, Population>;
+    using is_stable_scaling_t = typename scaling_traits<scaling_t>::is_stable_t;
+
+  public:
+    inline constexpr explicit scaling_body(Factory const& scaling)
+        : scaling_{scaling} {
+    }
+
+    inline auto scaling(Context& context) const {
+      return scaling_(context);
+    }
+
+  private:
+    Factory scaling_;
   };
 
   template<typename Built>
@@ -586,33 +609,37 @@ namespace config {
 
     template<scaling_factory<population_context_t> Factory>
     inline constexpr auto scale_as(Factory const& scaling) const {
-      using factory_t = Factory;
-      using chromosome_t = typename Built::chromosome_t;
-      using raw_fitness_t = typename Built::raw_fitness_t;
       using population_t = typename Built::population_t;
 
-      class body {
-      public:
-        using scaling_t = factory_result_t<factory_t, population_context_t>;
-        using is_global_scaling_t = can_scale_global<scaling_t, population_t>;
-        using is_stable_scaling_t =
-            typename scaling_traits<scaling_t>::is_stable_t;
-
-      public:
-        inline constexpr explicit body(factory_t const& scaling)
-            : scaling_{scaling} {
-        }
-
-        inline auto scaling(population_context_t& context) const {
-          return scaling_(context);
-        }
-
-      private:
-        factory_t scaling_;
-      };
-
-      return this->template next<>(body{scaling});
+      return this->template next<>(
+          scaling_body<Factory, population_context_t, population_t>{scaling});
     }
+  };
+
+  template<typename Crossover, typename Mutation>
+  class reproduce_body {
+  public:
+    using crossover_t = Crossover;
+    using mutation_t = Mutation;
+
+  public:
+    inline constexpr explicit reproduce_body(crossover_t const& crossover,
+                                             mutation_t const& mutation)
+        : crossover_{crossover}
+        , mutation_{mutation} {
+    }
+
+    inline auto const& crossover() const noexcept {
+      return crossover_;
+    }
+
+    inline auto const& mutation() const noexcept {
+      return mutation_;
+    }
+
+  private:
+    crossover_t crossover_;
+    mutation_t mutation_;
   };
 
   template<typename Built>
@@ -625,35 +652,28 @@ namespace config {
              mutation<typename Built::chromosome_t> Mutation>
     inline constexpr auto reproduce_using(Crossover const& crossover,
                                           Mutation const& mutation) const {
-      using chromosome_t = typename Built::chromosome_t;
-
-      class body {
-      public:
-        using crossover_t = Crossover;
-        using mutation_t = Mutation;
-
-      public:
-        inline constexpr explicit body(crossover_t const& crossover,
-                                       mutation_t const& mutation)
-            : crossover_{crossover}
-            , mutation_{mutation} {
-        }
-
-        inline auto const& crossover() const noexcept {
-          return crossover_;
-        }
-
-        inline auto const& mutation() const noexcept {
-          return mutation_;
-        }
-
-      private:
-        crossover_t crossover_;
-        mutation_t mutation_;
-      };
-
-      return this->template next<>(body{crossover, mutation});
+      return this->template next<>(reproduce_body{crossover, mutation});
     }
+  };
+
+  template<typename Population, typename... Models>
+  class statistics_body {
+  public:
+    using population_t = Population;
+    using statistics_t = stat::statistics<population_t, Models...>;
+    using population_context_t = population_context<population_t, statistics_t>;
+
+  public:
+    inline explicit statistics_body(std::size_t depth) noexcept
+        : depth_{depth} {
+    }
+
+    inline auto depth() const noexcept {
+      return depth_;
+    }
+
+  private:
+    std::size_t depth_;
   };
 
   template<typename Built>
@@ -670,41 +690,28 @@ namespace config {
 
     template<stat::model<internal_population_t>... Models>
     inline constexpr auto track_these(std::size_t depth) const {
-      class body {
-      public:
-        using population_t = internal_population_t;
-        using statistics_t = stat::statistics<population_t, Models...>;
-        using population_context_t =
-            population_context<population_t, statistics_t>;
-
-      public:
-        inline explicit body(std::size_t depth) noexcept
-            : depth_{depth} {
-        }
-
-        inline auto depth() const noexcept {
-          return depth_;
-        }
-
-      private:
-        std::size_t depth_;
-      };
-
-      return this->template next<>(body{depth});
+      return this->template next<>(
+          statistics_body<internal_population_t, Models...>{depth});
     }
+  };
+
+  class scale_fitness_body_base {};
+  class scale_fitness_body_base_none {
+  public:
+    using is_global_scaling_t = std::true_type;
+    using is_stable_scaling_t = std::true_type;
+  };
+
+  template<fitness Scaled, typename Base>
+  class scale_fitness_body : public Base {
+  public:
+    using scaled_fitness_t = Scaled;
   };
 
   template<typename Built>
   class scale_fitness_ptype
       : public details::ptype_base<Built, scale_fitness_ptype> {
   private:
-    class body_base {};
-    class body_base_none {
-    public:
-      using is_global_scaling_t = std::true_type;
-      using is_stable_scaling_t = std::true_type;
-    };
-
   public:
     inline constexpr explicit scale_fitness_ptype(Built const* current)
         : details::ptype_base<Built, scale_fitness_ptype>{current} {
@@ -712,23 +719,39 @@ namespace config {
 
     template<fitness Scaled>
     inline constexpr auto scale_to() const {
-      return scale_impl<Scaled, body_base>();
+      return scale_impl<Scaled, scale_fitness_body_base>();
     }
 
     inline constexpr auto scale_none() const {
-      return scale_impl<empty_fitness, body_base_none>();
+      return scale_impl<empty_fitness, scale_fitness_body_base_none>();
     }
 
   private:
     template<fitness Scaled, typename Base>
     inline constexpr auto scale_impl() const {
-      class body : public Base {
-      public:
-        using scaled_fitness_t = Scaled;
-      };
-
-      return this->template next<>(body{});
+      return this->template next<>(scale_fitness_body<Scaled, Base>{});
     }
+  };
+
+  template<typename Evaluator, typename Chromosome>
+  class evaluate_body {
+  public:
+    using evaluator_t = Evaluator;
+    using raw_fitness_t = std::invoke_result_t<
+        evaluator_t,
+        std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>;
+
+  public:
+    inline constexpr explicit evaluate_body(evaluator_t const& evaluator)
+        : evaluator_{evaluator} {
+    }
+
+    inline auto const& evaluator() const noexcept {
+      return evaluator_;
+    }
+
+  private:
+    evaluator_t evaluator_;
   };
 
   template<typename Built>
@@ -740,29 +763,28 @@ namespace config {
     template<evaluator<typename Built::chromosome_t> Evaluator>
     inline constexpr auto evaluate_against(Evaluator const& evaluator) const {
       using chromosome_t = typename Built::chromosome_t;
-
-      class body {
-      public:
-        using evaluator_t = Evaluator;
-        using raw_fitness_t = std::invoke_result_t<
-            evaluator_t,
-            std::add_lvalue_reference_t<std::add_const_t<chromosome_t>>>;
-
-      public:
-        inline constexpr explicit body(evaluator_t const& evaluator)
-            : evaluator_{evaluator} {
-        }
-
-        inline auto const& evaluator() const noexcept {
-          return evaluator_;
-        }
-
-      private:
-        evaluator_t evaluator_;
-      };
-
-      return this->template next<>(body{evaluator});
+      return this->template next<>(
+          evaluate_body<Evaluator, chromosome_t>{evaluator});
     }
+  };
+
+  template<typename Initializator>
+  class init_body {
+  public:
+    using initializator_t = Initializator;
+    using chromosome_t = std::invoke_result_t<initializator_t>;
+
+  public:
+    inline constexpr explicit init_body(initializator_t const& initializator)
+        : initializator_{initializator} {
+    }
+
+    inline auto const& initializator() const noexcept {
+      return initializator_;
+    }
+
+  private:
+    initializator_t initializator_;
   };
 
   template<typename Built>
@@ -773,26 +795,22 @@ namespace config {
 
     template<initializator Initializator>
     inline constexpr auto make_like(Initializator const& initializator) const {
-      class body {
-      public:
-        using initializator_t = Initializator;
-        using chromosome_t = std::invoke_result_t<initializator_t>;
-
-      public:
-        inline constexpr explicit body(initializator_t const& initializator)
-            : initializator_{initializator} {
-        }
-
-        inline auto const& initializator() const noexcept {
-          return initializator_;
-        }
-
-      private:
-        initializator_t initializator_;
-      };
-
-      return this->template next<>(body{initializator});
+      return this->template next<>(init_body{initializator});
     }
+  };
+
+  class size_body {
+  public:
+    inline constexpr explicit size_body(size_t size)
+        : size_{size} {
+    }
+
+    inline auto const& population_size() const noexcept {
+      return size_;
+    }
+
+  private:
+    std::size_t size_;
   };
 
   template<typename Built>
@@ -802,21 +820,7 @@ namespace config {
     }
 
     inline constexpr auto limit_to(size_t size) const {
-      class body {
-      public:
-        inline constexpr explicit body(size_t size)
-            : size_{size} {
-        }
-
-        inline auto const& population_size() const noexcept {
-          return size_;
-        }
-
-      private:
-        std::size_t size_;
-      };
-
-      return this->template next<>(body{size});
+      return this->template next<>(size_body{size});
     }
   };
 
