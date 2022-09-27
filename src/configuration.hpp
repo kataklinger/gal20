@@ -805,7 +805,7 @@ namespace config {
         : size_{size} {
     }
 
-    inline auto const& population_size() const noexcept {
+    inline auto population_size() const noexcept {
       return size_;
     }
 
