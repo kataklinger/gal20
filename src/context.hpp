@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "statistic.hpp"
+
 namespace gal {
 
 template<typename Population, typename Statistics>
@@ -9,9 +11,11 @@ public:
   using population_t = Population;
   using statistics_t = Statistics;
 
+  using history_t = stat::history<statistics_t>;
+
 public:
   inline constexpr population_context(population_t& population,
-                                      statistics_t& statistics) noexcept
+                                      history_t& statistics) noexcept
       : population_{&population}
       , statistics_{&statistics} {
   }
@@ -25,16 +29,16 @@ public:
   }
 
   inline statistics_t& statistics() noexcept {
-    return *statistics_;
+    return *statistics_->current();
   }
 
   inline statistics_t const& statistics() const noexcept {
-    return *statistics_;
+    return statistics_->current();
   }
 
 private:
   population_t* population_;
-  statistics_t* statistics_;
+  history_t* statistics_;
 };
 
 template<typename Population,
