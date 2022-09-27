@@ -105,6 +105,7 @@ namespace alg {
 
     { c.criterion() } -> std::convertible_to<typename Config::criterion_t>;
 
+    { c.population_size() } -> std::convertible_to<std::size_t>;
     { c.statistics_depth() } -> std::convertible_to<std::size_t>;
   };
 
@@ -121,7 +122,7 @@ namespace alg {
       inline explicit local_scaler(config_t& config,
                                    population_context_t& context)
           : reproduction_{context.population(),
-                          context.statistics(),
+                          context.history(),
                           config.crossover(),
                           config.mutation(),
                           config.evaluator(),
@@ -131,7 +132,7 @@ namespace alg {
       inline void operator()() const noexcept {
       }
 
-      inline auto reproduction() const {
+      inline auto& reproduction() {
         return reproduction_;
       }
 
@@ -151,13 +152,13 @@ namespace alg {
       inline explicit global_scaler_base(config_t& config,
                                          population_context_t& context)
           : reproduction_{context.population(),
-                          context.statistics(),
+                          context.history(),
                           config.crossover(),
                           config.mutation(),
                           config.evaluator()} {
       }
 
-      inline auto reproduction() const {
+      inline auto& reproduction() {
         return reproduction_;
       }
 
@@ -234,35 +235,38 @@ namespace alg {
     using evaluation_t = typename individual_t::evaluation_t;
     using scaler_t = details::scaler_t<config_t>;
 
+    using population_context_t = typename config_t::population_context_t;
     using reproduction_context_t = typename config_t::reproduction_context_t;
 
   public:
     inline explicit basic(config_t const& config)
         : config_{config}
-        , population_{population_.current_size(),
+        , population_{config_.population_size(),
                       config_t::is_stable_scaling_t::value}
         , statistics_{config.statistics_depth()} {
     }
 
     void run(std::stop_token token) {
-      scaler_t scaler{config_};
+      population_context_t ctx{population_, statistics_};
+
+      scaler_t scaler{config_, ctx};
       auto coupling = config_.coupling(scaler.reproduction());
 
-      for (auto const* statistics = &init();
+      for (auto* statistics = &init();
            !token.stop_requested() &&
-           !config_.criterion(population_, *statistics);
+           !std::invoke(config_.criterion(), population_, statistics_);
            statistics = &statistics_.next(population_)) {
 
-        scale(scaler, statistics);
+        scale(scaler, *statistics);
 
-        auto selected = select(statistics);
-        stat::count_range(statistics, selection_count_tag, selected);
+        auto selected = select(*statistics);
+        stat::count_range(*statistics, selection_count_tag, selected);
 
-        auto offspring = couple(selected, coupling, statistics);
-        stat::count_range(statistics, coupling_count_tag, offspring);
+        auto offspring = couple(selected, coupling, *statistics);
+        stat::count_range(*statistics, coupling_count_tag, offspring);
 
-        auto replaced = replace(offspring, statistics);
-        stat::count_range(statistics, selection_count_tag, replaced);
+        auto replaced = replace(offspring, *statistics);
+        stat::count_range(*statistics, selection_count_tag, replaced);
       }
     }
 
@@ -296,17 +300,16 @@ namespace alg {
     }
 
   private:
-    auto const& init() {
+    auto& init() {
       std::ranges::generate_n(
           std::back_inserter(population_.individuals()),
-          population_.target_size(),
-          [&config_] {
+          config_.population_size(),
+          [this] {
             auto chromosome = config_.initializator()();
 
-            evaluation_t evaluation{};
-            std::invoke(config_.evaluator(), chromosome, evaluation.raw());
-
-            return individual_t{std::move(chromosome), std::move(evaluation)};
+            return individual_t{
+                std::move(chromosome),
+                evaluation_t{std::invoke(config_.evaluator(), chromosome)}};
           });
 
       return statistics_.next(population_);

@@ -146,6 +146,9 @@ void setup_alg() {
 
 
   gal::alg::basic alg{cfg};
+
+  std::stop_token stop{};
+  alg.run(stop);
 }
 
 int main() {
@@ -196,10 +199,11 @@ int main() {
                             gal::stat::average_fitness<gal::raw_fitness_tag>,
                             gal::stat::fitness_deviation<gal::raw_fitness_tag>>;
   stat_t stat{};
+  gal::stat::history<decltype(stat)> hist{2};
 
   using ctx_t = gal::population_context<pop_t, stat_t>;
 
-  ctx_t ctx{p, stat};
+  ctx_t ctx{p, hist};
 
   auto sc0 = gal::scale::factory<gal::scale::top, 2, 1.5>{}(ctx);
 
@@ -235,7 +239,7 @@ int main() {
                                              test_mutation,
                                              test_evaluator,
                                              gal::scale::power<ctx_t, 2>>;
-  rtx_t rtx{p, stat, test_crossover{}, test_mutation{}, test_evaluator{}, sc3};
+  rtx_t rtx{p, hist, test_crossover{}, test_mutation{}, test_evaluator{}, sc3};
 
   gal::couple::reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>
       rep_p{gen};
@@ -249,7 +253,6 @@ int main() {
   auto cp2 = gal::couple::make_factory<gal::couple::field>(rep_p)(rtx);
   cp2(std::vector<pop_t::iterator_t>{});
 
-  gal::stat::history<decltype(stat)> hist{2};
   gal::stat::get_fitness_best_value<gal::raw_fitness_tag> getter{};
 
   gal::criteria::generation cr1{2};
