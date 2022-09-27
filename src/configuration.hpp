@@ -835,7 +835,7 @@ namespace config {
     }
   };
 
-  template<template<typename> class Root, typename Entries>
+  template<typename Entries, template<typename> class Root = root_ptype>
   struct builder : details::builder_node<Entries,
                                          plist<Root>,
                                          plist<>,

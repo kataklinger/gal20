@@ -114,7 +114,7 @@ struct evaluator {
 void setup_alg() {
   example::random_gen gen{};
 
-  gal::config::builder<gal::config::root_ptype, gal::alg::basic_config_map>
+  gal::config::builder<gal::alg::basic_config_map>
       builder{};
 
   auto cfg =
