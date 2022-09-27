@@ -1109,7 +1109,7 @@ namespace stat {
       values_.push_back(statistics_t{});
     }
 
-    inline auto const& next(population_t const& population) {
+    inline auto& next(population_t const& population) {
       if (values_.size() >= depth_) {
         values_.pop_front();
       }
