@@ -6,6 +6,7 @@ List of task to implement or improve
  - [x] use std::invoke for calling operations
 
 ## Basic Operations
+ - [ ] disable improving-only mutation when fitness is not totally ordered
  - [ ] initializator to produce tags
  - [ ] verify duplicates parents for parent replacement
  - [x] constraints on fitness types for scaling
