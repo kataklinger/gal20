@@ -14,8 +14,20 @@ concept fitness =
     std::regular<Type> && std::is_nothrow_move_constructible_v<Type> &&
     std::is_nothrow_move_assignable_v<Type>;
 
-template<typename Type>
-concept ordered_fitness = fitness<Type> && std::totally_ordered<Type>;
+template<typename Operation, typename Fitness>
+concept comparator = fitness<Fitness> && std::is_invocable_r_v<
+    bool,
+    Operation,
+    std::add_lvalue_reference_t<std::add_const_t<Fitness>>,
+    std::add_lvalue_reference_t<std::add_const_t<Fitness>>>;
+
+struct disabled_comparator {
+  template<typename Fitness>
+  inline constexpr auto operator()(Fitness const& /*unused*/,
+                                   Fitness const& /*unused*/) const noexcept {
+    return false;
+  }
+};
 
 template<typename Type>
 concept arithmetic_fitness = fitness<Type> && requires(Type a) {
@@ -112,17 +124,10 @@ struct fitness_traits<Fitness> {
   using random_distribution_t = std::uniform_real_distribution<Fitness>;
 };
 
-struct empty_fitness {};
-
-inline constexpr auto operator==(empty_fitness const& /*unused*/,
-                                 empty_fitness const& /*unused*/) noexcept {
-  return true;
-}
-
-inline constexpr auto operator!=(empty_fitness const& /*unused*/,
-                                 empty_fitness const& /*unused*/) noexcept {
-  return false;
-}
+struct empty_fitness {
+  inline constexpr auto
+      operator<=>(empty_fitness const& /*unused*/) const = default;
+};
 
 struct empty_tags {};
 

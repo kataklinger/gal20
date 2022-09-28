@@ -152,15 +152,15 @@ namespace couple {
             auto original_fitness =
                 std::invoke(context_->evaluator(), original);
 
-            if (original_fitness > mutated_fitness) {
-              increment(mutation_accepted_count_tag);
+            if (std::invoke(context_->comparator(),
+                            original_fitness,
+                            mutated_fitness)) {
               return {std::move(original), std::move(original_fitness)};
             }
           }
         }
-        else {
-          increment_if(do_mutate, mutation_accepted_count_tag);
-        }
+
+        increment_if(do_mutate, mutation_accepted_count_tag);
 
         return {std::move(mutated), std::move(mutated_fitness)};
       }
@@ -318,7 +318,7 @@ namespace couple {
       }
 
       auto all = incubate.take();
-      std::ranges::sort(all, std::ranges::greater{}, [](auto const& item) {
+      std::ranges::sort(all, context_->comparator(), [](auto const& item) {
         return get_child(item).evaluation().raw();
       });
 

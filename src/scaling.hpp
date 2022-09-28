@@ -190,7 +190,7 @@ namespace scale {
 
   template<typename Context>
   concept ranked_context =
-      ordered_fitness<typename Context::population_t::raw_fitness_t> &&
+      ordered_population<typename Context::population_t, raw_fitness_tag> &&
       std::constructible_from<typename Context::population_t::scaled_fitness_t,
                               double>;
 
@@ -232,7 +232,7 @@ namespace scale {
 
   template<typename Context, typename Base>
   concept exponential_context =
-      ordered_fitness<typename Context::population_t::raw_fitness_t> &&
+      ordered_population<typename Context::population_t, raw_fitness_tag> &&
       std::constructible_from<typename Context::population_t::scaled_fitness_t,
                               Base>;
 
@@ -272,13 +272,13 @@ namespace scale {
   };
 
   template<typename Fitness, typename Proportion, typename Output>
-  concept proportional_fitness = ordered_fitness<Fitness> &&
-      requires(Fitness f, Proportion p) {
+  concept proportional_fitness = requires(Fitness f, Proportion p) {
     { p* f } -> std::convertible_to<Output>;
   };
 
   template<typename Context, typename Proportion>
   concept proportional_context =
+      ordered_population<typename Context::population_t, raw_fitness_tag> &&
       proportional_fitness<typename Context::population_t::raw_fitness_t,
                            Proportion,
                            typename Context::population_t::scaled_fitness_t>;

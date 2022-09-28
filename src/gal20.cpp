@@ -14,8 +14,10 @@
 
 #include <deque>
 #include <list>
+#include <functional>
 
-using pop_t = gal::population<int, double, double, int>;
+using pop_t =
+    gal::population<int, double, std::greater<>, double, std::greater<>, int>;
 
 struct parent_replacement_t
     : std::tuple<pop_t::iterator_t, pop_t::individual_t> {
@@ -114,15 +116,14 @@ struct evaluator {
 void setup_alg() {
   example::random_gen gen{};
 
-  gal::config::builder<gal::alg::basic_config_map>
-      builder{};
+  gal::config::builder<gal::alg::basic_config_map> builder{};
 
   auto cfg =
       builder.begin()
           .limit_to(20)
           .tag_nothing()
           .make_like(example::initializator{gen})
-          .evaluate_against(example::evaluator{})
+          .evaluate_against(example::evaluator{}, std::greater{})
           .reproduce_using(
               gal::cross::symmetric_singlepoint<example::random_gen>{gen},
               gal::mutate::shuffle<example::random_gen, 1>{gen})
@@ -144,7 +145,6 @@ void setup_alg() {
           .replace_with(gal::replace::worst<gal::raw_fitness_tag>{})
           .build();
 
-
   gal::alg::basic alg{cfg};
 
   std::stop_token stop{};
@@ -155,7 +155,7 @@ int main() {
 
   std::vector<parent_replacement_t> x{};
 
-  pop_t p{true};
+  pop_t p{{}, {}, true};
   p.replace(std::move(x));
 
   test_selection_range<pop_t>(std::vector<pop_t::iterator_t>{});

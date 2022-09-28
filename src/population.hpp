@@ -10,9 +10,9 @@ namespace gal {
 
 template<typename FitnessTag, typename Raw, typename Scaled>
 concept sort_fitness_tag = ( std::same_as<FitnessTag, raw_fitness_tag> &&
-                             ordered_fitness<Raw> ) ||
+                             !std::same_as<Raw, disabled_comparator> ) ||
                            (std::same_as<FitnessTag, scaled_fitness_tag> &&
-                            ordered_fitness<Scaled>);
+                            !std::same_as<Scaled, disabled_comparator>);
 
 enum class sort_by { none, raw, scaled, both };
 
@@ -24,19 +24,21 @@ struct sort_policy_base {
       : by{stable_scaling ? sort_by::both : value} {
   }
 
-  template<typename Collection>
-  inline auto minmax(Collection const& individuals) noexcept {
+  template<typename Collection, typename Comparator>
+  inline auto minmax(Collection const& individuals,
+                     Comparator&& comparator) noexcept {
     return std::ranges::minmax_element(
-        individuals, std::ranges::greater{}, [](auto const& i) {
+        individuals, std::forward<Comparator>(comparator), [](auto const& i) {
           return i.evaluation().get(FitnessTag{});
         });
   }
 
-  template<typename Collection>
-  inline void sort(Collection& individuals) {
-    std::ranges::sort(individuals, std::ranges::greater{}, [](auto const& i) {
-      return i.evaluation().get(FitnessTag{});
-    });
+  template<typename Collection, typename Comparator>
+  inline void sort(Collection& individuals, Comparator&& comparator) {
+    std::ranges::sort(
+        individuals, std::forward<Comparator>(comparator), [](auto const& i) {
+          return i.evaluation().get(FitnessTag{});
+        });
   }
 };
 
@@ -59,13 +61,19 @@ struct sort_policy<scaled_fitness_tag> : sort_policy_base<scaled_fitness_tag> {
 
 template<chromosome Chromosome,
          fitness Raw,
-         fitness Scaled = empty_fitness,
-         typename Tags = empty_tags>
+         comparator<Raw> RawCompare,
+         fitness Scaled,
+         comparator<Scaled> ScaledCompare,
+         typename Tags>
 class population {
 public:
   using chromosome_t = Chromosome;
+
   using raw_fitness_t = Raw;
+  using raw_comparator_t = RawCompare;
+
   using scaled_fitness_t = Scaled;
+  using scaled_comparator_t = ScaledCompare;
 
   using individual_t =
       individual<chromosome_t, raw_fitness_t, scaled_fitness_t, Tags>;
@@ -76,13 +84,22 @@ public:
   using const_iterator_t = typename collection_t::const_iterator;
 
 public:
-  inline explicit population(bool stable_scaling) noexcept
-      : target_size_{std::nullopt}
+  inline population(raw_comparator_t const& raw_comparator,
+                    scaled_comparator_t const& scaled_comparator,
+                    bool stable_scaling) noexcept
+      : raw_comparator_{raw_comparator}
+      , scaled_comparator_{scaled_comparator}
+      , target_size_{std::nullopt}
       , stable_scaling_{stable_scaling} {
   }
 
-  inline explicit population(std::size_t target_size, bool stable_scaling)
-      : target_size_{target_size}
+  inline population(raw_comparator_t const& raw_comparator,
+                    scaled_comparator_t const& scaled_comparator,
+                    std::size_t target_size,
+                    bool stable_scaling)
+      : raw_comparator_{raw_comparator}
+      , scaled_comparator_{scaled_comparator}
+      , target_size_{target_size}
       , stable_scaling_{stable_scaling} {
     if (target_size_) {
       individuals_.reserve(*target_size_);
@@ -135,27 +152,27 @@ public:
     return trim_impl(0);
   }
 
-  template<sort_fitness_tag<raw_fitness_t, scaled_fitness_t> FitnessTag>
-  inline void sort(FitnessTag /*unused*/) {
+  template<sort_fitness_tag<raw_comparator_t, scaled_comparator_t> FitnessTag>
+  inline void sort(FitnessTag tag) {
     sort_policy<FitnessTag> policy{stable_scaling_};
 
     if (sorted_ != policy.by) {
       sorted_ = sort_by::none;
-      policy.sort(individuals_);
+      policy.sort(individuals_, comparator(tag));
       sorted_ = policy.by;
     }
   }
 
-  template<sort_fitness_tag<raw_fitness_t, scaled_fitness_t> FitnessTag>
+  template<sort_fitness_tag<raw_comparator_t, scaled_comparator_t> FitnessTag>
   inline std::pair<individual_t const&, individual_t const&>
-      extremes(FitnessTag /*unused*/) const noexcept {
+      extremes(FitnessTag tag) const noexcept {
     sort_policy<FitnessTag> policy{stable_scaling_};
 
     if (sorted_ == policy.by) {
       return {individuals_.back(), individuals_.front()};
     }
     else {
-      auto [mini, maxi] = policy.minmax(individuals_);
+      auto [mini, maxi] = policy.minmax(individuals_, comparator(tag));
       return {*mini, *maxi};
     }
   }
@@ -174,6 +191,22 @@ public:
 
   inline auto target_size() const noexcept {
     return target_size_;
+  }
+
+  inline auto const& raw_comparator() const noexcept {
+    return raw_comparator_;
+  }
+
+  inline auto const& scaled_comparator() const noexcept {
+    return scaled_comparator_;
+  }
+
+  inline auto const& comparator(raw_fitness_tag /*unused*/) const noexcept {
+    return raw_comparator_;
+  }
+
+  inline auto const& comparator(scaled_fitness_tag /*unused*/) const noexcept {
+    return scaled_comparator_;
   }
 
 private:
@@ -196,6 +229,9 @@ private:
   }
 
 private:
+  raw_comparator_t raw_comparator_;
+  scaled_comparator_t scaled_comparator_;
+
   std::optional<std::size_t> target_size_;
   collection_t individuals_;
 
@@ -222,9 +258,29 @@ template<typename FitnessType, typename Population>
 using get_fitness_t =
     typename get_fitness_type<FitnessType>::template type<Population>;
 
+template<typename FitnessTag>
+struct get_fitness_comparator;
+
+template<>
+struct get_fitness_comparator<raw_fitness_tag> {
+  template<typename Population>
+  using type = typename Population::raw_comparator_t;
+};
+
+template<>
+struct get_fitness_comparator<scaled_fitness_tag> {
+  template<typename Population>
+  using type = typename Population::scaled_comparator_t;
+};
+
+template<typename FitnessType, typename Population>
+using get_fitness_comparator_t =
+    typename get_fitness_comparator<FitnessType>::template type<Population>;
+
 template<typename Population, typename FitnessTag>
 concept ordered_population =
-    ordered_fitness<get_fitness_t<FitnessTag, Population>>;
+    !std::same_as<get_fitness_comparator_t<FitnessTag, Population>,
+                  disabled_comparator>;
 
 template<typename Population, typename FitnessTag>
 concept averageable_population =

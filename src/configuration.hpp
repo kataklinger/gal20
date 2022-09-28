@@ -523,20 +523,19 @@ namespace config {
 
   template<typename Built>
   struct couple_ptype : public details::ptype_base<Built, couple_ptype> {
-    using internal_reproduction_context_t =
-        details::build_reproduction_context_t<Built>;
+    using reproduction_context_t = details::build_reproduction_context_t<Built>;
     using selection_result_t = typename Built::selection_result_t;
 
     inline constexpr explicit couple_ptype(Built const* current)
         : details::ptype_base<Built, couple_ptype>{current} {
     }
 
-    template<coupling_factory<internal_reproduction_context_t,
-                              selection_result_t> Factory>
+    template<
+        coupling_factory<reproduction_context_t, selection_result_t> Factory>
     inline constexpr auto couple_like(Factory const& coupling) const {
-      return this->template next<>(couple_body<Factory,
-                                               internal_reproduction_context_t,
-                                               selection_result_t>{coupling});
+      return this->template next<>(
+          couple_body<Factory, reproduction_context_t, selection_result_t>{
+              coupling});
     }
   };
 
@@ -679,19 +678,21 @@ namespace config {
   template<typename Built>
   struct statistics_ptype
       : public details::ptype_base<Built, statistics_ptype> {
-    using internal_population_t = population<typename Built::chromosome_t,
-                                             typename Built::raw_fitness_t,
-                                             typename Built::scaled_fitness_t,
-                                             typename Built::tags_t>;
+    using population_t = population<typename Built::chromosome_t,
+                                    typename Built::raw_fitness_t,
+                                    typename Built::raw_comparator_t,
+                                    typename Built::scaled_fitness_t,
+                                    typename Built::scaled_comparator_t,
+                                    typename Built::tags_t>;
 
     inline constexpr explicit statistics_ptype(Built const* current)
         : details::ptype_base<Built, statistics_ptype>{current} {
     }
 
-    template<stat::model<internal_population_t>... Models>
+    template<stat::model<population_t>... Models>
     inline constexpr auto track_these(std::size_t depth) const {
       return this->template next<>(
-          statistics_body<internal_population_t, Models...>{depth});
+          statistics_body<population_t, Models...>{depth});
     }
   };
 
@@ -702,10 +703,24 @@ namespace config {
     using is_stable_scaling_t = std::true_type;
   };
 
-  template<fitness Scaled, typename Base>
+  template<fitness Scaled, typename Comparator, typename Base>
   class scale_fitness_body : public Base {
   public:
     using scaled_fitness_t = Scaled;
+    using scaled_comparator_t = Comparator;
+
+  public:
+    inline constexpr explicit scale_fitness_body(
+        scaled_comparator_t const& comparator)
+        : scaled_comparator_{comparator} {
+    }
+
+    inline auto const& scaled_comparator() const noexcept {
+      return scaled_comparator_;
+    }
+
+  private:
+    scaled_comparator_t scaled_comparator_;
   };
 
   template<typename Built>
@@ -717,54 +732,70 @@ namespace config {
         : details::ptype_base<Built, scale_fitness_ptype>{current} {
     }
 
-    template<fitness Scaled>
-    inline constexpr auto scale_to() const {
-      return scale_impl<Scaled, scale_fitness_body_base>();
+    template<fitness Scaled, comparator<Scaled> Comparator>
+    inline constexpr auto scale_to(Comparator const& comparator) const {
+      return scale_impl<Scaled, Comparator, scale_fitness_body_base>(
+          comparator);
     }
 
     inline constexpr auto scale_none() const {
-      return scale_impl<empty_fitness, scale_fitness_body_base_none>();
+      return scale_impl<empty_fitness,
+                        disabled_comparator,
+                        scale_fitness_body_base_none>({});
     }
 
   private:
-    template<fitness Scaled, typename Base>
-    inline constexpr auto scale_impl() const {
-      return this->template next<>(scale_fitness_body<Scaled, Base>{});
+    template<typename Scaled, typename Comparator, typename Base>
+    inline constexpr auto scale_impl(Comparator const& comparator) const {
+      return this->template next<>(
+          scale_fitness_body<Scaled, Comparator, Base>{comparator});
     }
   };
 
-  template<typename Evaluator, typename Chromosome>
+  template<typename Evaluator, typename Chromosome, typename Comparator>
   class evaluate_body {
   public:
     using evaluator_t = Evaluator;
-    using raw_fitness_t = std::invoke_result_t<
-        evaluator_t,
-        std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>;
+    using raw_fitness_t = get_evaluator_result_t<Chromosome, Evaluator>;
+    using raw_comparator_t = Comparator;
 
   public:
-    inline constexpr explicit evaluate_body(evaluator_t const& evaluator)
-        : evaluator_{evaluator} {
+    inline constexpr explicit evaluate_body(
+        evaluator_t const& evaluator,
+        raw_comparator_t const& raw_comparator)
+        : evaluator_{evaluator}
+        , raw_comparator_{raw_comparator} {
     }
 
     inline auto const& evaluator() const noexcept {
       return evaluator_;
     }
 
+    inline auto const& raw_comparator() const noexcept {
+      return raw_comparator_;
+    }
+
   private:
     evaluator_t evaluator_;
+    raw_comparator_t raw_comparator_;
   };
 
   template<typename Built>
   struct evaluate_ptype : public details::ptype_base<Built, evaluate_ptype> {
+    using chromosome_t = typename Built::chromosome_t;
+
     inline constexpr explicit evaluate_ptype(Built const* current)
         : details::ptype_base<Built, evaluate_ptype>{current} {
     }
 
-    template<evaluator<typename Built::chromosome_t> Evaluator>
-    inline constexpr auto evaluate_against(Evaluator const& evaluator) const {
-      using chromosome_t = typename Built::chromosome_t;
+    template<
+        evaluator<chromosome_t> Evaluator,
+        comparator<get_evaluator_result_t<chromosome_t, Evaluator>> Comparator>
+    inline constexpr auto evaluate_against(Evaluator const& evaluator,
+                                           Comparator const& comparator) const {
       return this->template next<>(
-          evaluate_body<Evaluator, chromosome_t>{evaluator});
+          evaluate_body<Evaluator, chromosome_t, Comparator>{evaluator,
+                                                             comparator});
     }
   };
 

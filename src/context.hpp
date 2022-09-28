@@ -20,20 +20,24 @@ public:
       , statistics_{&statistics} {
   }
 
-  inline population_t& population() noexcept {
+  inline auto& population() noexcept {
     return *population_;
   }
 
-  inline population_t const& population() const noexcept {
+  inline auto const& population() const noexcept {
     return *population_;
   }
 
-  inline history_t& history() noexcept {
+  inline auto& history() noexcept {
     return *statistics_;
   }
 
-  inline history_t const& history() const noexcept {
+  inline auto const& history() const noexcept {
     return *statistics_;
+  }
+
+  inline auto& comparator() const noexcept {
+    return population_->raw_comparator();
   }
 
 private:

@@ -48,6 +48,7 @@ namespace alg {
       is_empty_fitness_v<typename Config::scaled_fitness_t> ||
       requires(Config c) {
     scaling<typename Config::scaling_t, typename Config::population_t>;
+
     {
       c.scaling(std::declval<typename Config::population_context_t>())
       } -> std::convertible_to<typename Config::scaling_t>;
@@ -62,13 +63,21 @@ namespace alg {
     std::same_as<typename Config::population_t,
                  population<typename Config::chromosome_t,
                             typename Config::raw_fitness_t,
+                            typename Config::raw_comparator_t,
                             typename Config::scaled_fitness_t,
+                            typename Config::scaled_comparator_t,
                             typename Config::tags_t>>;
 
     initializator<typename Config::initializator_t>;
     crossover<typename Config::crossover_t, typename Config::chromosome_t>;
     mutation<typename Config::mutation_t, typename Config::chromosome_t>;
     evaluator<typename Config::evaluator_t, typename Config::chromosome_t>;
+
+    comparator<typename Config::raw_comparator_t,
+               typename Config::raw_fitness_t>;
+
+    comparator<typename Config::scaled_comparator_t,
+               typename Config::raw_fitness_t>;
 
     traits::boolean_flag<typename Config::is_global_scaling_t>;
     traits::boolean_flag<typename Config::is_stable_scaling_t>;
@@ -96,6 +105,14 @@ namespace alg {
       } -> std::convertible_to<typename Config::initializator_t>;
 
     { c.evaluator() } -> std::convertible_to<typename Config::evaluator_t>;
+
+    {
+      c.raw_comparator()
+      } -> std::convertible_to<typename Config::raw_comparator_t>;
+
+    {
+      c.scaled_comparator()
+      } -> std::convertible_to<typename Config::scaled_comparator_t>;
 
     { c.selection() } -> std::convertible_to<typename Config::selection_t>;
 
@@ -241,7 +258,9 @@ namespace alg {
   public:
     inline explicit basic(config_t const& config)
         : config_{config}
-        , population_{config_.population_size(),
+        , population_{config_.raw_comparator(),
+                      config_.scaled_comparator(),
+                      config_.population_size(),
                       config_t::is_stable_scaling_t::value}
         , statistics_{config.statistics_depth()} {
     }

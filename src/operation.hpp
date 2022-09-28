@@ -30,6 +30,11 @@ concept evaluator = std::is_invocable_v<
         Operation,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>>;
 
+template<chromosome Chromosome, evaluator<Chromosome> Evaluator>
+using get_evaluator_result_t = std::invoke_result_t<
+    Evaluator,
+    std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>;
+
 namespace details {
   template<typename Scaling, typename = void>
   struct is_stable_scaling_helper {
