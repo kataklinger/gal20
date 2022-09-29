@@ -8,7 +8,9 @@ namespace gal {
 namespace config {
 
   template<typename Section>
-  concept section = !std::is_final_v<Section> && std::copyable<Section>;
+  concept section =
+      !std::is_final_v<Section> && std::copy_constructible<Section> &&
+      std::move_constructible<Section>;
 
   template<template<typename> class... Interfaces>
   struct plist {};

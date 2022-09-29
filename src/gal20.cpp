@@ -13,8 +13,8 @@
 #include "selection.hpp"
 
 #include <deque>
-#include <list>
 #include <functional>
+#include <list>
 
 using pop_t =
     gal::population<int, double, std::greater<>, double, std::greater<>, int>;
@@ -125,8 +125,12 @@ void setup_alg() {
           .make_like(example::initializator{gen})
           .evaluate_against(example::evaluator{}, std::greater{})
           .reproduce_using(
-              gal::cross::symmetric_singlepoint<example::random_gen>{gen},
-              gal::mutate::shuffle<example::random_gen, 1>{gen})
+              gal::cross::symmetric_singlepoint{gen},
+              gal::mutate::make_flip<1>(
+                  gen,
+                  [&gen](double& v) {
+                    v = std::uniform_real_distribution<>{-10, 10}(gen);
+                  }))
           .scale_none()
           .track_these<gal::stat::generation,
                        gal::stat::extreme_fitness<gal::raw_fitness_tag>,
@@ -139,9 +143,10 @@ void setup_alg() {
                   roulette<4, true, gal::raw_fitness_tag, example::random_gen>{
                       gen})
           .couple_like(gal::couple::make_factory<gal::couple::exclusive>(
-              gal::couple::
-                  reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>{
-                      gen}))
+              gal::couple::reproduction_params<0.8f,
+                                               0.2f,
+                                               std::true_type,
+                                               example::random_gen>{gen}))
           .replace_with(gal::replace::worst<gal::raw_fitness_tag>{})
           .build();
 
