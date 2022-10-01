@@ -348,6 +348,11 @@ namespace config {
       inline constexpr auto build() const {
         return static_cast<built_base_t>(*this);
       }
+
+      template<template<typename> class Algorithm>
+      inline constexpr auto build() const {
+        return Algorithm{static_cast<built_base_t>(*this)};
+      }
     };
 
     template<typename Built>
@@ -906,6 +911,11 @@ namespace config {
                                          plist<Root>,
                                          plist<>,
                                          details::empty_section> {};
+
+  template<typename Map>
+  inline constexpr auto for_map() {
+    return builder<Map>();
+  }
 
 } // namespace config
 } // namespace gal

@@ -118,10 +118,9 @@ struct evaluator {
 void setup_alg() {
   example::random_gen gen{};
 
-  gal::config::builder<gal::alg::basic_config_map> builder{};
-
-  auto cfg =
-      builder.begin()
+  auto alg =
+      gal::config::for_map<gal::alg::basic_config_map>()
+          .begin()
           .limit(20)
           .tag()
           .spawn(example::initializator{gen})
@@ -140,10 +139,8 @@ void setup_alg() {
               gal::couple::parameters<0.8f, 0.2f, true>(gen)))
           .replace(gal::replace::worst_raw{})
           .observe(gal::observe{gal::alg::generation_event,
-                                [](auto const& pop, auto const& his) {}})
-          .build();
-
-  gal::alg::basic<decltype(cfg)> alg{cfg};
+                                [](auto const& pop, auto const& hist) {}})
+          .build<gal::alg::basic>();
 
   std::stop_token stop{};
   alg.run(stop);
