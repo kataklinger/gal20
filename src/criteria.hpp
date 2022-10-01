@@ -10,9 +10,9 @@ namespace criteria {
   concept tracked_history =
       gal::stat::tracked_models<typename History::statistics_t, Model>;
 
-  class generation {
+  class generation_limit {
   public:
-    inline explicit generation(std::size_t limit)
+    inline explicit generation_limit(std::size_t limit)
         : limit_{limit} {
     }
 

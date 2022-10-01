@@ -88,6 +88,7 @@ struct test_evaluator {
 };
 
 namespace example {
+
 using random_gen = std::mt19937;
 using chromosome = std::vector<double>;
 
@@ -116,31 +117,34 @@ struct evaluator {
 } // namespace example
 
 void setup_alg() {
+  using namespace gal;
+  using namespace gal::stat;
+
   example::random_gen gen{};
   std::stop_token stop{};
 
-  gal::config::for_map<gal::alg::basic_config_map>()
+  config::for_map<alg::basic_config_map>()
       .begin()
       .limit(20)
       .tag()
       .spawn(example::initializator{gen})
       .evaluate(example::evaluator{}, std::less{})
-      .reproduce(gal::cross::symmetric_singlepoint{gen},
-                 gal::mutate::make_simple_flip<1>(gen, example::dist))
+      .reproduce(cross::symmetric_singlepoint{gen},
+                 mutate::make_simple_flip<1>(gen, example::dist))
       .scale()
-      .track<gal::stat::generation,
-             gal::stat::extreme_fitness_raw,
-             gal::stat::total_fitness_raw,
-             gal::stat::average_fitness_raw,
-             gal::stat::fitness_deviation_raw>(10)
-      .stop(gal::criteria::generation{100})
-      .select(gal::select::roulette_raw{gal::select::unique<4>, gen})
-      .couple(gal::couple::factorize<gal::couple::exclusive>(
-          gal::couple::parameters<0.8f, 0.2f, true>(gen)))
-      .replace(gal::replace::worst_raw{})
-      .observe(gal::observe{gal::alg::generation_event,
-                            [](auto const& pop, auto const& hist) {}})
-      .build<gal::alg::basic>()
+      .track<generation,
+             extreme_fitness_raw,
+             total_fitness_raw,
+             average_fitness_raw,
+             fitness_deviation_raw>(10)
+      .stop(criteria::generation_limit{100})
+      .select(select::roulette_raw{select::unique<4>, gen})
+      .couple(couple::factorize<couple::exclusive>(
+          couple::parameters<0.8f, 0.2f, true>(gen)))
+      .replace(replace::worst_raw{})
+      .observe(observe{alg::generation_event,
+                       [](auto const& pop, auto const& hist) {}})
+      .build<alg::basic>()
       .run(stop);
 }
 
@@ -246,7 +250,7 @@ int main() {
 
   gal::stat::get_fitness_best_value<gal::raw_fitness_tag> getter{};
 
-  gal::criteria::generation cr1{2};
+  gal::criteria::generation_limit cr1{2};
   cr1(p, hist);
 
   gal::criteria::value_limit cr2{getter,
