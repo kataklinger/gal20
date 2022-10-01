@@ -345,13 +345,14 @@ namespace config {
           , ptype_base_t{this} {
       }
 
-      inline constexpr auto build() const {
+      inline constexpr auto end() const {
         return static_cast<built_base_t>(*this);
       }
 
-      template<template<typename> class Algorithm>
-      inline constexpr auto build() const {
-        return Algorithm{static_cast<built_base_t>(*this)};
+      template<template<typename...> class Algorithm, typename... Args>
+      inline constexpr auto build(Args&&... args) const {
+        return Algorithm{static_cast<built_base_t>(*this),
+                         std::forward<Args>(args)...};
       }
     };
 
