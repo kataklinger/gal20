@@ -6,24 +6,48 @@
 namespace gal {
 namespace select {
 
-  template<std::size_t Size, bool Unique, typename Generator>
+  template<typename Attribute>
+  concept attribute = requires {
+    { Attribute::size } -> traits::decays_to<std::size_t>;
+    { Attribute::unique } -> traits::decays_to<bool>;
+    { Attribute::state() } -> std::same_as<details::state_t<Attribute::unique>>;
+  };
+
+  template<bool Unique, std::size_t Size>
+  struct selection_attribute {
+    inline static constexpr auto size = Size;
+    inline static constexpr auto unique = Unique;
+
+    inline static auto state() {
+      return details::state_t<unique>{size};
+    }
+  };
+
+  template<std::size_t Size>
+  inline constexpr selection_attribute<false, Size> nonunique{};
+
+  template<std::size_t Size>
+  inline constexpr selection_attribute<true, Size> unique{};
+
+  template<attribute Attribute, typename Generator>
   class random {
   public:
     using generator_t = Generator;
+    using attribute_t = Attribute;
 
   private:
-    using state_t = details::state_t<Unique>;
     using distribution_t = std::uniform_int_distribution<std::size_t>;
 
   public:
-    inline explicit random(generator_t& generator) noexcept
+    inline explicit random(attribute_t /*unused*/,
+                           generator_t& generator) noexcept
         : generator_{&generator} {
     }
 
     template<typename Population>
     inline auto operator()(Population& population) const {
       return details::select_many(
-          population, state_t{Size}, [&population, this]() {
+          population, attribute_t::state(), [&population, this]() {
             return distribution_t{0,
                                   population.current_size() - 1}(*generator_);
           });
@@ -50,23 +74,27 @@ namespace select {
     }
   };
 
-  template<std::size_t Size,
-           bool Unique,
-           typename FitnessTag,
-           typename Generator>
+  template<std::size_t Size>
+  using best_raw = best<Size, raw_fitness_tag>;
+
+  template<std::size_t Size>
+  using best_scaled = best<Size, scaled_fitness_tag>;
+
+  template<typename FitnessTag, attribute Attribute, typename Generator>
   class roulette {
   public:
     using generator_t = Generator;
+    using attribute_t = Attribute;
 
   private:
     using fitness_tag_t = FitnessTag;
-    using state_t = details::state_t<Unique>;
 
   private:
     inline static constexpr fitness_tag_t fitness_tag{};
 
   public:
-    inline explicit roulette(generator_t& generator) noexcept
+    inline explicit roulette(attribute_t /*unused*/,
+                             generator_t& generator) noexcept
         : generator_{&generator} {
     }
 
@@ -82,10 +110,11 @@ namespace select {
 
       auto wheel = get_wheel(population);
 
-      return details::select_many(population, state_t{Size}, [&wheel, this]() {
-        auto selected = distribution_t{{}, wheel.back()}(*generator_);
-        return std::ranges::lower_bound(wheel, selected) - wheel.begin();
-      });
+      return details::select_many(
+          population, attribute_t::state(), [&wheel, this]() {
+            auto selected = distribution_t{{}, wheel.back()}(*generator_);
+            return std::ranges::lower_bound(wheel, selected) - wheel.begin();
+          });
     }
 
   private:
@@ -107,6 +136,26 @@ namespace select {
 
   private:
     generator_t* generator_;
+  };
+
+  template<attribute Attribute, typename Generator>
+  class roulette_raw : public roulette<raw_fitness_tag, Attribute, Generator> {
+  public:
+    inline explicit roulette_raw(Attribute attrib,
+                                 Generator& generator) noexcept
+        : roulette<raw_fitness_tag, Attribute, Generator>{attrib, generator} {
+    }
+  };
+
+  template<attribute Attribute, typename Generator>
+  class roulette_scaled
+      : public roulette<scaled_fitness_tag, Attribute, Generator> {
+  public:
+    inline explicit roulette_scaled(Attribute attrib,
+                                    Generator& generator) noexcept
+        : roulette<scaled_fitness_tag, Attribute, Generator>{attrib,
+                                                             generator} {
+    }
   };
 
 } // namespace select

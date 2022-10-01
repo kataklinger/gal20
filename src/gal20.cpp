@@ -135,10 +135,7 @@ void setup_alg() {
                        gal::stat::average_fitness_raw,
                        gal::stat::fitness_deviation_raw>(10)
           .stop_when(gal::criteria::generation{100})
-          .select_using(
-              gal::select::
-                  roulette<4, true, gal::raw_fitness_tag, example::random_gen>{
-                      gen})
+          .select_using(gal::select::roulette_raw{gal::select::unique<4>, gen})
           .couple_like(gal::couple::make_factory<gal::couple::exclusive>(
               gal::couple::reproduction_params<0.8f,
                                                0.2f,
@@ -173,11 +170,10 @@ int main() {
   gal::select::best<2, gal::scaled_fitness_tag> sl1{};
   sl1(p);
 
-  gal::select::random<2, true, std::mt19937> sl2{gen};
+  gal::select::random sl2{gal::select::unique<2>, gen};
   sl2(p);
 
-  gal::select::roulette<2, true, gal::scaled_fitness_tag, std::mt19937> sl3{
-      gen};
+  gal::select::roulette_scaled sl3{gal::select::unique<2>, gen};
   sl3(p);
 
   gal::replace::random<std::mt19937> ro1{gen};
