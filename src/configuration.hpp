@@ -906,15 +906,15 @@ namespace config {
     }
   };
 
-  template<typename Entries, template<typename> class Root = root_ptype>
+  template<typename Entries, template<typename> class Root>
   struct builder : details::builder_node<Entries,
                                          plist<Root>,
                                          plist<>,
                                          details::empty_section> {};
 
-  template<typename Map>
+  template<typename Map, template<typename> class Root = root_ptype>
   inline constexpr auto for_map() {
-    return builder<Map>();
+    return builder<Map, Root>();
   }
 
 } // namespace config
