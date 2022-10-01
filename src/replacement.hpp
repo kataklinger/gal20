@@ -122,6 +122,9 @@ namespace replace {
     }
   };
 
+  using worst_raw = worst<raw_fitness_tag>;
+  using worst_scaled = worst<raw_fitness_tag>;
+
   template<typename FitnessTag>
   class crowd {
   public:
@@ -141,6 +144,9 @@ namespace replace {
       return population.trim();
     }
   };
+
+  using crowd_raw = crowd<raw_fitness_tag>;
+  using crowd_scaled = crowd<raw_fitness_tag>;
 
   template<std::size_t Size>
   class parents {

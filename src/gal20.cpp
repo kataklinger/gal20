@@ -126,16 +126,14 @@ void setup_alg() {
           .tag_nothing()
           .make_like(example::initializator{gen})
           .evaluate_against(example::evaluator{}, std::less{})
-          .reproduce_using(
-              gal::cross::symmetric_singlepoint{gen},
-              gal::mutate::make_flip<1>(
-                  gen, [&gen](double& v) { v = example::dist(gen); }))
+          .reproduce_using(gal::cross::symmetric_singlepoint{gen},
+                           gal::mutate::make_simple_flip<1>(gen, example::dist))
           .scale_none()
           .track_these<gal::stat::generation,
-                       gal::stat::extreme_fitness<gal::raw_fitness_tag>,
-                       gal::stat::total_fitness<gal::raw_fitness_tag>,
-                       gal::stat::average_fitness<gal::raw_fitness_tag>,
-                       gal::stat::fitness_deviation<gal::raw_fitness_tag>>(10)
+                       gal::stat::extreme_fitness_raw,
+                       gal::stat::total_fitness_raw,
+                       gal::stat::average_fitness_raw,
+                       gal::stat::fitness_deviation_raw>(10)
           .stop_when(gal::criteria::generation{100})
           .select_using(
               gal::select::
@@ -146,11 +144,10 @@ void setup_alg() {
                                                0.2f,
                                                std::true_type,
                                                example::random_gen>{gen}))
-          .replace_with(gal::replace::worst<gal::raw_fitness_tag>{})
+          .replace_with(gal::replace::worst_raw{})
           .observe_following(
               gal::observe{gal::alg::generation_event,
                            [](auto const& pop, auto const& his) {}})
-          //.observer_none()
           .build();
 
   gal::alg::basic<decltype(cfg)> alg{cfg};

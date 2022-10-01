@@ -322,6 +322,9 @@ namespace stat {
     };
   };
 
+  using extreme_fitness_raw = extreme_fitness<raw_fitness_tag>;
+  using extreme_fitness_scaled = extreme_fitness<scaled_fitness_tag>;
+
   template<typename FitnessTag>
   struct total_fitness {
     template<averageable_population<FitnessTag> Population>
@@ -355,6 +358,9 @@ namespace stat {
       fitness_t value_{};
     };
   };
+
+  using total_fitness_raw = total_fitness<raw_fitness_tag>;
+  using total_fitness_scaled = total_fitness<scaled_fitness_tag>;
 
   template<typename FitnessTag>
   struct average_fitness {
@@ -395,6 +401,9 @@ namespace stat {
       fitness_t value_{};
     };
   };
+
+  using average_fitness_raw = average_fitness<raw_fitness_tag>;
+  using average_fitness_scaled = average_fitness<scaled_fitness_tag>;
 
   template<typename Value>
   struct square_power;
@@ -515,6 +524,9 @@ namespace stat {
       deviation_t deviation_;
     };
   };
+
+  using fitness_deviation_raw = fitness_deviation<raw_fitness_tag>;
+  using fitness_deviation_scaled = fitness_deviation<scaled_fitness_tag>;
 
   template<typename Population, model<Population>... Models>
   class statistics : public details::model_node<Population, Models...> {

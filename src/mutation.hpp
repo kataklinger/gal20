@@ -187,16 +187,58 @@ namespace mutate {
     Fn fn_;
   };
 
-  template<std::size_t Count, typename Generator, typename Flop>
-  inline constexpr auto make_create(Generator& generator, Flop&& flop) {
-    return create<Generator, std::remove_reference_t<Flop>, Count>{
-        generator, std::forward<Flop>(flop)};
+  template<typename Generator, typename Distribution>
+  class roller {
+  public:
+    using generator_t = Generator;
+    using distribution_t = Distribution;
+
+  public:
+    inline constexpr roller(generator_t& generator, distribution_t distribution)
+        : generator_{&generator}
+        , distribution_{distribution} {
+    }
+
+    template<typename Value>
+    inline auto operator()(Value& value) const {
+      value = (*this)();
+    }
+
+    inline auto operator()() const {
+      return distribution_(*generator_);
+    }
+
+  private:
+    generator_t* generator_;
+    distribution_t distribution_;
+  };
+
+  template<std::size_t Count, typename Generator, typename Roll>
+  inline constexpr auto make_create(Generator& generator, Roll&& roll) {
+    return create<Generator, std::remove_cvref_t<Roll>, Count>{
+        generator, std::forward<Roll>(roll)};
   }
 
-  template<std::size_t Count, typename Generator, typename Flop>
-  inline constexpr auto make_flip(Generator& generator, Flop&& flop) {
-    return flip<Generator, std::remove_reference_t<Flop>, Count>{
-        generator, std::forward<Flop>(flop)};
+  template<std::size_t Count, typename Generator, typename Distribution>
+  inline constexpr auto make_simple_create(Generator& generator,
+                                           Distribution distribution) {
+    using roll_t = roller<Generator, Distribution>;
+    return create<Generator, roll_t, Count>{generator,
+                                            roll_t{generator, distribution}};
+  }
+
+  template<std::size_t Count, typename Generator, typename Roll>
+  inline constexpr auto make_flip(Generator& generator, Roll&& roll) {
+    return flip<Generator, std::remove_cvref_t<Roll>, Count>{
+        generator, std::forward<Roll>(roll)};
+  }
+
+  template<std::size_t Count, typename Generator, typename Distribution>
+  inline constexpr auto make_simple_flip(Generator& generator,
+                                         Distribution distribution) {
+    using roll_t = roller<Generator, Distribution>;
+    return flip<Generator, roll_t, Count>{generator,
+                                          roll_t{generator, distribution}};
   }
 
 } // namespace mutate
