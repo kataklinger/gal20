@@ -117,33 +117,31 @@ struct evaluator {
 
 void setup_alg() {
   example::random_gen gen{};
-
-  auto alg =
-      gal::config::for_map<gal::alg::basic_config_map>()
-          .begin()
-          .limit(20)
-          .tag()
-          .spawn(example::initializator{gen})
-          .evaluate(example::evaluator{}, std::less{})
-          .reproduce(gal::cross::symmetric_singlepoint{gen},
-                     gal::mutate::make_simple_flip<1>(gen, example::dist))
-          .scale()
-          .track<gal::stat::generation,
-                 gal::stat::extreme_fitness_raw,
-                 gal::stat::total_fitness_raw,
-                 gal::stat::average_fitness_raw,
-                 gal::stat::fitness_deviation_raw>(10)
-          .stop(gal::criteria::generation{100})
-          .select(gal::select::roulette_raw{gal::select::unique<4>, gen})
-          .couple(gal::couple::factorize<gal::couple::exclusive>(
-              gal::couple::parameters<0.8f, 0.2f, true>(gen)))
-          .replace(gal::replace::worst_raw{})
-          .observe(gal::observe{gal::alg::generation_event,
-                                [](auto const& pop, auto const& hist) {}})
-          .build<gal::alg::basic>();
-
   std::stop_token stop{};
-  alg.run(stop);
+
+  gal::config::for_map<gal::alg::basic_config_map>()
+      .begin()
+      .limit(20)
+      .tag()
+      .spawn(example::initializator{gen})
+      .evaluate(example::evaluator{}, std::less{})
+      .reproduce(gal::cross::symmetric_singlepoint{gen},
+                 gal::mutate::make_simple_flip<1>(gen, example::dist))
+      .scale()
+      .track<gal::stat::generation,
+             gal::stat::extreme_fitness_raw,
+             gal::stat::total_fitness_raw,
+             gal::stat::average_fitness_raw,
+             gal::stat::fitness_deviation_raw>(10)
+      .stop(gal::criteria::generation{100})
+      .select(gal::select::roulette_raw{gal::select::unique<4>, gen})
+      .couple(gal::couple::factorize<gal::couple::exclusive>(
+          gal::couple::parameters<0.8f, 0.2f, true>(gen)))
+      .replace(gal::replace::worst_raw{})
+      .observe(gal::observe{gal::alg::generation_event,
+                            [](auto const& pop, auto const& hist) {}})
+      .build<gal::alg::basic>()
+      .run(stop);
 }
 
 int main() {
