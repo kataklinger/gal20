@@ -28,12 +28,12 @@ namespace couple {
         , mutation_{generator} {
     }
 
-    inline auto const& crossover() const noexcept {
-      return crossover_;
+    inline bool do_crossover() const noexcept {
+      return crossover_();
     }
 
-    inline auto const& mutation() const noexcept {
-      return mutation_;
+    inline bool do_mutation() const noexcept {
+      return mutation_();
     }
 
   private:
@@ -117,7 +117,7 @@ namespace couple {
     private:
       auto reproduce_impl(chromosome_t const& parent1,
                           chromosome_t const& parent2) const {
-        auto do_cross = std::invoke(params_->crossover());
+        auto do_cross = params_->do_crossover();
         auto produced =
             do_cross ? std::invoke(context_->crossover(), parent1, parent2)
                      : std::pair{parent1, parent2};
@@ -136,7 +136,7 @@ namespace couple {
       }
 
       individual_t try_mutate(chromosome_t& original) const {
-        auto do_mutate = std::invoke(params_->mutation());
+        auto do_mutate = params_->do_mutation();
 
         auto mutated =
             mutate(context_->mutation(),
