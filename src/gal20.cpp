@@ -8,6 +8,7 @@
 #include "criteria.hpp"
 #include "crossover.hpp"
 #include "mutation.hpp"
+#include "observe.hpp"
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"
@@ -90,6 +91,8 @@ namespace example {
 using random_gen = std::mt19937;
 using chromosome = std::vector<double>;
 
+const std::uniform_real_distribution<> dist{-10.0, 10.0};
+
 class initializator {
 public:
   inline explicit initializator(random_gen& generator) noexcept
@@ -97,7 +100,6 @@ public:
   }
 
   inline auto operator()() const noexcept {
-    std::uniform_real_distribution<> dist{-10.0, 10.0};
     return chromosome{dist(*generator_), dist(*generator_)};
   }
 
@@ -106,8 +108,8 @@ private:
 };
 
 struct evaluator {
-  inline auto operator()(chromosome const& ch) const noexcept {
-    return -std::pow(ch[0], 2.0) - std::pow(ch[1], 2.0);
+  inline auto operator()(chromosome const& chromosome) const noexcept {
+    return std::pow(chromosome[0] + chromosome[1], 2.0);
   }
 };
 
@@ -123,14 +125,11 @@ void setup_alg() {
           .limit_to(20)
           .tag_nothing()
           .make_like(example::initializator{gen})
-          .evaluate_against(example::evaluator{}, std::greater{})
+          .evaluate_against(example::evaluator{}, std::less{})
           .reproduce_using(
               gal::cross::symmetric_singlepoint{gen},
               gal::mutate::make_flip<1>(
-                  gen,
-                  [&gen](double& v) {
-                    v = std::uniform_real_distribution<>{-10, 10}(gen);
-                  }))
+                  gen, [&gen](double& v) { v = example::dist(gen); }))
           .scale_none()
           .track_these<gal::stat::generation,
                        gal::stat::extreme_fitness<gal::raw_fitness_tag>,
@@ -148,16 +147,19 @@ void setup_alg() {
                                                std::true_type,
                                                example::random_gen>{gen}))
           .replace_with(gal::replace::worst<gal::raw_fitness_tag>{})
+          .observe_following(
+              gal::observe{gal::alg::generation_event,
+                           [](auto const& pop, auto const& his) {}})
+          //.observer_none()
           .build();
 
-  gal::alg::basic alg{cfg};
+  gal::alg::basic<decltype(cfg)> alg{cfg};
 
   std::stop_token stop{};
   alg.run(stop);
 }
 
 int main() {
-
   std::vector<parent_replacement_t> x{};
 
   pop_t p{{}, {}, true};

@@ -6,6 +6,25 @@
 #include <stop_token>
 
 namespace gal {
+
+namespace alg {
+
+  struct generation_event_t {};
+  inline constexpr generation_event_t generation_event{};
+
+} // namespace alg
+
+template<>
+struct observer_definition<alg::generation_event_t> {
+  template<typename Observer, typename Definitions>
+  inline static constexpr auto satisfies = std::is_invocable_v<
+      Observer,
+      std::add_lvalue_reference_t<
+          std::add_const_t<typename Definitions::population_t>>,
+      std::add_lvalue_reference_t<
+          std::add_const_t<stat::history<typename Definitions::statistics_t>>>>;
+};
+
 namespace alg {
 
   namespace details {
@@ -29,13 +48,15 @@ namespace alg {
                       config::plist<config::scale_fitness_ptype>>,
         config::entry<config::scale_fitness_ptype,
                       config::plist<config::statistics_ptype>>,
-        config::entry<
-            config::statistics_ptype,
-            config::entry_if<
-                details::basic_scaling_cond,
-                config::plist<config::select_ptype, config::criterion_ptype>,
-                config::plist<config::scale_ptype, config::criterion_ptype>>,
-            config::plist<config::tags_ptype>>,
+        config::entry<config::statistics_ptype,
+                      config::entry_if<details::basic_scaling_cond,
+                                       config::plist<config::select_ptype,
+                                                     config::criterion_ptype,
+                                                     config::observer_ptype>,
+                                       config::plist<config::scale_ptype,
+                                                     config::criterion_ptype,
+                                                     config::observer_ptype>>,
+                      config::plist<config::tags_ptype>>,
         config::entry<config::scale_ptype, config::plist<config::select_ptype>>,
         config::entry<config::select_ptype,
                       config::plist<config::couple_ptype>>,
@@ -122,6 +143,7 @@ namespace alg {
 
     { c.criterion() } -> std::convertible_to<typename Config::criterion_t>;
 
+    {c.observers()};
     { c.population_size() } -> std::convertible_to<std::size_t>;
     { c.statistics_depth() } -> std::convertible_to<std::size_t>;
   };
@@ -271,10 +293,9 @@ namespace alg {
       scaler_t scaler{config_, ctx};
       auto coupling = config_.coupling(scaler.reproduction());
 
-      for (auto* statistics = &init();
-           !token.stop_requested() &&
-           !std::invoke(config_.criterion(), population_, statistics_);
-           statistics = &statistics_.next(population_)) {
+      auto* statistics = &init();
+      while (!token.stop_requested() &&
+             !std::invoke(config_.criterion(), population_, statistics_)) {
 
         scale(scaler, *statistics);
 
@@ -286,6 +307,10 @@ namespace alg {
 
         auto replaced = replace(offspring, *statistics);
         stat::count_range(*statistics, selection_count_tag, replaced);
+
+        statistics = &statistics_.next(population_);
+
+        config_.observers().observe(generation_event, population_, statistics_);
       }
     }
 

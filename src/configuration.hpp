@@ -2,6 +2,7 @@
 #pragma once
 
 #include "context.hpp"
+#include "observe.hpp"
 #include "statistic.hpp"
 
 namespace gal {
@@ -434,6 +435,46 @@ namespace config {
     }
   };
 
+  template<typename Events, typename... Observers>
+  class observer_body {
+  public:
+    using events_t = Events;
+    using observers_t =
+        observer_pack<events_t, std::remove_cvref_t<Observers>...>;
+
+  public:
+    inline explicit constexpr observer_body(events_t events,
+                                            Observers&&... observers)
+        : observers_{events, std::move(observers)...} {
+    }
+
+    inline auto& observers() {
+      return observers_;
+    }
+
+  private:
+    observers_t observers_;
+  };
+
+  template<typename Built>
+  class observer_ptype : public details::ptype_base<Built, observer_ptype> {
+  public:
+    inline constexpr explicit observer_ptype(Built const* current)
+        : details::ptype_base<Built, observer_ptype>{current} {
+    }
+
+    template<typename... Events, gal::observer<Built, Events>... Observers>
+    inline constexpr auto
+        observe_following(gal::observe<Events, Observers>... observers) {
+      return this->template next<>(observer_body{
+          gal::observer_tags<Events...>{}, std::move(observers).observer()...});
+    }
+
+    inline constexpr auto observer_none() {
+      return this->template next<>(observer_body{gal::observer_tags<>{}});
+    }
+  };
+
   template<typename Criterion>
   class criterion_body {
   public:
@@ -455,8 +496,7 @@ namespace config {
   template<typename Built>
   struct criterion_ptype : public details::ptype_base<Built, criterion_ptype> {
     using population_t = typename Built::population_t;
-    using statistics_t = typename Built::statistics_t;
-    using history_t = stat::history<statistics_t>;
+    using history_t = stat::history<typename Built::statistics_t>;
 
     inline constexpr explicit criterion_ptype(Built const* current)
         : details::ptype_base<Built, criterion_ptype>{current} {
