@@ -427,11 +427,11 @@ namespace config {
 
     template<typename Tags>
     inline constexpr auto tag_with() const {
-      return this->template next<>(tags_body<Tags>{});
+      return this->next(tags_body<Tags>{});
     }
 
     inline constexpr auto tag_nothing() const {
-      return this->template next<>(tags_body<empty_tags>{});
+      return this->next(tags_body<empty_tags>{});
     }
   };
 
@@ -466,12 +466,12 @@ namespace config {
     template<typename... Events, gal::observer<Built, Events>... Observers>
     inline constexpr auto
         observe_following(gal::observe<Events, Observers>... observers) {
-      return this->template next<>(observe_body{
-          gal::observer_tags<Events...>{}, std::move(observers).observer()...});
+      return this->next(observe_body{gal::observer_tags<Events...>{},
+                                     std::move(observers).observer()...});
     }
 
     inline constexpr auto observer_none() {
-      return this->template next<>(observe_body{gal::observer_tags<>{}});
+      return this->next(observe_body{gal::observer_tags<>{}});
     }
   };
 
@@ -504,7 +504,7 @@ namespace config {
 
     template<criterion<population_t, history_t> Criterion>
     inline constexpr auto stop_when(Criterion const& criterion) const {
-      return this->template next<>(criterion_body{criterion});
+      return this->next(criterion_body{criterion});
     }
   };
 
@@ -537,7 +537,7 @@ namespace config {
 
     template<replacement<population_t, copuling_result_t> Replacement>
     inline constexpr auto replace_with(Replacement const& replacement) const {
-      return this->template next<>(replace_body{replacement});
+      return this->next(replace_body{replacement});
     }
   };
 
@@ -575,7 +575,7 @@ namespace config {
     template<
         coupling_factory<reproduction_context_t, selection_result_t> Factory>
     inline constexpr auto couple_like(Factory const& coupling) const {
-      return this->template next<>(
+      return this->next(
           couple_body<Factory, reproduction_context_t, selection_result_t>{
               coupling});
     }
@@ -612,8 +612,7 @@ namespace config {
 
     template<selection<population_t> Selection>
     inline constexpr auto select_using(Selection const& selection) const {
-      return this->template next<>(
-          select_body<Selection, population_t>{selection});
+      return this->next(select_body<Selection, population_t>{selection});
     }
   };
 
@@ -652,7 +651,7 @@ namespace config {
     inline constexpr auto scale_as(Factory const& scaling) const {
       using population_t = typename Built::population_t;
 
-      return this->template next<>(
+      return this->next(
           scaling_body<Factory, population_context_t, population_t>{scaling});
     }
   };
@@ -693,7 +692,7 @@ namespace config {
              mutation<typename Built::chromosome_t> Mutation>
     inline constexpr auto reproduce_using(Crossover const& crossover,
                                           Mutation const& mutation) const {
-      return this->template next<>(reproduce_body{crossover, mutation});
+      return this->next(reproduce_body{crossover, mutation});
     }
   };
 
@@ -733,8 +732,7 @@ namespace config {
 
     template<stat::model<population_t>... Models>
     inline constexpr auto track_these(std::size_t depth) const {
-      return this->template next<>(
-          statistics_body<population_t, Models...>{depth});
+      return this->next(statistics_body<population_t, Models...>{depth});
     }
   };
 
@@ -789,7 +787,7 @@ namespace config {
   private:
     template<typename Scaled, typename Comparator, typename Base>
     inline constexpr auto scale_impl(Comparator const& comparator) const {
-      return this->template next<>(
+      return this->next(
           scale_fitness_body<Scaled, Comparator, Base>{comparator});
     }
   };
@@ -835,9 +833,8 @@ namespace config {
         comparator<get_evaluator_result_t<chromosome_t, Evaluator>> Comparator>
     inline constexpr auto evaluate_against(Evaluator const& evaluator,
                                            Comparator const& comparator) const {
-      return this->template next<>(
-          evaluate_body<Evaluator, chromosome_t, Comparator>{evaluator,
-                                                             comparator});
+      return this->next(evaluate_body<Evaluator, chromosome_t, Comparator>{
+          evaluator, comparator});
     }
   };
 
@@ -868,7 +865,7 @@ namespace config {
 
     template<initializator Initializator>
     inline constexpr auto make_like(Initializator const& initializator) const {
-      return this->template next<>(init_body{initializator});
+      return this->next(init_body{initializator});
     }
   };
 
@@ -893,7 +890,7 @@ namespace config {
     }
 
     inline constexpr auto limit_to(size_t size) const {
-      return this->template next<>(size_body{size});
+      return this->next(size_body{size});
     }
   };
 
@@ -904,7 +901,7 @@ namespace config {
     }
 
     inline constexpr auto begin() const {
-      return this->template next<>(details::empty_section{});
+      return this->next(details::empty_section{});
     }
   };
 
