@@ -122,26 +122,25 @@ void setup_alg() {
 
   auto cfg =
       builder.begin()
-          .limit_to(20)
-          .tag_nothing()
-          .make_like(example::initializator{gen})
-          .evaluate_against(example::evaluator{}, std::less{})
-          .reproduce_using(gal::cross::symmetric_singlepoint{gen},
-                           gal::mutate::make_simple_flip<1>(gen, example::dist))
-          .scale_none()
-          .track_these<gal::stat::generation,
-                       gal::stat::extreme_fitness_raw,
-                       gal::stat::total_fitness_raw,
-                       gal::stat::average_fitness_raw,
-                       gal::stat::fitness_deviation_raw>(10)
-          .stop_when(gal::criteria::generation{100})
-          .select_using(gal::select::roulette_raw{gal::select::unique<4>, gen})
-          .couple_like(gal::couple::make_factory<gal::couple::exclusive>(
+          .limit(20)
+          .tag()
+          .initialize(example::initializator{gen})
+          .evaluate(example::evaluator{}, std::less{})
+          .reproduce(gal::cross::symmetric_singlepoint{gen},
+                     gal::mutate::make_simple_flip<1>(gen, example::dist))
+          .scale()
+          .track<gal::stat::generation,
+                 gal::stat::extreme_fitness_raw,
+                 gal::stat::total_fitness_raw,
+                 gal::stat::average_fitness_raw,
+                 gal::stat::fitness_deviation_raw>(10)
+          .stop(gal::criteria::generation{100})
+          .select(gal::select::roulette_raw{gal::select::unique<4>, gen})
+          .couple(gal::couple::factorize<gal::couple::exclusive>(
               gal::couple::parameters<0.8f, 0.2f, true>(gen)))
-          .replace_with(gal::replace::worst_raw{})
-          .observe_following(
-              gal::observe{gal::alg::generation_event,
-                           [](auto const& pop, auto const& his) {}})
+          .replace(gal::replace::worst_raw{})
+          .observe(gal::observe{gal::alg::generation_event,
+                                [](auto const& pop, auto const& his) {}})
           .build();
 
   gal::alg::basic<decltype(cfg)> alg{cfg};
@@ -241,13 +240,13 @@ int main() {
   gal::couple::reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>
       rep_p{gen};
 
-  auto cp0 = gal::couple::make_factory<gal::couple::exclusive>(rep_p)(rtx);
+  auto cp0 = gal::couple::factorize<gal::couple::exclusive>(rep_p)(rtx);
   cp0(std::vector<pop_t::iterator_t>{});
 
-  auto cp1 = gal::couple::make_factory<gal::couple::overlapping>(rep_p)(rtx);
+  auto cp1 = gal::couple::factorize<gal::couple::overlapping>(rep_p)(rtx);
   cp1(std::vector<pop_t::iterator_t>{});
 
-  auto cp2 = gal::couple::make_factory<gal::couple::field>(rep_p)(rtx);
+  auto cp2 = gal::couple::factorize<gal::couple::field>(rep_p)(rtx);
   cp2(std::vector<pop_t::iterator_t>{});
 
   gal::stat::get_fitness_best_value<gal::raw_fitness_tag> getter{};

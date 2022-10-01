@@ -374,7 +374,7 @@ namespace couple {
   };
 
   template<template<typename, typename> class Coupling, typename Params>
-  inline constexpr auto make_factory(Params const& params) {
+  inline constexpr auto factorize(Params const& params) {
     return factory<Coupling, Params>{params};
   }
 
