@@ -41,6 +41,18 @@ namespace couple {
     probabilistic_operation<generator_t, Mutation> mutation_;
   };
 
+  template<auto Crossover,
+           auto Mutation,
+           bool MutationImproveOnly,
+           typename Generator>
+  requires(probability<Crossover>&& probability<
+           Mutation>) inline auto parameters(Generator& generator) noexcept {
+    return reproduction_params<Crossover,
+                               Mutation,
+                               std::bool_constant<MutationImproveOnly>,
+                               std::remove_cv_t<Generator>>{generator};
+  }
+
   namespace details {
 
     template<typename Context, typename Population>

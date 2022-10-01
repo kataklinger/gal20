@@ -137,10 +137,7 @@ void setup_alg() {
           .stop_when(gal::criteria::generation{100})
           .select_using(gal::select::roulette_raw{gal::select::unique<4>, gen})
           .couple_like(gal::couple::make_factory<gal::couple::exclusive>(
-              gal::couple::reproduction_params<0.8f,
-                                               0.2f,
-                                               std::true_type,
-                                               example::random_gen>{gen}))
+              gal::couple::parameters<0.8f, 0.2f, true>(gen)))
           .replace_with(gal::replace::worst_raw{})
           .observe_following(
               gal::observe{gal::alg::generation_event,
