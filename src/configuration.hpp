@@ -469,10 +469,6 @@ namespace config {
       return this->next(observe_body{gal::observer_tags<Events...>{},
                                      std::move(observers).observer()...});
     }
-
-    inline constexpr auto observer_none() {
-      return this->next(observe_body{gal::observer_tags<>{}});
-    }
   };
 
   template<typename Criterion>
