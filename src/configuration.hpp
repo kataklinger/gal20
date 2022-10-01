@@ -864,7 +864,7 @@ namespace config {
     }
 
     template<initializator Initializator>
-    inline constexpr auto initialize(Initializator const& initializator) const {
+    inline constexpr auto spawn(Initializator const& initializator) const {
       return this->next(init_body{initializator});
     }
   };

@@ -124,7 +124,7 @@ void setup_alg() {
       builder.begin()
           .limit(20)
           .tag()
-          .initialize(example::initializator{gen})
+          .spawn(example::initializator{gen})
           .evaluate(example::evaluator{}, std::less{})
           .reproduce(gal::cross::symmetric_singlepoint{gen},
                      gal::mutate::make_simple_flip<1>(gen, example::dist))
