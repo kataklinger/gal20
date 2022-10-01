@@ -436,15 +436,15 @@ namespace config {
   };
 
   template<typename Events, typename... Observers>
-  class observer_body {
+  class observe_body {
   public:
     using events_t = Events;
     using observers_t =
         observer_pack<events_t, std::remove_cvref_t<Observers>...>;
 
   public:
-    inline explicit constexpr observer_body(events_t events,
-                                            Observers&&... observers)
+    inline explicit constexpr observe_body(events_t events,
+                                           Observers&&... observers)
         : observers_{events, std::move(observers)...} {
     }
 
@@ -457,21 +457,21 @@ namespace config {
   };
 
   template<typename Built>
-  class observer_ptype : public details::ptype_base<Built, observer_ptype> {
+  class observe_ptype : public details::ptype_base<Built, observe_ptype> {
   public:
-    inline constexpr explicit observer_ptype(Built const* current)
-        : details::ptype_base<Built, observer_ptype>{current} {
+    inline constexpr explicit observe_ptype(Built const* current)
+        : details::ptype_base<Built, observe_ptype>{current} {
     }
 
     template<typename... Events, gal::observer<Built, Events>... Observers>
     inline constexpr auto
         observe_following(gal::observe<Events, Observers>... observers) {
-      return this->template next<>(observer_body{
+      return this->template next<>(observe_body{
           gal::observer_tags<Events...>{}, std::move(observers).observer()...});
     }
 
     inline constexpr auto observer_none() {
-      return this->template next<>(observer_body{gal::observer_tags<>{}});
+      return this->template next<>(observe_body{gal::observer_tags<>{}});
     }
   };
 
