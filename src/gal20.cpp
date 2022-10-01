@@ -120,17 +120,17 @@ void setup_alg() {
   using namespace gal;
   using namespace gal::stat;
 
-  example::random_gen gen{};
+  example::random_gen rng{};
   std::stop_token stop{};
 
   config::for_map<alg::basic_config_map>()
       .begin()
       .limit(20)
       .tag()
-      .spawn(example::initializator{gen})
+      .spawn(example::initializator{rng})
       .evaluate(example::evaluator{}, std::less{})
-      .reproduce(cross::symmetric_singlepoint{gen},
-                 mutate::make_simple_flip<1>(gen, example::dist))
+      .reproduce(cross::symmetric_singlepoint{rng},
+                 mutate::make_simple_flip<1>(rng, example::dist))
       .scale()
       .track<generation,
              extreme_fitness_raw,
@@ -138,9 +138,9 @@ void setup_alg() {
              average_fitness_raw,
              fitness_deviation_raw>(10)
       .stop(criteria::generation_limit{100})
-      .select(select::roulette_raw{select::unique<4>, gen})
+      .select(select::roulette_raw{select::unique<4>, rng})
       .couple(couple::factorize<couple::exclusive>(
-          couple::parameters<0.8f, 0.2f, true>(gen)))
+          couple::parameters<0.8f, 0.2f, true>(rng)))
       .replace(replace::worst_raw{})
       .observe(observe{alg::generation_event,
                        [](auto const& pop, auto const& hist) {}})
