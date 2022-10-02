@@ -13,8 +13,8 @@ namespace couple {
            auto Mutation,
            traits::boolean_flag MutationImproveOnly,
            typename Generator>
-  requires(probability<Crossover>&&
-               probability<Mutation>) class reproduction_params {
+    requires(probability<Crossover> && probability<Mutation>)
+  class reproduction_params {
   public:
     using generator_t = Generator;
     using mutation_improve_only_t = MutationImproveOnly;
@@ -41,24 +41,12 @@ namespace couple {
     probabilistic_operation<generator_t, Mutation> mutation_;
   };
 
-  template<auto Crossover,
-           auto Mutation,
-           bool MutationImproveOnly,
-           typename Generator>
-  requires(probability<Crossover>&& probability<
-           Mutation>) inline auto parameters(Generator& generator) noexcept {
-    return reproduction_params<Crossover,
-                               Mutation,
-                               std::bool_constant<MutationImproveOnly>,
-                               std::remove_cv_t<Generator>>{generator};
-  }
-
   namespace details {
 
     template<typename Context, typename Population>
     concept with_scaling = requires(Context ctx) {
-      { ctx.scaling() } -> scaling<Population>;
-    };
+                             { ctx.scaling() } -> scaling<Population>;
+                           };
 
     template<typename Population, typename Context>
     struct has_scaling : std::false_type {};
@@ -383,8 +371,9 @@ namespace couple {
            auto Mutation,
            bool MutationImproveOnly,
            typename Generator>
-  inline constexpr auto factorize(Generator& generator) requires(
-      probability<Crossover>&& probability<Mutation>) {
+  inline constexpr auto factorize(Generator& generator)
+    requires(probability<Crossover> && probability<Mutation>)
+  {
     using params_t =
         reproduction_params<Crossover,
                             Mutation,

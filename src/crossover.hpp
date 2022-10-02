@@ -99,7 +99,8 @@ namespace cross {
   };
 
   template<typename Generator, std::size_t Points>
-  requires(Points > 1) class symmetric_multipoint {
+    requires(Points > 1)
+  class symmetric_multipoint {
   public:
     using generator_t = Generator;
 
@@ -188,7 +189,8 @@ namespace cross {
   };
 
   template<typename Generator, std::size_t Points>
-  requires(Points > 1) class asymmetric_multipoint {
+    requires(Points > 1)
+  class asymmetric_multipoint {
   public:
     using generator_t = Generator;
 

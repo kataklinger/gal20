@@ -7,11 +7,14 @@ namespace gal {
 namespace select {
 
   template<typename Attribute>
-  concept attribute = requires {
-    { Attribute::size } -> traits::decays_to<std::size_t>;
-    { Attribute::unique } -> traits::decays_to<bool>;
-    { Attribute::state() } -> std::same_as<details::state_t<Attribute::unique>>;
-  };
+  concept attribute =
+      requires {
+        { Attribute::size } -> traits::decays_to<std::size_t>;
+        { Attribute::unique } -> traits::decays_to<bool>;
+        {
+          Attribute::state()
+          } -> std::same_as<details::state_t<Attribute::unique>>;
+      };
 
   template<bool Unique, std::size_t Size>
   struct selection_attribute {
@@ -99,9 +102,10 @@ namespace select {
     }
 
     template<typename Population>
-    inline auto operator()(Population& population) const requires
-        ordered_population<Population, FitnessTag> &&
-        averageable_population<Population, FitnessTag> {
+    inline auto operator()(Population& population) const
+      requires ordered_population<Population, FitnessTag> &&
+               averageable_population<Population, FitnessTag>
+    {
       using fitness_t = get_fitness_t<fitness_tag_t, Population>;
       using distribution_t =
           typename fitness_traits<fitness_t>::random_distribution_t;

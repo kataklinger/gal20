@@ -11,9 +11,13 @@ namespace gal {
 template<typename Event>
 struct observer_definition;
 
+// clang-format off
+
 template<typename Observer, typename Definitions, typename Event>
 concept observer =
     observer_definition<Event>::template satisfies<Observer, Definitions>;
+
+// clang-format on
 
 template<typename... Events>
 struct observer_tags {};

@@ -277,10 +277,14 @@ template<typename FitnessType, typename Population>
 using get_fitness_comparator_t =
     typename get_fitness_comparator<FitnessType>::template type<Population>;
 
+// clang-format off
+
 template<typename Population, typename FitnessTag>
 concept ordered_population =
     !std::same_as<get_fitness_comparator_t<FitnessTag, Population>,
                   disabled_comparator>;
+
+// clang-format on
 
 template<typename Population, typename FitnessTag>
 concept averageable_population =

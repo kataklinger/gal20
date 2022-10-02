@@ -47,7 +47,8 @@ namespace mutate {
   } // namespace details
 
   template<typename Generator, std::size_t Count>
-  requires(Count > 0) class interchange {
+    requires(Count > 0)
+  class interchange {
   public:
     using generator_t = Generator;
 
@@ -78,7 +79,8 @@ namespace mutate {
   };
 
   template<typename Generator, std::size_t Count>
-  requires(Count > 0) class shuffle {
+    requires(Count > 0)
+  class shuffle {
   public:
     using generator_t = Generator;
 
@@ -109,7 +111,8 @@ namespace mutate {
   };
 
   template<typename Generator, std::size_t Count>
-  requires(Count > 0) class destroy {
+    requires(Count > 0)
+  class destroy {
   public:
     using generator_t = Generator;
 
@@ -132,7 +135,8 @@ namespace mutate {
   };
 
   template<typename Generator, typename Fn, std::size_t Count>
-  requires(Count > 0) class create {
+    requires(Count > 0)
+  class create {
   public:
     using generator_t = Generator;
 
@@ -157,7 +161,8 @@ namespace mutate {
   };
 
   template<typename Generator, typename Fn, std::size_t Count>
-  requires(Count > 0) class flip {
+    requires(Count > 0)
+  class flip {
   public:
     using generator_t = Generator;
 

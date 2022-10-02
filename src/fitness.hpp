@@ -15,11 +15,13 @@ concept fitness =
     std::is_nothrow_move_assignable_v<Type>;
 
 template<typename Operation, typename Fitness>
-concept comparator = fitness<Fitness> && std::is_invocable_r_v<
-    bool,
-    Operation,
-    std::add_lvalue_reference_t<std::add_const_t<Fitness>>,
-    std::add_lvalue_reference_t<std::add_const_t<Fitness>>>;
+concept comparator =
+    fitness<Fitness> &&
+    std::is_invocable_r_v<
+        bool,
+        Operation,
+        std::add_lvalue_reference_t<std::add_const_t<Fitness>>,
+        std::add_lvalue_reference_t<std::add_const_t<Fitness>>>;
 
 struct disabled_comparator {
   template<typename Fitness>
@@ -31,10 +33,12 @@ struct disabled_comparator {
 
 template<typename Type>
 concept arithmetic_fitness = fitness<Type> && requires(Type a) {
-  { a + a } -> std::same_as<Type>;
-  { a - a } -> std::same_as<Type>;
-  { a / std::size_t(1) } -> std::same_as<Type>;
-};
+                                                { a + a } -> std::same_as<Type>;
+                                                { a - a } -> std::same_as<Type>;
+                                                {
+                                                  a / std::size_t(1)
+                                                  } -> std::same_as<Type>;
+                                              };
 
 template<typename Fitness>
 concept integer_fitness = arithmetic_fitness<Fitness> && std::integral<Fitness>;
@@ -44,16 +48,17 @@ concept real_fitness =
     arithmetic_fitness<Fitness> && std::floating_point<Fitness>;
 
 template<typename Totalizator>
-concept fitness_totalizator = requires(Totalizator t) {
-  std::semiregular<Totalizator>;
-  arithmetic_fitness<typename Totalizator::value_t>;
+concept fitness_totalizator =
+    requires(Totalizator t) {
+      std::semiregular<Totalizator>;
+      arithmetic_fitness<typename Totalizator::value_t>;
 
-  {
-    t.add(std::declval<typename Totalizator::value_t>())
-    } -> std::convertible_to<Totalizator>;
+      {
+        t.add(std::declval<typename Totalizator::value_t>())
+        } -> std::convertible_to<Totalizator>;
 
-  { t.sum() } -> std::convertible_to<typename Totalizator::value_t>;
-};
+      { t.sum() } -> std::convertible_to<typename Totalizator::value_t>;
+    };
 
 template<arithmetic_fitness Value>
 class integer_fitness_totalizator {

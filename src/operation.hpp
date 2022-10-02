@@ -9,7 +9,7 @@ namespace gal {
 
 template<typename Operation>
 concept initializator = std::is_invocable_v<Operation> &&
-    chromosome<std::invoke_result_t<Operation>>;
+                        chromosome<std::invoke_result_t<Operation>>;
 
 template<typename Operation, typename Chromosome>
 concept crossover = std::is_invocable_r_v<
@@ -23,9 +23,10 @@ concept mutation = std::
     is_invocable_r_v<void, Operation, std::add_lvalue_reference_t<Chromosome>>;
 
 template<typename Operation, typename Chromosome>
-concept evaluator = std::is_invocable_v<
-    Operation,
-    std::add_lvalue_reference_t<std::add_const_t<Chromosome>>> &&
+concept evaluator =
+    std::is_invocable_v<
+        Operation,
+        std::add_lvalue_reference_t<std::add_const_t<Chromosome>>> &&
     fitness<std::invoke_result_t<
         Operation,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>>;
@@ -80,6 +81,8 @@ template<typename Scaling, typename Population>
 inline constexpr auto can_scale_global_v =
     can_scale_global<Scaling, Population>::value;
 
+// clang-format off
+
 template<typename Scaling, typename Population>
 concept local_scaling = can_scale_local_v<Scaling, Population> &&
     !can_scale_global_v<Scaling, Population>;
@@ -88,17 +91,15 @@ template<typename Scaling, typename Population>
 concept global_scaling = can_scale_global_v<Scaling, Population> &&
     !can_scale_local_v<Scaling, Population>;
 
+// clang-format on
+
 template<typename Scaling, typename Population>
 concept scaling =
     local_scaling<Scaling, Population> || global_scaling<Scaling, Population>;
 
-// clang-format off
-
 template<typename Operation, typename Population>
 concept selection =
-    std::is_invocable_v<
-        Operation,
-        std::add_lvalue_reference_t<Population>> &&
+    std::is_invocable_v<Operation, std::add_lvalue_reference_t<Population>> &&
     selection_range<
         std::invoke_result_t<Operation,
                              std::add_lvalue_reference_t<Population>>,
@@ -121,16 +122,12 @@ concept replacement =
                              Offsprings>,
         typename Population::individual_t>;
 
-// clang-format on
-
 template<typename Operation, typename Population, typename History>
 concept criterion = std::is_invocable_r_v<
     bool,
     Operation,
     std::add_lvalue_reference_t<std::add_const_t<Population>>,
     std::add_lvalue_reference_t<std::add_const_t<History>>>;
-
-// clang-format off
 
 template<typename Factory, typename Context>
 concept scaling_factory =
@@ -149,8 +146,6 @@ concept coupling_factory =
              typename Context::population_t,
              Parents>;
 
-// clang-format on
-
 template<typename Factory, typename Context>
 using factory_result_t =
     std::invoke_result_t<std::add_const_t<Factory>,
@@ -161,7 +156,8 @@ concept probability = Probability >= 0.f && Probability <= 1.f &&
                       std::floating_point<decltype(Probability)>;
 
 template<typename Generator, auto Probability>
-requires(probability<Probability>) struct probabilistic_operation {
+  requires(probability<Probability>)
+struct probabilistic_operation {
 public:
   using generator_t = Generator;
   using distribution_t = std::uniform_real_distribution<decltype(Probability)>;

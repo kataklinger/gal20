@@ -52,7 +52,7 @@ namespace traits {
 
   template<typename Ty>
   concept boolean_flag = std::derived_from<Ty, std::true_type> ||
-      std::derived_from<Ty, std::false_type>;
+                         std::derived_from<Ty, std::false_type>;
 
   template<typename From, typename To>
   concept decays_to = std::same_as<std::decay_t<From>, To>;

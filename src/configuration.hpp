@@ -8,10 +8,14 @@
 namespace gal {
 namespace config {
 
+  // clang-format off
+
   template<typename Section>
   concept section =
       !std::is_final_v<Section> && std::copy_constructible<Section> &&
       std::move_constructible<Section>;
+
+  // clang-format on
 
   template<template<typename> class... Interfaces>
   struct plist {};
@@ -768,7 +772,6 @@ namespace config {
   template<typename Built>
   class scale_fitness_ptype
       : public details::ptype_base<Built, scale_fitness_ptype> {
-  private:
   public:
     inline constexpr explicit scale_fitness_ptype(Built const* current)
         : details::ptype_base<Built, scale_fitness_ptype>{current} {

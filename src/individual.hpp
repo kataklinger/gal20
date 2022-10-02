@@ -3,7 +3,6 @@
 
 #include "chromosome.hpp"
 #include "fitness.hpp"
-
 #include "traits.hpp"
 
 #include <optional>
@@ -105,15 +104,22 @@ using rank_t = std::optional<std::size_t>;
 
 template<typename Range, typename Selected>
 concept selection_range = std::ranges::random_access_range<Range> &&
-    requires(Range r) {
-  { *std::ranges::begin(r) } -> traits::decays_to<Selected>;
-};
+                          requires(Range r) {
+                            {
+                              *std::ranges::begin(r)
+                              } -> traits::decays_to<Selected>;
+                          };
 
 template<typename Range, typename Replaced, typename Replacement>
 concept replacement_range = std::ranges::random_access_range<Range> &&
-    requires(Range r) {
-  { get_parent(*std::ranges::begin(r)) } -> traits::decays_to<Replaced>;
-  { get_child(*std::ranges::begin(r)) } -> traits::decays_to<Replacement>;
-};
+                            requires(Range r) {
+                              {
+                                get_parent(*std::ranges::begin(r))
+                                } -> traits::decays_to<Replaced>;
+
+                              {
+                                get_child(*std::ranges::begin(r))
+                                } -> traits::decays_to<Replacement>;
+                            };
 
 } // namespace gal

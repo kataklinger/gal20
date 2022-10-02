@@ -45,9 +45,12 @@ namespace scale {
   } // namespace details
 
   template<typename Fitness>
-  concept linear_fitness = arithmetic_fitness<Fitness> && requires(Fitness f) {
-    { 1.0 * f } -> std::convertible_to<double>;
-  };
+  concept linear_fitness =
+      arithmetic_fitness<Fitness> && requires(Fitness f) {
+                                       {
+                                         1.0 * f
+                                         } -> std::convertible_to<double>;
+                                     };
 
   template<typename Context>
   concept linear_context =
@@ -59,7 +62,8 @@ namespace scale {
                            stat::average_fitness<raw_fitness_tag>>;
 
   template<linear_context Context, auto Preassure>
-  requires(scaling_constant<Preassure>) class linear {
+    requires(scaling_constant<Preassure>)
+  class linear {
   public:
     using is_stable_t = std::true_type;
 
@@ -121,11 +125,12 @@ namespace scale {
   };
 
   template<typename Fitness>
-  concept sigma_fitness = stat::deviation_fitness<Fitness> &&
+  concept sigma_fitness =
+      stat::deviation_fitness<Fitness> &&
       requires(Fitness f) {
-    std::convertible_to<stat::fitness_deviation_t<Fitness>, double>;
-    { f / 1.0 } -> std::convertible_to<double>;
-  };
+        std::convertible_to<stat::fitness_deviation_t<Fitness>, double>;
+        { f / 1.0 } -> std::convertible_to<double>;
+      };
 
   template<typename Context>
   concept sigma_context =
@@ -195,7 +200,8 @@ namespace scale {
                               double>;
 
   template<ranked_context Context, auto Preassure>
-  requires(scaling_constant<Preassure>) class ranked {
+    requires(scaling_constant<Preassure>)
+  class ranked {
   public:
     using is_stable_t = std::true_type;
 
@@ -237,8 +243,9 @@ namespace scale {
                               Base>;
 
   template<typename Context, auto Base>
-  requires(exponential_context<Context, decltype(Base)>&&
-               scaling_constant<Base>) class exponential {
+    requires(exponential_context<Context, decltype(Base)> &&
+             scaling_constant<Base>)
+  class exponential {
   public:
     using is_stable_t = std::true_type;
 
@@ -273,8 +280,8 @@ namespace scale {
 
   template<typename Fitness, typename Proportion, typename Output>
   concept proportional_fitness = requires(Fitness f, Proportion p) {
-    { p* f } -> std::convertible_to<Output>;
-  };
+                                   { p* f } -> std::convertible_to<Output>;
+                                 };
 
   template<typename Context, typename Proportion>
   concept proportional_context =
@@ -284,9 +291,10 @@ namespace scale {
                            typename Context::population_t::scaled_fitness_t>;
 
   template<typename Context, auto RankCutoff, auto Proportion>
-  requires(proportional_context<Context, decltype(Proportion)>&&
-                   std::integral<decltype(RankCutoff)>&& RankCutoff > 0 &&
-           scaling_constant<Proportion>) class top {
+    requires(proportional_context<Context, decltype(Proportion)> &&
+             std::integral<decltype(RankCutoff)> && RankCutoff > 0 &&
+             scaling_constant<Proportion>)
+  class top {
   public:
     using is_stable_t = std::true_type;
 
@@ -322,8 +330,8 @@ namespace scale {
 
   template<typename Fitness, typename Power, typename Output>
   concept power_fitness = requires(Fitness f, Power p) {
-    { std::pow(f, p) } -> std::convertible_to<Output>;
-  };
+                            { std::pow(f, p) } -> std::convertible_to<Output>;
+                          };
 
   template<typename Context, typename Power>
   concept power_context =
@@ -332,8 +340,8 @@ namespace scale {
                     typename Context::population_t::scaled_fitness_t>;
 
   template<typename Context, auto Power>
-  requires(power_context<Context, decltype(Power)>&&
-               scaling_constant<Power>) class power {
+    requires(power_context<Context, decltype(Power)> && scaling_constant<Power>)
+  class power {
   public:
     using is_stable_t = std::true_type;
 
@@ -403,7 +411,8 @@ namespace scale {
   };
 
   template<template<typename, auto...> class Scaling, auto... Parameters>
-  requires(scaling_constant<Parameters>&&...) struct factory {
+    requires(scaling_constant<Parameters> && ...)
+  struct factory {
     template<typename Context>
     auto operator()(Context& context) {
       return Scaling<Context, Parameters...>{context};

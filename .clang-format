@@ -38,6 +38,7 @@ Cpp11BracedListStyle: 'true'
 DerivePointerAlignment: 'false'
 IndentCaseLabels: 'false'
 IndentWidth: 2
+TabWidth: 2
 IndentWrappedFunctionNames: 'true'
 KeepEmptyLinesAtTheStartOfBlocks: 'true'
 Language: Cpp
@@ -54,7 +55,20 @@ SpacesInAngles: 'false'
 SpacesInCStyleCastParentheses: 'true'
 SpacesInParentheses: 'false'
 SpacesInSquareBrackets: 'false'
-Standard: Cpp11
+Standard: Latest
 UseTab: Never
+BreakInheritanceList: BeforeColon
+DeriveLineEnding: 'true'
+EmptyLineAfterAccessModifier: Never
+EmptyLineBeforeAccessModifier: Always
+FixNamespaceComments: 'true'
+LambdaBodyIndentation: Signature
+QualifierAlignment: Right
+ReferenceAlignment: Left
+SortUsingDeclarations: 'true'
+RequiresClausePosition: OwnLine
+BreakBeforeConceptDeclarations: Always
+IndentRequiresClause: 'true'
+InsertBraces: 'true'
 
 ...
