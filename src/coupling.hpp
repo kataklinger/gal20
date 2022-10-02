@@ -233,7 +233,7 @@ namespace couple {
           *context_, params_, std::ranges::size(parents), std::true_type{}};
 
       auto it = std::ranges::begin(parents);
-      if (auto size = std::ranges::size(parents); size % 2 == 0) {
+      if (auto size = std::ranges::size(parents); size % 2 != 0) {
         for (auto end = it + (size - 1); it != end; it += 2) {
           incubate(*it, *(it + 1));
         }
