@@ -26,12 +26,12 @@ namespace stat {
     using type = std::tuple<element_t<Dependencies>...>;
 
     template<typename Source>
-    static inline auto pack(Source const& source) {
+    inline static auto pack(Source const& source) {
       return type{static_cast<element_t<Dependencies>>(source)...};
     }
 
     template<typename Dependency>
-    static inline decltype(auto) unpack(type const& pack) {
+    inline static decltype(auto) unpack(type const& pack) {
       return std::get<element_t<Dependency>>(pack);
     }
   };

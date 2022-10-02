@@ -63,12 +63,13 @@ EmptyLineAfterAccessModifier: Never
 EmptyLineBeforeAccessModifier: Always
 FixNamespaceComments: 'true'
 LambdaBodyIndentation: Signature
-QualifierAlignment: Right
 ReferenceAlignment: Left
 SortUsingDeclarations: 'true'
 RequiresClausePosition: OwnLine
 BreakBeforeConceptDeclarations: Always
 IndentRequiresClause: 'true'
 InsertBraces: 'true'
+QualifierAlignment: Custom
+QualifierOrder: ['inline', 'static', 'constexpr', 'type', 'const', 'volatile']
 
 ...
