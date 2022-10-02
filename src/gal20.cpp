@@ -139,8 +139,7 @@ void setup_alg() {
              fitness_deviation_raw>(10)
       .stop(criteria::generation_limit{100})
       .select(select::roulette_raw{select::unique<4>, rng})
-      .couple(couple::factorize<couple::exclusive>(
-          couple::parameters<0.8f, 0.2f, true>(rng)))
+      .couple(couple::factorize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::worst_raw{})
       .observe(observe{alg::generation_event,
                        [](auto const& pop, auto const& hist) {}})

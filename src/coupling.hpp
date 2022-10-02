@@ -378,5 +378,21 @@ namespace couple {
     return factory<Coupling, Params>{params};
   }
 
+  template<template<typename, typename> class Coupling,
+           auto Crossover,
+           auto Mutation,
+           bool MutationImproveOnly,
+           typename Generator>
+  inline constexpr auto factorize(Generator& generator) requires(
+      probability<Crossover>&& probability<Mutation>) {
+    using params_t =
+        reproduction_params<Crossover,
+                            Mutation,
+                            std::bool_constant<MutationImproveOnly>,
+                            std::remove_cv_t<Generator>>;
+
+    return factory<Coupling, params_t>{params_t{generator}};
+  }
+
 } // namespace couple
 } // namespace gal
