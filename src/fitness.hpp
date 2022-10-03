@@ -47,6 +47,14 @@ template<typename Fitness>
 concept real_fitness =
     arithmetic_fitness<Fitness> && std::floating_point<Fitness>;
 
+template<typename Fitness>
+concept multiobjective_fitness =
+    std::ranges::sized_range<Fitness> && requires(Fitness f) {
+                                           {
+                                             *std::ranges::begin(f)
+                                             } -> std::totally_ordered;
+                                         };
+
 template<typename Totalizator>
 concept fitness_totalizator =
     requires(Totalizator t) {
