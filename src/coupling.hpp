@@ -50,7 +50,7 @@ namespace couple {
 
   template<auto Crossover,
            auto Mutation,
-           traits::boolean_flag MutationImproveOnly,
+           util::boolean_flag MutationImproveOnly,
            typename Generator>
     requires(probability<Crossover> && probability<Mutation>)
   class reproduction_params {
@@ -97,7 +97,7 @@ namespace couple {
     inline constexpr auto has_scaling_v =
         has_scaling<Context, Population>::value;
 
-    template<typename Context, typename Params, traits::boolean_flag Pairing>
+    template<typename Context, typename Params, util::boolean_flag Pairing>
     class incubator {
     public:
       using context_t = Context;
@@ -178,7 +178,7 @@ namespace couple {
 
         auto mutated =
             mutate(context_->mutation(),
-                   traits::move_if(original, std::negation<improve_t>{}),
+                   util::move_if(original, std::negation<improve_t>{}),
                    do_mutate);
 
         auto mutated_fitness = std::invoke(context_->evaluator(), mutated);

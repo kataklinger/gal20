@@ -5,7 +5,7 @@
 #include <random>
 #include <type_traits>
 
-#include "traits.hpp"
+#include "utility.hpp"
 
 namespace gal {
 
@@ -184,22 +184,22 @@ public:
     swap(scaled_, other.scaled_);
   }
 
-  template<traits::forward_ref<raw_t> F>
+  template<util::forward_ref<raw_t> F>
   inline void set_raw(F&& fitness) {
     raw_ = std::forward<F>(fitness);
   }
 
-  template<traits::forward_ref<scaled_t> F>
+  template<util::forward_ref<scaled_t> F>
   inline void set_scaled(F&& fitness) {
     scaled_ = std::forward<F>(fitness);
   }
 
-  template<traits::forward_ref<raw_t> F>
+  template<util::forward_ref<raw_t> F>
   inline void set(raw_fitness_tag /*unused*/, F&& fitness) const noexcept {
     set_raw(std::forward<F>(fitness));
   }
 
-  template<traits::forward_ref<scaled_t> F>
+  template<util::forward_ref<scaled_t> F>
   inline void set(scaled_fitness_tag /*unused*/, F&& fitness) const noexcept {
     set_scaled(std::forward<F>(fitness));
   }

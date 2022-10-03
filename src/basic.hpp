@@ -102,8 +102,8 @@ namespace alg {
         comparator<typename Config::scaled_comparator_t,
                    typename Config::raw_fitness_t>;
 
-        traits::boolean_flag<typename Config::is_global_scaling_t>;
-        traits::boolean_flag<typename Config::is_stable_scaling_t>;
+        util::boolean_flag<typename Config::is_global_scaling_t>;
+        util::boolean_flag<typename Config::is_stable_scaling_t>;
 
         selection_range<typename Config::selection_result_t,
                         typename Config::population_t::const_iterator_t>;

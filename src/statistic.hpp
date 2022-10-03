@@ -412,7 +412,7 @@ namespace stat {
   template<typename Value>
   struct square_power;
 
-  template<traits::arithmetic Value>
+  template<util::arithmetic Value>
   struct square_power<Value> {
     using result_t = Value;
 
@@ -429,7 +429,7 @@ namespace stat {
   template<typename Value>
   struct square_root;
 
-  template<traits::arithmetic Value>
+  template<util::arithmetic Value>
   struct square_root<Value> {
     using result_t = Value;
 

@@ -8,8 +8,8 @@ namespace select {
 
   template<typename Attribute>
   concept attribute = requires {
-                        { Attribute::size } -> traits::decays_to<std::size_t>;
-                        { Attribute::unique } -> traits::decays_to<bool>;
+                        { Attribute::size } -> util::decays_to<std::size_t>;
+                        { Attribute::unique } -> util::decays_to<bool>;
                         {
                           Attribute::sample()
                           } -> std::same_as<sample_t<Attribute::unique>>;

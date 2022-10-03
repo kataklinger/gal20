@@ -5,7 +5,7 @@
 #include <type_traits>
 
 namespace gal {
-namespace traits {
+namespace util {
 
   template<typename Ref, typename Decayed>
   concept forward_ref = std::same_as<Decayed, std::remove_cvref_t<Ref>>;

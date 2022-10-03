@@ -3,7 +3,7 @@
 
 #include "chromosome.hpp"
 #include "fitness.hpp"
-#include "traits.hpp"
+#include "utility.hpp"
 
 #include <optional>
 #include <ranges>
@@ -20,46 +20,45 @@ public:
   using tags_t = Tags;
 
 public:
-  template<traits::forward_ref<chromosome_t> C,
-           traits::forward_ref<evaluation_t> E>
+  template<util::forward_ref<chromosome_t> C, util::forward_ref<evaluation_t> E>
   inline individual(C&& chromosome, E&& evaluation) noexcept(
-      traits::is_nothrow_forward_constructibles_v<decltype(chromosome),
-                                                  decltype(evaluation)>&&
+      util::is_nothrow_forward_constructibles_v<decltype(chromosome),
+                                                decltype(evaluation)>&&
           std::is_nothrow_default_constructible_v<tags_t>)
       : chromosome_{std::forward<C>(chromosome)}
       , evaluation_{std::forward<E>(evaluation)}
       , tags_{} {
   }
 
-  template<traits::forward_ref<chromosome_t> C,
-           traits::forward_ref<evaluation_t> E,
-           traits::forward_ref<tags_t> T>
+  template<util::forward_ref<chromosome_t> C,
+           util::forward_ref<evaluation_t> E,
+           util::forward_ref<tags_t> T>
   inline individual(C&& chromosome, E&& evaluation, T&& tags) noexcept(
-      traits::is_nothrow_forward_constructibles_v<decltype(chromosome),
-                                                  decltype(evaluation),
-                                                  decltype(tags)>)
+      util::is_nothrow_forward_constructibles_v<decltype(chromosome),
+                                                decltype(evaluation),
+                                                decltype(tags)>)
       : chromosome_{std::forward<C>(chromosome)}
       , evaluation_{std::forward<E>(evaluation)}
       , tags_{std::forward<T>(tags)} {
   }
 
-  template<traits::forward_ref<chromosome_t> C,
-           traits::forward_ref<raw_fitness_t> F>
+  template<util::forward_ref<chromosome_t> C,
+           util::forward_ref<raw_fitness_t> F>
   inline individual(C&& chromosome, F&& fitness) noexcept(
-      traits::is_nothrow_forward_constructibles_v<decltype(chromosome),
-                                                  decltype(fitness)>&&
+      util::is_nothrow_forward_constructibles_v<decltype(chromosome),
+                                                decltype(fitness)>&&
           std::is_nothrow_default_constructible_v<tags_t>)
       : individual{std::forward<C>(chromosome),
                    evaluation_t{std::forward<F>(fitness)}} {
   }
 
-  template<traits::forward_ref<chromosome_t> C,
-           traits::forward_ref<raw_fitness_t> F,
-           traits::forward_ref<tags_t> T>
+  template<util::forward_ref<chromosome_t> C,
+           util::forward_ref<raw_fitness_t> F,
+           util::forward_ref<tags_t> T>
   inline individual(C&& chromosome, F&& fitness, T&& tags) noexcept(
-      traits::is_nothrow_forward_constructibles_v<decltype(chromosome),
-                                                  decltype(fitness),
-                                                  decltype(tags)>)
+      util::is_nothrow_forward_constructibles_v<decltype(chromosome),
+                                                decltype(fitness),
+                                                decltype(tags)>)
       : individual{std::forward<C>(chromosome),
                    evaluation_t{std::forward<F>(fitness)},
                    std::forward<T>(tags)} {
@@ -107,7 +106,7 @@ concept selection_range = std::ranges::random_access_range<Range> &&
                           requires(Range r) {
                             {
                               *std::ranges::begin(r)
-                              } -> traits::decays_to<Selected>;
+                              } -> util::decays_to<Selected>;
                           };
 
 template<typename Range, typename Replaced, typename Replacement>
@@ -115,11 +114,11 @@ concept replacement_range = std::ranges::random_access_range<Range> &&
                             requires(Range r) {
                               {
                                 get_parent(*std::ranges::begin(r))
-                                } -> traits::decays_to<Replaced>;
+                                } -> util::decays_to<Replaced>;
 
                               {
                                 get_child(*std::ranges::begin(r))
-                                } -> traits::decays_to<Replacement>;
+                                } -> util::decays_to<Replacement>;
                             };
 
 } // namespace gal
