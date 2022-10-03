@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "utility.hpp"
+#include "sampling.hpp"
 
 namespace gal {
 namespace cross {
@@ -120,10 +120,9 @@ namespace cross {
         return std::pair<Chromosome, Chromosome>{p1, p2};
       }
 
-      auto selected = gal::details::selecte_many(
-          gal::details::unique_state{count}, [&p1, &p2, this] {
-            return details::distribute(p1, p2)(*generator_);
-          });
+      auto selected = sample_many(unique_sample{count}, [&p1, &p2, this] {
+        return details::distribute(p1, p2)(*generator_);
+      });
 
       std::ranges::sort(selected);
 
@@ -210,15 +209,15 @@ namespace cross {
         return std::pair<Chromosome, Chromosome>{p1, p2};
       }
 
-      auto selected1 = gal::details::selecte_many(
-          gal::details::unique_state{count},
-          [&p1, this] { return details::distribute(p1)(*generator_); });
+      auto selected1 = sample_many(unique_sample{count}, [&p1, this] {
+        return details::distribute(p1)(*generator_);
+      });
 
       std::ranges::sort(selected1);
 
-      auto selected2 = gal::details::selecte_many(
-          gal::details::unique_state{count},
-          [&p2, this] { return details::distribute(p2)(*generator_); });
+      auto selected2 = sample_many(unique_sample{count}, [&p2, this] {
+        return details::distribute(p2)(*generator_);
+      });
 
       std::ranges::sort(selected2);
 

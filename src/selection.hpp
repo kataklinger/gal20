@@ -1,28 +1,27 @@
 
 #pragma once
 
-#include "utility.hpp"
+#include "sampling.hpp"
 
 namespace gal {
 namespace select {
 
   template<typename Attribute>
-  concept attribute =
-      requires {
-        { Attribute::size } -> traits::decays_to<std::size_t>;
-        { Attribute::unique } -> traits::decays_to<bool>;
-        {
-          Attribute::state()
-          } -> std::same_as<details::state_t<Attribute::unique>>;
-      };
+  concept attribute = requires {
+                        { Attribute::size } -> traits::decays_to<std::size_t>;
+                        { Attribute::unique } -> traits::decays_to<bool>;
+                        {
+                          Attribute::sample()
+                          } -> std::same_as<sample_t<Attribute::unique>>;
+                      };
 
   template<bool Unique, std::size_t Size>
   struct selection_attribute {
     inline static constexpr auto size = Size;
     inline static constexpr auto unique = Unique;
 
-    inline static auto state() {
-      return details::state_t<unique>{size};
+    inline static auto sample() {
+      return sample_t<unique>{size};
     }
   };
 
@@ -49,8 +48,8 @@ namespace select {
 
     template<typename Population>
     inline auto operator()(Population& population) const {
-      return details::select_many(
-          population, attribute_t::state(), [&population, this]() {
+      return sample_many(
+          population, attribute_t::sample(), [&population, this]() {
             return distribution_t{0,
                                   population.current_size() - 1}(*generator_);
           });
@@ -71,9 +70,8 @@ namespace select {
       population.sort(fitness_tag_t{});
 
       std::size_t idx{};
-      return details::select_many(population,
-                                  details::nonunique_state{Size},
-                                  [&idx]() { return idx++; });
+      return sample_many(
+          population, nonunique_sample{Size}, [&idx]() { return idx++; });
     }
   };
 
@@ -114,11 +112,10 @@ namespace select {
 
       auto wheel = get_wheel(population);
 
-      return details::select_many(
-          population, attribute_t::state(), [&wheel, this]() {
-            auto selected = distribution_t{{}, wheel.back()}(*generator_);
-            return std::ranges::lower_bound(wheel, selected) - wheel.begin();
-          });
+      return sample_many(population, attribute_t::sample(), [&wheel, this]() {
+        auto selected = distribution_t{{}, wheel.back()}(*generator_);
+        return std::ranges::lower_bound(wheel, selected) - wheel.begin();
+      });
     }
 
   private:

@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "utility.hpp"
+#include "sampling.hpp"
 
 #include <tuple>
 
@@ -80,13 +80,13 @@ namespace replace {
                                typename Population::individual_t> Offspring>
     inline auto operator()(Population& population,
                            Offspring&& offspring) const {
-      auto to_replace = gal::details::select_many(
-          population,
-          gal::details::unique_state{details::get_size(population, offspring)},
-          [&population, this]() {
-            return distribution_t{0,
-                                  population.current_size() - 1}(*generator_);
-          });
+      auto to_replace =
+          sample_many(population,
+                      unique_sample{details::get_size(population, offspring)},
+                      [&population, this]() {
+                        return distribution_t{0, population.current_size() - 1}(
+                            *generator_);
+                      });
 
       return population.replace(details::apply_replaced(to_replace, offspring));
     }
@@ -113,10 +113,8 @@ namespace replace {
 
       auto size = details::get_size(population, offspring);
       std::size_t idx{population.current_size() - size};
-      auto to_replace =
-          gal::details::select_many(population,
-                                    gal::details::nonunique_state{size},
-                                    [&idx]() { return idx++; });
+      auto to_replace = sample_many(
+          population, nonunique_sample{size}, [&idx]() { return idx++; });
 
       return population.replace(details::apply_replaced(to_replace, offspring));
     }

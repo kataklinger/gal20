@@ -2,12 +2,51 @@
 #pragma once
 
 #include "operation.hpp"
-#include "utility.hpp"
+#include "sampling.hpp"
 
 #include <unordered_set>
 
 namespace gal {
 namespace couple {
+
+  namespace details {
+
+    template<typename Replaced, typename Replacement>
+    struct parentship : std::tuple<Replaced, Replacement> {
+      using std::tuple<Replaced, Replacement>::tuple;
+    };
+
+    template<typename Replaced, typename Replacement>
+    auto const& get_parent(parentship<Replaced, Replacement> const& pair) {
+      return std::get<0>(pair);
+    }
+
+    template<typename Replaced, typename Replacement>
+    auto& get_parent(parentship<Replaced, Replacement>& pair) {
+      return std::get<0>(pair);
+    }
+
+    template<typename Replaced, typename Replacement>
+    auto&& get_parent(parentship<Replaced, Replacement>&& pair) {
+      return std::move(std::get<0>(pair));
+    }
+
+    template<typename Replaced, typename Replacement>
+    auto const& get_child(parentship<Replaced, Replacement> const& pair) {
+      return std::get<1>(pair);
+    }
+
+    template<typename Replaced, typename Replacement>
+    auto& get_child(parentship<Replaced, Replacement>& pair) {
+      return std::get<1>(pair);
+    }
+
+    template<typename Replaced, typename Replacement>
+    auto&& get_child(parentship<Replaced, Replacement>&& pair) {
+      return std::move(std::get<1>(pair));
+    }
+
+  } // namespace details
 
   template<auto Crossover,
            auto Mutation,
@@ -72,8 +111,7 @@ namespace couple {
       using parent_iterator_t = typename population_t::iterator_t;
       using individual_t = typename population_t::individual_t;
 
-      using parentship_t =
-          gal::details::parentship<parent_iterator_t, individual_t>;
+      using parentship_t = details::parentship<parent_iterator_t, individual_t>;
 
       inline static constexpr auto pairing = pairing_t::value;
 

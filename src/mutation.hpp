@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "utility.hpp"
+#include "sampling.hpp"
 
 namespace gal {
 namespace mutate {
@@ -176,7 +176,7 @@ namespace mutate {
 
     template<range_chromosome Chromosome>
     void operator()(Chromosome& target) const {
-      gal::details::unique_state state{details::get_count(count, target)};
+      unique_sample state{details::get_count(count, target)};
       while (!state.full()) {
         std::size_t idx = 0;
         do {
