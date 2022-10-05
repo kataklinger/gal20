@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <compare>
 #include <concepts>
 #include <random>
 #include <type_traits>
@@ -47,13 +48,19 @@ template<typename Fitness>
 concept real_fitness =
     arithmetic_fitness<Fitness> && std::floating_point<Fitness>;
 
+template<fitness Fitness>
+struct multiobjective_value {
+  using type = std::remove_reference_t<decltype(*std::ranges::begin(
+      std::declval<std::add_lvalue_reference_t<Fitness>>()))>;
+};
+
+template<fitness Fitness>
+using multiobjective_value_t = typename multiobjective_value<Fitness>::type;
+
 template<typename Fitness>
 concept multiobjective_fitness =
-    std::ranges::sized_range<Fitness> && requires(Fitness f) {
-                                           {
-                                             *std::ranges::begin(f)
-                                             } -> std::totally_ordered;
-                                         };
+    std::ranges::sized_range<Fitness> &&
+    std::totally_ordered<multiobjective_value_t<Fitness>>;
 
 template<typename Totalizator>
 concept fitness_totalizator =
@@ -149,6 +156,50 @@ struct is_empty_fitness : std::is_same<Fitness, empty_fitness> {};
 
 template<typename Fitness>
 inline constexpr auto is_empty_fitness_v = is_empty_fitness<Fitness>::value;
+
+template<typename ComponentCompare>
+class dominate {
+public:
+  using component_compare_t = ComponentCompare;
+
+public:
+  inline dominate() noexcept(
+      std::is_nothrow_default_constructible_v<component_compare_t>) {
+  }
+
+  inline explicit dominate(component_compare_t const& compare) noexcept(
+      std::is_nothrow_copy_constructible_v<component_compare_t>)
+      : compare_{compare} {
+  }
+
+  template<multiobjective_fitness Fitness>
+  inline std::weak_ordering operator()(Fitness const& left,
+                                       Fitness const& right) const {
+    bool res_l{}, res_r{};
+
+    auto end = std::ranges::end(left);
+    for (auto itl = std::ranges::begin(left), itr = std::ranges::begin(right);
+         itl != end && (!res_l || !res_r);
+         ++itl, ++itr) {
+      res_l = res_l || compare_(*itl, *itr);
+      res_r = res_r || compare_(*itr, *itl);
+    }
+
+    if (res_l) {
+      if (!res_r) {
+        return std::weak_ordering::less;
+      }
+    }
+    else if (res_r) {
+      return std::weak_ordering::greater;
+    }
+
+    return std::weak_ordering::equivalent;
+  }
+
+private:
+  [[no_unique_address]] component_compare_t compare_{};
+};
 
 struct raw_fitness_tag {};
 struct scaled_fitness_tag {};
