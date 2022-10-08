@@ -1,14 +1,14 @@
 
 #pragma once
 
-#include "statistic.hpp"
+#include "statistics.hpp"
 
 namespace gal {
 namespace criteria {
 
   template<typename History, typename Model>
   concept tracked_history =
-      gal::stat::tracked_models<typename History::statistics_t, Model>;
+      stats::tracked_models<typename History::statistics_t, Model>;
 
   class generation_limit {
   public:
@@ -16,10 +16,10 @@ namespace criteria {
         : limit_{limit} {
     }
 
-    template<typename Population, tracked_history<stat::generation> History>
+    template<typename Population, tracked_history<stats::generation> History>
     inline bool operator()(Population const& /*unused*/,
                            History const& history) const noexcept {
-      return stat::get_generation{}(history.current()) > limit_;
+      return stats::get_generation{}(history.current()) > limit_;
     }
 
   private:

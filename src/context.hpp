@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "statistic.hpp"
+#include "statistics.hpp"
 
 namespace gal {
 
@@ -11,7 +11,7 @@ public:
   using population_t = Population;
   using statistics_t = Statistics;
 
-  using history_t = stat::history<statistics_t>;
+  using history_t = stats::history<statistics_t>;
 
 public:
   inline constexpr population_context(population_t& population,
@@ -58,7 +58,7 @@ public:
   using mutation_t = Mutation;
   using evaluator_t = Evaluator;
 
-  using history_t = stat::history<statistics_t>;
+  using history_t = stats::history<statistics_t>;
 
 private:
   using base_t = population_context<Population, Statistics>;
@@ -113,7 +113,7 @@ public:
   using evaluator_t = Evaluator;
   using scaling_t = Scaling;
 
-  using history_t = stat::history<statistics_t>;
+  using history_t = stats::history<statistics_t>;
 
 private:
   using base_t = reproduction_context<Population,

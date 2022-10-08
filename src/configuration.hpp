@@ -3,7 +3,7 @@
 
 #include "context.hpp"
 #include "observe.hpp"
-#include "statistic.hpp"
+#include "statistics.hpp"
 
 namespace gal {
 namespace config {
@@ -502,7 +502,7 @@ namespace config {
   template<typename Built>
   struct criterion_ptype : public details::ptype_base<Built, criterion_ptype> {
     using population_t = typename Built::population_t;
-    using history_t = stat::history<typename Built::statistics_t>;
+    using history_t = stats::history<typename Built::statistics_t>;
 
     inline constexpr explicit criterion_ptype(Built const* current)
         : details::ptype_base<Built, criterion_ptype>{current} {
@@ -706,7 +706,7 @@ namespace config {
   class statistics_body {
   public:
     using population_t = Population;
-    using statistics_t = stat::statistics<population_t, Models...>;
+    using statistics_t = stats::statistics<population_t, Models...>;
     using population_context_t = population_context<population_t, statistics_t>;
 
   public:
@@ -736,7 +736,7 @@ namespace config {
         : details::ptype_base<Built, statistics_ptype>{current} {
     }
 
-    template<stat::model<population_t>... Models>
+    template<stats::model<population_t>... Models>
     inline constexpr auto track(std::size_t depth) const {
       return this->next(statistics_body<population_t, Models...>{depth});
     }

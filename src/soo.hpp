@@ -7,35 +7,35 @@
 
 namespace gal {
 
-namespace alg {
+namespace soo {
 
   struct generation_event_t {};
   inline constexpr generation_event_t generation_event{};
 
-} // namespace alg
+} // namespace soo
 
 template<>
-struct observer_definition<alg::generation_event_t> {
+struct observer_definition<soo::generation_event_t> {
   template<typename Observer, typename Definitions>
   inline static constexpr auto satisfies = std::is_invocable_v<
       Observer,
       std::add_lvalue_reference_t<
           std::add_const_t<typename Definitions::population_t>>,
-      std::add_lvalue_reference_t<
-          std::add_const_t<stat::history<typename Definitions::statistics_t>>>>;
+      std::add_lvalue_reference_t<std::add_const_t<
+          stats::history<typename Definitions::statistics_t>>>>;
 };
 
-namespace alg {
+namespace soo {
 
   namespace details {
 
     template<typename Builder>
-    struct basic_scaling_cond
+    struct algo_scaling_cond
         : is_empty_fitness<typename Builder::scaled_fitness_t> {};
 
   } // namespace details
 
-  struct basic_config_map {
+  struct algo_config_map {
     using type = config::entry_map<
         config::entry<config::root_ptype,
                       config::plist<config::size_ptype,
@@ -49,7 +49,7 @@ namespace alg {
         config::entry<config::scale_fitness_ptype,
                       config::plist<config::statistics_ptype>>,
         config::entry<config::statistics_ptype,
-                      config::entry_if<details::basic_scaling_cond,
+                      config::entry_if<details::algo_scaling_cond,
                                        config::plist<config::select_ptype,
                                                      config::criterion_ptype,
                                                      config::observe_ptype>,
@@ -76,7 +76,7 @@ namespace alg {
       };
 
   template<typename Config>
-  concept basic_config =
+  concept algo_config =
       scaling_config<Config> &&
       requires(Config c) {
         chromosome<typename Config::chromosome_t>;
@@ -152,7 +152,7 @@ namespace alg {
 
   namespace details {
 
-    template<basic_config Config>
+    template<algo_config Config>
     class local_scaler {
     public:
       using config_t = Config;
@@ -181,7 +181,7 @@ namespace alg {
       reproduction_context_t reproduction_;
     };
 
-    template<basic_config Config>
+    template<algo_config Config>
     class global_scaler_base {
     public:
       using config_t = Config;
@@ -207,7 +207,7 @@ namespace alg {
       reproduction_context_t reproduction_;
     };
 
-    template<basic_config Config>
+    template<algo_config Config>
     class global_scaler : public global_scaler_base<Config> {
     public:
       using config_t = Config;
@@ -238,7 +238,7 @@ namespace alg {
       scaling_t scaling_;
     };
 
-    template<basic_config Config>
+    template<algo_config Config>
     class disabled_scaler : public global_scaler_base<Config> {
     public:
       using config_t = Config;
@@ -254,7 +254,7 @@ namespace alg {
       }
     };
 
-    template<basic_config Config>
+    template<algo_config Config>
     using scaler_t = std::conditional_t<
         is_empty_fitness_v<typename Config::scaled_fitness_t>,
         disabled_scaler<Config>,
@@ -264,8 +264,8 @@ namespace alg {
 
   } // namespace details
 
-  template<basic_config Config>
-  class basic {
+  template<algo_config Config>
+  class algo {
   public:
     using config_t = Config;
     using population_t = typename config_t::population_t;
@@ -280,7 +280,7 @@ namespace alg {
     using reproduction_context_t = typename config_t::reproduction_context_t;
 
   public:
-    inline explicit basic(config_t const& config)
+    inline explicit algo(config_t const& config)
         : config_{config}
         , population_{config_.raw_comparator(),
                       config_.scaled_comparator(),
@@ -302,13 +302,13 @@ namespace alg {
         scale(scaler, *statistics);
 
         auto selected = select(*statistics);
-        stat::count_range(*statistics, selection_count_tag, selected);
+        stats::count_range(*statistics, selection_count_tag, selected);
 
         auto offspring = couple(selected, coupling, *statistics);
-        stat::count_range(*statistics, coupling_count_tag, offspring);
+        stats::count_range(*statistics, coupling_count_tag, offspring);
 
         auto replaced = replace(offspring, *statistics);
-        stat::count_range(*statistics, selection_count_tag, replaced);
+        stats::count_range(*statistics, selection_count_tag, replaced);
 
         statistics = &statistics_.next(population_);
 
@@ -318,12 +318,12 @@ namespace alg {
 
   private:
     inline void scale(scaler_t& scaler, statistics_t& current) {
-      auto timer = stat::start_timer(current, scaling_time_tag);
+      auto timer = stats::start_timer(current, scaling_time_tag);
       scaler();
     }
 
     inline auto select(statistics_t& current) {
-      auto timer = stat::start_timer(current, selection_time_tag);
+      auto timer = stats::start_timer(current, selection_time_tag);
       return std::invoke(config_.selection(), population_);
     }
 
@@ -332,14 +332,14 @@ namespace alg {
     inline auto couple(Selected&& selected,
                        Coupling&& coupling,
                        statistics_t& current) {
-      auto coupling_time = stat::start_timer(current, coupling_time_tag);
+      auto coupling_time = stats::start_timer(current, coupling_time_tag);
       return std::invoke(std::forward<Coupling>(coupling),
                          std::forward<Selected>(selected));
     }
 
     template<std::ranges::range Offspring>
     inline auto replace(Offspring&& offspring, statistics_t& current) {
-      auto timer = stat::start_timer(current, replacement_time_tag);
+      auto timer = stats::start_timer(current, replacement_time_tag);
       return std::invoke(config_.replacement(),
                          population_,
                          std::forward<Offspring>(offspring));
@@ -364,8 +364,8 @@ namespace alg {
   private:
     config_t config_;
     population_t population_;
-    stat::history<statistics_t> statistics_;
+    stats::history<statistics_t> statistics_;
   };
 
-} // namespace alg
+} // namespace soo
 } // namespace gal

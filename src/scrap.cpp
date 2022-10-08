@@ -1,5 +1,4 @@
 
-#include "basic.hpp"
 #include "coupling.hpp"
 #include "criteria.hpp"
 #include "crossover.hpp"
@@ -8,6 +7,7 @@
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"
+#include "soo.hpp"
 
 #include <deque>
 #include <functional>
@@ -121,15 +121,15 @@ void test_ground() {
   gal::replace::parents<10> ro5{};
   ro5(p, std::vector<parent_replacement_t>{});
 
-  using stat_t =
-      gal::stat::statistics<pop_t,
-                            gal::stat::generation,
-                            gal::stat::extreme_fitness<gal::raw_fitness_tag>,
-                            gal::stat::total_fitness<gal::raw_fitness_tag>,
-                            gal::stat::average_fitness<gal::raw_fitness_tag>,
-                            gal::stat::fitness_deviation<gal::raw_fitness_tag>>;
+  using stat_t = gal::stats::statistics<
+      pop_t,
+      gal::stats::generation,
+      gal::stats::extreme_fitness<gal::raw_fitness_tag>,
+      gal::stats::total_fitness<gal::raw_fitness_tag>,
+      gal::stats::average_fitness<gal::raw_fitness_tag>,
+      gal::stats::fitness_deviation<gal::raw_fitness_tag>>;
   stat_t stat{};
-  gal::stat::history<decltype(stat)> hist{2};
+  gal::stats::history<decltype(stat)> hist{2};
 
   using ctx_t = gal::population_context<pop_t, stat_t>;
 
@@ -183,7 +183,7 @@ void test_ground() {
   auto cp2 = gal::couple::factorize<gal::couple::field>(rep_p)(rtx);
   cp2(std::vector<pop_t::iterator_t>{});
 
-  gal::stat::get_fitness_best_value<gal::raw_fitness_tag> getter{};
+  gal::stats::get_fitness_best_value<gal::raw_fitness_tag> getter{};
 
   gal::criteria::generation_limit cr1{2};
   cr1(p, hist);
@@ -245,4 +245,3 @@ void test_ground() {
   mu5(lst_chromo);
   mu5(deq_chromo);
 }
-

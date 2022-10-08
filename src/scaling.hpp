@@ -57,9 +57,9 @@ namespace scale {
       linear_fitness<typename Context::population_t::raw_fitness_t> &&
       std::constructible_from<typename Context::population_t::scaled_fitness_t,
                               double> &&
-      stat::tracked_models<typename Context::statistics_t,
-                           stat::extreme_fitness<raw_fitness_tag>,
-                           stat::average_fitness<raw_fitness_tag>>;
+      stats::tracked_models<typename Context::statistics_t,
+                            stats::extreme_fitness<raw_fitness_tag>,
+                            stats::average_fitness<raw_fitness_tag>>;
 
   template<linear_context Context, auto Preassure>
     requires(scaling_constant<Preassure>)
@@ -75,8 +75,8 @@ namespace scale {
     using raw_fitness_t = typename population_t::raw_fitness_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
-    using fitness_ext_t = stat::extreme_fitness<raw_fitness_tag>;
-    using fitness_avg_t = stat::average_fitness<raw_fitness_tag>;
+    using fitness_ext_t = stats::extreme_fitness<raw_fitness_tag>;
+    using fitness_avg_t = stats::average_fitness<raw_fitness_tag>;
 
   public:
     using individual_t = typename population_t::individual_t;
@@ -121,14 +121,14 @@ namespace scale {
 
   private:
     std::pair<double, double> coefficients_;
-    stat::history<statistics_t>* statistics_;
+    stats::history<statistics_t>* statistics_;
   };
 
   template<typename Fitness>
   concept sigma_fitness =
-      stat::deviation_fitness<Fitness> &&
+      stats::deviation_fitness<Fitness> &&
       requires(Fitness f) {
-        std::convertible_to<stat::fitness_deviation_t<Fitness>, double>;
+        std::convertible_to<stats::fitness_deviation_t<Fitness>, double>;
         { f / 1.0 } -> std::convertible_to<double>;
       };
 
@@ -137,8 +137,8 @@ namespace scale {
       sigma_fitness<typename Context::population_t::raw_fitness_t> &&
       std::constructible_from<typename Context::population_t::scaled_fitness_t,
                               double> &&
-      stat::tracked_models<typename Context::statistics_t,
-                           stat::fitness_deviation<raw_fitness_tag>>;
+      stats::tracked_models<typename Context::statistics_t,
+                            stats::fitness_deviation<raw_fitness_tag>>;
 
   template<sigma_context Context>
   class sigma {
@@ -151,8 +151,8 @@ namespace scale {
     using raw_fitness_t = typename population_t::raw_fitness_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
-    using fitness_avg_t = stat::average_fitness<raw_fitness_tag>;
-    using fitness_dev_t = stat::fitness_deviation<raw_fitness_tag>;
+    using fitness_avg_t = stats::average_fitness<raw_fitness_tag>;
+    using fitness_dev_t = stats::fitness_deviation<raw_fitness_tag>;
 
   public:
     using individual_t = typename population_t::individual_t;
@@ -190,7 +190,7 @@ namespace scale {
     }
 
   private:
-    stat::history<statistics_t>* statistics_;
+    stats::history<statistics_t>* statistics_;
   };
 
   template<typename Context>
@@ -369,8 +369,8 @@ namespace scale {
       arithmetic_fitness<typename Context::population_t::raw_fitness_t> &&
       std::constructible_from<typename Context::population_t::scaled_fitness_t,
                               typename Context::population_t::raw_fitness_t> &&
-      stat::tracked_models<typename Context::statistics_t,
-                           stat::extreme_fitness<raw_fitness_tag>>;
+      stats::tracked_models<typename Context::statistics_t,
+                            stats::extreme_fitness<raw_fitness_tag>>;
 
   template<window_context Context>
   class window {
@@ -384,7 +384,7 @@ namespace scale {
     using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
-    using fitness_ext_t = stat::extreme_fitness<raw_fitness_tag>;
+    using fitness_ext_t = stats::extreme_fitness<raw_fitness_tag>;
 
   public:
     using individual_t = typename population_t::individual_t;
@@ -407,7 +407,7 @@ namespace scale {
     }
 
   private:
-    stat::history<statistics_t>* statistics_;
+    stats::history<statistics_t>* statistics_;
   };
 
   template<template<typename, auto...> class Scaling, auto... Parameters>

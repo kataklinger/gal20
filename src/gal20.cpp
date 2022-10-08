@@ -1,7 +1,6 @@
 ﻿// gal20.cpp : Defines the entry point for the application.
 //
 
-#include "basic.hpp"
 #include "coupling.hpp"
 #include "criteria.hpp"
 #include "crossover.hpp"
@@ -10,6 +9,7 @@
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"
+#include "soo.hpp"
 
 namespace example {
 
@@ -42,12 +42,11 @@ struct evaluator {
 
 int main() {
   using namespace gal;
-  using namespace gal::stat;
 
   example::random_gen rng{};
   std::stop_token stop{};
 
-  config::for_map<alg::basic_config_map>()
+  config::for_map<soo::algo_config_map>()
       .begin()
       .limit(20)
       .tag()
@@ -56,18 +55,18 @@ int main() {
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, example::dist))
       .scale()
-      .track<generation,
-             extreme_fitness_raw,
-             total_fitness_raw,
-             average_fitness_raw,
-             fitness_deviation_raw>(10)
+      .track<stats::generation,
+             stats::extreme_fitness_raw,
+             stats::total_fitness_raw,
+             stats::average_fitness_raw,
+             stats::fitness_deviation_raw>(10)
       .stop(criteria::generation_limit{100})
       .select(select::roulette_raw{select::unique<4>, rng})
       .couple(couple::factorize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::worst_raw{})
-      .observe(observe{alg::generation_event,
+      .observe(observe{soo::generation_event,
                        [](auto const& pop, auto const& hist) {}})
-      .build<alg::basic>()
+      .build<soo::algo>()
       .run(stop);
 
   return 0;

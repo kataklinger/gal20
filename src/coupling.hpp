@@ -3,6 +3,7 @@
 
 #include "operation.hpp"
 #include "sampling.hpp"
+#include "statistics.hpp"
 
 #include <unordered_set>
 
@@ -225,12 +226,12 @@ namespace couple {
 
       template<typename Tag>
       inline void increment(Tag tag) const {
-        stat::increment_count(get_stats(), tag);
+        stats::increment_count(get_stats(), tag);
       }
 
       template<typename Tag>
       inline void increment_if(bool executed, Tag tag) const {
-        stat::increment_count<Tag>(get_stats(), tag, {executed});
+        stats::increment_count<Tag>(get_stats(), tag, {executed});
       }
 
       inline auto& get_stats() const noexcept {
@@ -240,7 +241,7 @@ namespace couple {
     private:
       context_t* context_;
       params_t const* params_;
-      stat::history<statistics_t>* statistics_;
+      stats::history<statistics_t>* statistics_;
 
       std::vector<parentship_t> results_;
     };

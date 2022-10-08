@@ -9,6 +9,8 @@ List of task to implement or improve
  - [ ] disable improving-only mutation when fitness is not totally ordered
  - [ ] initializator to produce tags
  - [ ] verify duplicates parents for parent replacement
+ - [ ] elitism parameter for random replacement
+ - [ ] roulette wheele selection when minimizing fintess
  - [x] constraints on fitness types for scaling
  - [x] verify population size for selection/replacement operations
  - [x] case where scaling does not change the ordering
