@@ -99,7 +99,7 @@ private:
   [[no_unique_address]] tags_t tags_;
 };
 
-using rank_t = std::optional<std::size_t>;
+using ordinal_t = std::optional<std::size_t>;
 
 template<typename Range, typename Selected>
 concept selection_range = std::ranges::random_access_range<Range> &&

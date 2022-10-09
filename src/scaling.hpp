@@ -91,7 +91,8 @@ namespace scale {
           get_worst(), get_average(), get_best());
     }
 
-    inline void operator()(rank_t /*unused*/, individual_t& individual) const {
+    inline void operator()(ordinal_t /*unused*/,
+                           individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(calculate(eval.raw()));
     }
@@ -162,7 +163,8 @@ namespace scale {
         : statistics_{&context.history()} {
     }
 
-    inline void operator()(rank_t /*unused*/, individual_t& individual) const {
+    inline void operator()(ordinal_t /*unused*/,
+                           individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(calculate(eval.raw()));
     }
@@ -223,10 +225,10 @@ namespace scale {
       population_->sort(raw_fitness_tag{});
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) const {
+    inline void operator()(ordinal_t ordinal, individual_t& individual) const {
       auto eval = individual.evaluation();
 
-      auto value = Preassure - 2.0 * (*rank - 1.0) * (Preassure - 1.0) /
+      auto value = Preassure - 2.0 * (*ordinal - 1.0) * (Preassure - 1.0) /
                                    (population_->current_size() - 1.0);
 
       eval.set_scaled(scaled_fitness_t{value});
@@ -267,10 +269,10 @@ namespace scale {
       population_->sort(raw_fitness_tag{});
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) const {
+    inline void operator()(ordinal_t ordinal, individual_t& individual) const {
       auto eval = individual.evaluation();
 
-      auto power = population_->current_size() - *rank - 1;
+      auto power = population_->current_size() - *ordinal - 1;
       eval.set_scaled(scaled_fitness_t{std::pow(Base, power)});
     }
 
@@ -290,9 +292,9 @@ namespace scale {
                            Proportion,
                            typename Context::population_t::scaled_fitness_t>;
 
-  template<typename Context, auto RankCutoff, auto Proportion>
+  template<typename Context, auto OrdinalCutoff, auto Proportion>
     requires(proportional_context<Context, decltype(Proportion)> &&
-             std::integral<decltype(RankCutoff)> && RankCutoff > 0 &&
+             std::integral<decltype(OrdinalCutoff)> && OrdinalCutoff > 0 &&
              scaling_constant<Proportion>)
   class top {
   public:
@@ -307,7 +309,7 @@ namespace scale {
   public:
     using individual_t = typename population_t::individual_t;
 
-    inline static constexpr std::size_t cutoff{RankCutoff};
+    inline static constexpr std::size_t cutoff{OrdinalCutoff};
 
   public:
     inline explicit top(context_t& context)
@@ -318,10 +320,10 @@ namespace scale {
       population_->sort(raw_fitness_tag{});
     }
 
-    inline void operator()(rank_t rank, individual_t& individual) const {
+    inline void operator()(ordinal_t ordinal, individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(
-          scaled_fitness_t{*rank <= cutoff ? Proportion * eval.raw() : 0});
+          scaled_fitness_t{*ordinal <= cutoff ? Proportion * eval.raw() : 0});
     }
 
   private:
@@ -394,7 +396,8 @@ namespace scale {
         : statistics_{&context.history()} {
     }
 
-    inline void operator()(rank_t /*unused*/, individual_t& individual) const {
+    inline void operator()(ordinal_t /*unused*/,
+                           individual_t& individual) const {
       auto eval = individual.evaluation();
       eval.set_scaled(scaled_fitness_t{eval.raw() - get_worst()});
     }
