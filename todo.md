@@ -4,6 +4,7 @@ List of task to implement or improve
 
 ## General
  - [x] use std::invoke for calling operations
+ - [ ] individual grouping
 
 ## Basic Operations
  - [ ] disable improving-only mutation when fitness is not totally ordered
