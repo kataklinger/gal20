@@ -11,6 +11,8 @@ List of task to implement or improve
  - [ ] verify duplicates parents for parent replacement
  - [ ] elitism parameter for random replacement
  - [ ] roulette wheele selection when minimizing fintess
+ - [ ] insert-only replacement
+ - [ ] replacement with forbidden regions
  - [x] constraints on fitness types for scaling
  - [x] verify population size for selection/replacement operations
  - [x] case where scaling does not change the ordering
