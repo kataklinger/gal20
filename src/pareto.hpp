@@ -62,7 +62,7 @@ namespace details {
 
     inline auto operator++(int) noexcept {
       auto ret = *this;
-      this->operator++();
+      ++*this;
       return ret;
     }
 
