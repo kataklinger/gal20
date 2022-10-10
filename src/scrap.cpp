@@ -8,6 +8,7 @@
 #include "scaling.hpp"
 #include "selection.hpp"
 #include "soo.hpp"
+#include "pareto.hpp"
 
 #include <deque>
 #include <functional>
