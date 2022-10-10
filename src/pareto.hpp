@@ -24,15 +24,13 @@ namespace details {
     using reference = value_type;
     using iterator_category = std::input_iterator_tag;
 
-    struct ptr_wrapper {
+    struct pointer {
       value_type value;
 
       inline value_type* operator->() const noexcept {
         return &value;
       }
     };
-
-    using pointer = ptr_wrapper;
 
   public:
     pareto_iter() = default;
