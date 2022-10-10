@@ -27,7 +27,11 @@ namespace details {
     struct pointer {
       value_type value;
 
-      inline value_type* operator->() const noexcept {
+      inline value_type* operator->() noexcept {
+        return &value;
+      }
+
+      inline value_type const* operator->() const noexcept {
         return &value;
       }
     };
