@@ -23,6 +23,7 @@ namespace details {
     using value_type = std::pair<base_value_ref_t, base_value_ref_t>;
     using reference = value_type;
     using iterator_category = std::input_iterator_tag;
+    using iterator_concept = std::forward_iterator_tag;
 
     struct pointer {
       value_type value;
