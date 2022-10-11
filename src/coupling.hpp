@@ -141,15 +141,13 @@ namespace couple {
           results_.emplace_back(parent1, std::move(child1));
           results_.emplace_back(parent2, std::move(child2));
         }
+        else if (std::invoke(context_->comparator(),
+                             child1.evaluation().raw(),
+                             child2.evaluation().raw())) {
+          results_.emplace_back(parent1, std::move(child1));
+        }
         else {
-          if (std::invoke(context_->comparator(),
-                          child1.evaluation().raw(),
-                          child2.evaluation().raw())) {
-            results_.emplace_back(parent1, std::move(child1));
-          }
-          else {
-            results_.emplace_back(parent1, std::move(child2));
-          }
+          results_.emplace_back(parent1, std::move(child2));
         }
       }
 
@@ -212,18 +210,17 @@ namespace couple {
       inline chromosome_t mutate(Mutation const& mutation,
                                  Chromosome&& chromosome,
                                  bool do_mutate) const {
-        if (do_mutate) {
-          if constexpr (std::is_lvalue_reference_v<Chromosome>) {
-            chromosome_t mutated{chromosome};
-            std::invoke(mutation, mutated);
-            return mutated;
-          }
-          else {
-            std::invoke(mutation, chromosome);
-            return std::move(chromosome);
-          }
+        if (!do_mutate) {
+          return std::move(chromosome);
+        }
+
+        if constexpr (std::is_lvalue_reference_v<Chromosome>) {
+          chromosome_t mutated{chromosome};
+          std::invoke(mutation, mutated);
+          return mutated;
         }
         else {
+          std::invoke(mutation, chromosome);
           return std::move(chromosome);
         }
       }
