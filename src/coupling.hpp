@@ -142,7 +142,9 @@ namespace couple {
           results_.emplace_back(parent2, std::move(child2));
         }
         else {
-          if (child1.evaluation().raw() >= child2.evaluation().raw()) {
+          if (std::invoke(context_->comparator(),
+                          child1.evaluation().raw(),
+                          child2.evaluation().raw())) {
             results_.emplace_back(parent1, std::move(child1));
           }
           else {
