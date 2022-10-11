@@ -362,7 +362,8 @@ namespace couple {
 
       auto end = std::ranges::end(parents);
       for (auto fst = std::ranges::begin(parents); fst != end; ++fst) {
-        for (auto snd = fst + 1; fst != end; ++snd) {
+        auto snd = fst;
+        for (++snd; snd != end; ++snd) {
           incubate(*fst, *snd);
         }
       }
