@@ -271,23 +271,33 @@ namespace couple {
     }
 
     template<parents_range<population_t> Parents>
-    inline auto operator()(Parents&& parents) {
+    inline auto operator()(Parents&& parents) const {
       details::incubator incubate{
           *context_, params_, std::ranges::size(parents), std::true_type{}};
 
-      auto it = std::ranges::begin(parents);
-      if (auto size = std::ranges::size(parents); size % 2 != 0) {
-        for (auto end = it + (size - 1); it != end; it += 2) {
-          incubate(*it, *(it + 1));
-        }
-      }
-      else {
-        for (auto end = std::ranges::end(parents); it != end; it += 2) {
-          incubate(*it, *(it + 1));
-        }
-      }
+      auto size = std::ranges::size(parents);
+      auto first = std::ranges::begin(parents);
+      auto last =
+          size % 2 != 0 ? adv(first, size - 1) : std::ranges::end(parents);
+
+      loop(incubate, first, last);
 
       return incubate.take();
+    }
+
+  private:
+    template<typename Incubator, typename It>
+    inline void loop(Incubator& incubate, It first, It last) const {
+      for (; first != last; ++first) {
+        auto fst = first++;
+        incubate(*fst, *first);
+      }
+    }
+
+    template<typename It, typename Diff>
+    inline It adv(It it, Diff off) const {
+      std::advance(it, off);
+      return it;
     }
 
   private:
