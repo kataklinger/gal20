@@ -18,32 +18,34 @@ namespace couple {
     };
 
     template<typename Replaced, typename Replacement>
-    auto const& get_parent(parentship<Replaced, Replacement> const& pair) {
+    inline auto const&
+        get_parent(parentship<Replaced, Replacement> const& pair) {
       return std::get<0>(pair);
     }
 
     template<typename Replaced, typename Replacement>
-    auto& get_parent(parentship<Replaced, Replacement>& pair) {
+    inline auto& get_parent(parentship<Replaced, Replacement>& pair) {
       return std::get<0>(pair);
     }
 
     template<typename Replaced, typename Replacement>
-    auto&& get_parent(parentship<Replaced, Replacement>&& pair) {
+    inline auto&& get_parent(parentship<Replaced, Replacement>&& pair) {
       return std::move(std::get<0>(pair));
     }
 
     template<typename Replaced, typename Replacement>
-    auto const& get_child(parentship<Replaced, Replacement> const& pair) {
+    inline auto const&
+        get_child(parentship<Replaced, Replacement> const& pair) {
       return std::get<1>(pair);
     }
 
     template<typename Replaced, typename Replacement>
-    auto& get_child(parentship<Replaced, Replacement>& pair) {
+    inline auto& get_child(parentship<Replaced, Replacement>& pair) {
       return std::get<1>(pair);
     }
 
     template<typename Replaced, typename Replacement>
-    auto&& get_child(parentship<Replaced, Replacement>&& pair) {
+    inline auto&& get_child(parentship<Replaced, Replacement>&& pair) {
       return std::move(std::get<1>(pair));
     }
 
