@@ -5,7 +5,7 @@
 #include "criteria.hpp"
 #include "crossover.hpp"
 #include "mutation.hpp"
-#include "observe.hpp"
+#include "observing.hpp"
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"

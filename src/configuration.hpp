@@ -2,7 +2,7 @@
 #pragma once
 
 #include "context.hpp"
-#include "observe.hpp"
+#include "observing.hpp"
 #include "statistics.hpp"
 
 namespace gal {
