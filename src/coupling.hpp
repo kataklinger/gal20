@@ -324,8 +324,8 @@ namespace couple {
       details::incubator incubate{
           *context_, params_, std::ranges::size(parents), std::false_type{}};
 
-      auto fst = std::ranges::begin(parents), prev = fst, cur = prev + 1;
-      for (; cur != std::ranges::end(parents); prev = cur++) {
+      auto fst = std::ranges::begin(parents), prev = fst, cur = prev;
+      for (++cur; cur != std::ranges::end(parents); prev = cur++) {
         incubate(*prev, *cur);
       }
 
