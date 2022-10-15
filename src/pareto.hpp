@@ -11,11 +11,10 @@ namespace pareto {
 
   namespace details {
 
-    template<std::forward_iterator Base, std::sentinel_for<Base> Sentinel>
+    template<std::forward_iterator Base>
     class paired_iterator {
     public:
       using base_iterator_t = Base;
-      using sentinel_t = Sentinel;
 
     private:
       using iter_traits_t = std::iterator_traits<base_iterator_t>;
@@ -45,8 +44,14 @@ namespace pareto {
     public:
       paired_iterator() = default;
 
+      inline explicit paired_iterator(base_iterator_t last) noexcept
+          : i_{last}
+          , j_{last}
+          , last_{last} {
+      }
+
       inline explicit paired_iterator(base_iterator_t first,
-                                      sentinel_t last) noexcept
+                                      base_iterator_t last) noexcept
           : i_{first}
           , j_{first}
           , last_{last} {
@@ -76,48 +81,25 @@ namespace pareto {
         return {**this};
       }
 
-      template<typename Tx, typename Ty>
-      friend bool operator==(paired_iterator<Tx, Ty> const&,
-                             paired_iterator<Tx, Ty> const&) noexcept;
-
-      template<typename Tx, typename Ty>
-      friend bool operator==(paired_iterator<Tx, Ty> const&, Ty) noexcept;
+      template<typename Ty>
+      friend bool operator==(paired_iterator<Ty> const&,
+                             paired_iterator<Ty> const&) noexcept;
 
     private:
       base_iterator_t i_{};
       base_iterator_t j_{};
-      sentinel_t last_{};
+      base_iterator_t last_{};
     };
 
-    template<typename Tx, typename Ty>
-    inline bool operator==(paired_iterator<Tx, Ty> const& lhs,
-                           paired_iterator<Tx, Ty> const& rhs) noexcept {
+    template<typename Ty>
+    inline bool operator==(paired_iterator<Ty> const& lhs,
+                           paired_iterator<Ty> const& rhs) noexcept {
       return lhs.i_ == rhs.i_ && lhs.j_ == rhs.j_ && lhs.last_ == rhs.last_;
     }
 
-    template<typename Tx, typename Ty>
-    inline bool operator!=(paired_iterator<Tx, Ty> const& lhs,
-                           paired_iterator<Tx, Ty> const& rhs) noexcept {
-      return !(lhs == rhs);
-    }
-
-    template<typename Tx, typename Ty>
-    inline bool operator==(paired_iterator<Tx, Ty> const& lhs, Ty rhs) {
-      return lhs.i_ == rhs && lhs.j_ == rhs;
-    }
-
-    template<typename Tx, typename Ty>
-    inline bool operator!=(paired_iterator<Tx, Ty> const& lhs, Ty rhs) {
-      return !(lhs == rhs);
-    }
-
-    template<typename Tx, typename Ty>
-    inline bool operator==(Ty lhs, paired_iterator<Tx, Ty> const& rhs) {
-      return rhs == lhs;
-    }
-
-    template<typename Tx, typename Ty>
-    inline bool operator!=(Ty lhs, paired_iterator<Tx, Ty> const& rhs) {
+    template<typename Ty>
+    inline bool operator!=(paired_iterator<Ty> const& lhs,
+                           paired_iterator<Ty> const& rhs) noexcept {
       return !(lhs == rhs);
     }
 
@@ -150,18 +132,18 @@ namespace pareto {
   namespace details {
 
     template<typename Individual>
-    class solution_impl : public solution<solution_impl<Individual>> {
+    class solution_impl {
     public:
       using individual_t = Individual;
 
     public:
-      inline explicit solution_impl(individual_t& individual)
-          : individual_{individual} {
+      inline explicit solution_impl(individual_t& individual) noexcept
+          : individual_{&individual} {
       }
 
-      inline void add_dominated(solution_impl* dominated) {
-        dominated_.push_back(dominated);
-        dominated->inc_dominators();
+      inline void add_dominated(solution_impl& dominated) {
+        dominated_.push_back(&dominated);
+        dominated.inc_dominators();
       }
 
       inline void dec_dominators() noexcept {
@@ -173,11 +155,11 @@ namespace pareto {
       }
 
       inline auto& individual() noexcept {
-        return individual_;
+        return *individual_;
       }
 
       inline auto const& individual() const noexcept {
-        return individual_;
+        return *individual_;
       }
 
       inline auto& dominated() noexcept {
@@ -201,8 +183,8 @@ namespace pareto {
     private:
       individual_t* individual_;
 
-      std::size_t dominators_total_;
-      std::size_t dominators_left_;
+      std::size_t dominators_total_{};
+      std::size_t dominators_left_{};
       std::vector<solution_impl*> dominated_;
     };
 
@@ -235,7 +217,7 @@ namespace pareto {
   namespace details {
 
     template<typename Individual>
-    class frontier_impl : public frontier<frontier_impl<Individual>> {
+    class frontier_impl {
     public:
       using individual_t = Individual;
       using members_t = std::vector<details::solution_impl<individual_t>*>;
@@ -284,6 +266,8 @@ namespace pareto {
       using solution_t = solution_impl<individual_t>;
       using members_t = std::vector<solution_t*>;
 
+      using solution_pair_t = std::pair<solution_t&, solution_t&>;
+
       using collection_t = std::vector<frontier_t>;
 
     public:
@@ -326,19 +310,20 @@ namespace pareto {
         std::ranges::for_each(
             details::paired_iterator{std::ranges::begin(solutions_),
                                      std::ranges::end(solutions_)},
-            std::ranges::end(solutions_),
-            [&comparator](std::pair<solution_t, solution_t>& pair) {
+            details::paired_iterator{std::ranges::end(solutions_)},
+            [&comparator](solution_pair_t pair) {
               compare_pair(pair, comparator);
             });
       }
 
       template<typename Comparator>
-      inline void compare_pair(std::pair<solution_t, solution_t>& pair,
-                               Comparator const& comparator) {
+      inline static void compare_pair(solution_pair_t& pair,
+                                      Comparator const& comparator) {
         auto& [fst, snd] = pair;
 
-        auto result = std::invoke(
-            comparator, fst.individual().raw(), snd.individual().raw());
+        auto result = std::invoke(comparator,
+                                  fst.individual().evaluation().raw(),
+                                  snd.individual().evaluation().raw());
 
         if (result == std::weak_ordering::greater) {
           fst.add_dominated(snd);
@@ -492,7 +477,7 @@ namespace pareto {
   }
 
   template<std::ranges::forward_range Source, typename Comparator>
-    requires std::ranges::view<Source>
+  // requires std::ranges::view<Source>
   class sorted_view
       : public std::ranges::view_interface<sorted_view<Source, Comparator>> {
   private:
@@ -505,7 +490,7 @@ namespace pareto {
   public:
     sorted_view() = default;
 
-    inline explicit sorted_view(Source source, comparator_t const& comparator)
+    inline explicit sorted_view(Source&& source, comparator_t const& comparator)
         : state_{std::forward<Source>(source), comparator} {
     }
 
@@ -535,8 +520,9 @@ namespace pareto {
       }
 
       template<std::ranges::viewable_range Range>
-      inline auto operator()(Range&& range) {
-        return sorted_view{std::forward<Range>(range), comparator_};
+      inline auto operator()(Range&& range) const {
+        return sorted_view<Range, Comparator>{std::forward<Range>(range),
+                                              comparator_};
       }
 
     private:
@@ -545,13 +531,13 @@ namespace pareto {
 
     struct sorted_view_adaptor {
       template<std::ranges::viewable_range Range, typename Comparator>
-      inline auto operator()(Range&& range, Comparator&& comparator) {
+      inline auto operator()(Range&& range, Comparator&& comparator) const {
         return sorted_view{std::forward<Range>(range),
                            std::forward<Comparator>(comparator)};
       }
 
       template<typename Comparator>
-      inline auto operator()(Comparator&& comparator) {
+      inline auto operator()(Comparator&& comparator) const {
         return sorted_view_closure{std::forward<Comparator>(comparator)};
       }
     };
