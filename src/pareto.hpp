@@ -305,6 +305,10 @@ namespace pareto {
         return completed_ || n != frontiers_.end() ? n : identify_next(it);
       }
 
+      inline bool is_last(frontiers_iterator_t it) {
+        return it == frontiers_.end() && completed_;
+      }
+
     private:
       template<typename Range>
       inline auto wrap(Range&& range) {
@@ -454,8 +458,7 @@ namespace pareto {
   template<typename Ty>
   inline bool operator==(frontiers_iterator<Ty> const& lhs,
                          frontiers_iterator<Ty> const& rhs) noexcept {
-    // todo: implement
-    return false;
+    return lhs.state_ == rhs.state_ && lhs.base_ == rhs.base_;
   }
 
   template<typename Ty>
@@ -466,9 +469,8 @@ namespace pareto {
 
   template<typename Ty>
   inline bool operator==(frontiers_iterator<Ty> const& lhs,
-                         frontiers_sentinel rhs) noexcept {
-    // todo: implement
-    return false;
+                         frontiers_sentinel /*unused*/) noexcept {
+    return lhs.state_->is_last(lhs.base_);
   }
 
   template<typename Ty>
