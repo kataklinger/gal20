@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <ranges>
 #include <vector>
 
@@ -476,26 +477,27 @@ namespace pareto {
     return !(lhs == rhs);
   }
 
-  template<std::ranges::forward_range Source, typename Comparator>
-  // requires std::ranges::view<Source>
-  class sorted_view
-      : public std::ranges::view_interface<sorted_view<Source, Comparator>> {
+  template<std::ranges::forward_range Range, typename Comparator>
+    requires std::ranges::view<Range>
+  class sort_view
+      : public std::ranges::view_interface<sort_view<Range, Comparator>> {
   private:
-    using individual_t = std::ranges::range_value_t<Source>;
+    using individual_t = std::ranges::range_value_t<Range>;
+    using state_t = details::state<individual_t>;
 
   public:
     using comparator_t = Comparator;
     using iterator_t = frontiers_iterator<individual_t>;
 
   public:
-    sorted_view() = default;
+    sort_view() = default;
 
-    inline explicit sorted_view(Source&& source, comparator_t const& comparator)
-        : state_{std::forward<Source>(source), comparator} {
+    inline sort_view(Range range, comparator_t const& comparator)
+        : state_{std::make_shared<state_t>(std::move(range), comparator)} {
     }
 
     inline auto begin() const {
-      return iterator_t{state_};
+      return iterator_t{*state_};
     }
 
     inline auto end() const noexcept {
@@ -503,55 +505,58 @@ namespace pareto {
     }
 
   private:
-    mutable details::state<individual_t> state_;
+    std::shared_ptr<state_t> state_;
   };
+
+  template<typename Range, typename Comparator>
+  sort_view(Range&& range, Comparator&&)
+      -> sort_view<std::views::all_t<Range>, std::remove_cvref_t<Comparator>>;
 
   namespace details {
 
     template<typename Comparator>
-    class sorted_view_closure {
+    class sort_view_closure {
     public:
-      inline explicit sorted_view_closure(Comparator const& comparator)
+      inline explicit sort_view_closure(Comparator const& comparator)
           : comparator_{comparator} {
       }
 
-      inline explicit sorted_view_closure(Comparator&& comparator)
+      inline explicit sort_view_closure(Comparator&& comparator)
           : comparator_{std::move(comparator)} {
       }
 
       template<std::ranges::viewable_range Range>
       inline auto operator()(Range&& range) const {
-        return sorted_view<Range, Comparator>{std::forward<Range>(range),
-                                              comparator_};
+        return sort_view{std::forward<Range>(range), comparator_};
       }
 
     private:
       Comparator comparator_;
     };
 
-    struct sorted_view_adaptor {
+    struct sort_view_adaptor {
       template<std::ranges::viewable_range Range, typename Comparator>
       inline auto operator()(Range&& range, Comparator&& comparator) const {
-        return sorted_view{std::forward<Range>(range),
-                           std::forward<Comparator>(comparator)};
+        return sort_view{std::forward<Range>(range),
+                         std::forward<Comparator>(comparator)};
       }
 
       template<typename Comparator>
       inline auto operator()(Comparator&& comparator) const {
-        return sorted_view_closure{std::forward<Comparator>(comparator)};
+        return sort_view_closure{std::forward<Comparator>(comparator)};
       }
     };
 
     template<std::ranges::viewable_range Range, typename Comparator>
     inline auto operator|(Range&& range,
-                          sorted_view_closure<Comparator> const& closure) {
+                          sort_view_closure<Comparator> const& closure) {
       return closure(std::forward<Range>(range));
     }
 
   } // namespace details
 
   namespace views {
-    inline details::sorted_view_adaptor sorted;
+    inline details::sort_view_adaptor sort;
   }
 
 } // namespace pareto
