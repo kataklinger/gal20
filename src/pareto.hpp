@@ -74,8 +74,8 @@ namespace pareto {
         return ret;
       }
 
-      inline value_type operator*() const noexcept {
-        return {*i_, *j_};
+      inline auto operator*() const noexcept {
+        return value_type{*i_, *j_};
       }
 
       inline pointer operator->() const noexcept {
@@ -195,7 +195,7 @@ namespace pareto {
   class frontier {
   public:
     inline explicit frontier(Impl* impl) noexcept
-        : impl_{&impl} {
+        : impl_{impl} {
     }
 
     inline auto level() const noexcept {
@@ -423,8 +423,8 @@ namespace pareto {
       return ret;
     }
 
-    inline value_type operator*() const {
-      return {&*base_};
+    inline auto operator*() const {
+      return value_type{&*base_};
     }
 
     inline pointer operator->() const {

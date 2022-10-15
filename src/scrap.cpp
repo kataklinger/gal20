@@ -4,11 +4,11 @@
 #include "crossover.hpp"
 #include "mutation.hpp"
 #include "observing.hpp"
+#include "pareto.hpp"
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"
 #include "soo.hpp"
-#include "pareto.hpp"
 
 #include <deque>
 #include <functional>
@@ -245,4 +245,14 @@ void test_ground() {
   mu5(vec_chromo);
   mu5(lst_chromo);
   mu5(deq_chromo);
+
+  using fit_t = std::vector<float>;
+
+  using indv_t =
+      gal::individual<int, fit_t, gal::empty_fitness, gal::empty_tags>;
+
+  std::vector<indv_t> par_indv{};
+  auto v = par_indv | gal::pareto::views::sort(gal::dominate{std::less{}});
+
+  std::ranges::for_each(v, [](auto&& f) {});
 }
