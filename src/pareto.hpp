@@ -221,11 +221,12 @@ namespace pareto {
     class frontier_impl {
     public:
       using individual_t = Individual;
-      using members_t = std::vector<details::solution_impl<individual_t>*>;
+      using member_t = details::solution_impl<individual_t>*;
+      using members_t = std::vector<member_t>;
 
     public:
       template<std::ranges::range Members>
-        requires std::same_as<individual_t, std::ranges::range_value_t<Members>>
+        requires std::same_as<member_t, std::ranges::range_value_t<Members>>
       inline explicit frontier_impl(std::size_t level, Members&& members)
           : level_{level}
           , members_{std::ranges::begin(members), std::ranges::end(members)} {
@@ -335,10 +336,12 @@ namespace pareto {
       }
 
       auto identify_first() {
-        auto frontier = frontiers_.emplace_back(
-            0, solutions_ | std::views::filter([](auto const& item) {
-                 return item.in_frontier();
-               }));
+        auto filtered = solutions_ | std::views::filter([](auto const& item) {
+                          return item.in_frontier();
+                        }) |
+                        std::views::transform([](auto& item) { return &item; });
+
+        auto frontier = frontiers_.emplace_back(0, filtered);
 
         completed_ = frontier.empty();
 
