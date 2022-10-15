@@ -33,11 +33,11 @@ namespace pareto {
       struct pointer {
         value_type value;
 
-        inline value_type* operator->() noexcept {
+        inline auto* operator->() noexcept {
           return &value;
         }
 
-        inline value_type const* operator->() const noexcept {
+        inline auto const* operator->() const noexcept {
           return &value;
         }
       };
@@ -74,8 +74,8 @@ namespace pareto {
         return ret;
       }
 
-      inline auto operator*() const noexcept {
-        return value_type{*i_, *j_};
+      inline value_type operator*() const noexcept {
+        return {*i_, *j_};
       }
 
       inline pointer operator->() const noexcept {
@@ -147,11 +147,11 @@ namespace pareto {
         dominated.inc_dominators();
       }
 
-      inline void dec_dominators() noexcept {
+      inline auto dec_dominators() noexcept {
         return --dominators_left_ == 0;
       }
 
-      inline bool in_frontier() const noexcept {
+      inline auto in_frontier() const noexcept {
         return dominators_left_ == 0;
       }
 
@@ -334,7 +334,7 @@ namespace pareto {
         }
       }
 
-      void identify_first() {
+      auto identify_first() {
         auto frontier = frontiers_.emplace_back(
             0, solutions_ | std::views::filter([](auto const& item) {
                  return item.in_frontier();
@@ -345,13 +345,13 @@ namespace pareto {
         return frontiers_.begin();
       }
 
-      void identify_next(frontiers_iterator_t it) {
+      auto identify_next(frontiers_iterator_t it) {
         members_t members{};
 
-        for (auto& dominator : it->members()) {
-          for (auto& dominated : dominator.dominated()) {
-            if (dominated.dec_dominators()) {
-              members.push_back(&dominated);
+        for (auto dominator : it->members()) {
+          for (auto dominated : dominator->dominated()) {
+            if (dominated->dec_dominators()) {
+              members.push_back(dominated);
             }
           }
         }
@@ -362,7 +362,7 @@ namespace pareto {
         }
 
         frontiers_.emplace_back(frontiers_.size(), std::move(members));
-        return frontiers_.back();
+        return --frontiers_.end();
       }
 
     private:
@@ -385,17 +385,17 @@ namespace pareto {
 
   public:
     using difference_type = std::ptrdiff_t;
-    using value_type = frontier<individual_t>;
+    using value_type = frontier<details::frontier_impl<individual_t>>;
     using reference = value_type;
 
     struct pointer {
       value_type value;
 
-      inline value_type* operator->() noexcept {
+      inline auto* operator->() noexcept {
         return &value;
       }
 
-      inline value_type const* operator->() const noexcept {
+      inline auto const* operator->() const noexcept {
         return &value;
       }
     };
@@ -420,12 +420,12 @@ namespace pareto {
       return ret;
     }
 
-    inline auto operator*() const {
-      return value_type{&*base_};
+    inline value_type operator*() const {
+      return {&*base_};
     }
 
     inline pointer operator->() const {
-      return pointer{**this};
+      return {**this};
     }
 
     template<typename Ty>
