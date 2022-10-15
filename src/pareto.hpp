@@ -135,7 +135,27 @@ namespace details {
       ++dominated->dominators_;
     }
 
-    inline auto const& raw() const noexcept {
+    inline void clear_dominator() noexcept {
+      return --dominators_ == 0;
+    }
+
+    inline auto& dominated() noexcept {
+      return dominated_;
+    }
+
+    inline auto const& dominated() const noexcept {
+      return dominated_;
+    }
+
+    inline auto dominators() const noexcept {
+      return dominators_;
+    }
+
+    inline bool nondominated() const noexcept {
+      return dominators_ == 0;
+    }
+
+    inline auto const& fitness() const noexcept {
       return individual_->raw();
     }
 
@@ -152,7 +172,7 @@ template<typename Individual>
 class pareto_front {
 public:
   using individual_t = Individual;
-  using members_t = std::vector<individual_t>;
+  using members_t = std::vector<details::paretor_wrapper<individual_t>*>;
 
 public:
   template<std::ranges::range Members>
@@ -179,6 +199,10 @@ public:
     return members_;
   }
 
+  inline auto empty() const noexcept {
+    return members_.empty();
+  }
+
 private:
   std::size_t level_;
   members_t members_;
@@ -194,12 +218,27 @@ namespace details {
 
   private:
     using wrapper_t = paretor_wrapper<individual_t>;
+    using members_t = std::vector<wrapper_t*>;
+
+    using collection_t = std::vector<front_t>;
+
+  public:
+    using fronts_iterator_t = typename collection_t::iterator;
 
   public:
     template<typename Range, typename Comparator>
     inline explicit pareto_state(Range&& range, Comparator const& comparator)
         : individuals_{wrap(std::forward<Range>(range))} {
       compare_all(comparator);
+    }
+
+    inline auto begin() {
+      return fronts_.empty() ? identify_first() : fronts_.begin();
+    }
+
+    inline auto next(fronts_iterator_t it) {
+      auto n = std::next(it);
+      return completed_ || n != fronts_.end() ? n : identify_next(it);
     }
 
   private:
@@ -230,7 +269,7 @@ namespace details {
                              Comparator const& comparator) {
       auto& [fst, snd] = pair;
 
-      auto result = std::invoke(comparator, fst.raw(), snd.raw());
+      auto result = std::invoke(comparator, fst.fitness(), snd.fitness());
       if (result == std::weak_ordering::greater) {
         fst.add_dominated(snd);
       }
@@ -239,9 +278,41 @@ namespace details {
       }
     }
 
+    void identify_first() {
+      auto front = fronts_.emplace_back(
+          0, individuals_ | std::ranges::views::filter([](auto const& ind) {
+               return ind.nondominated();
+             }));
+
+      completed_ = front.empty();
+
+      return fronts_.begin();
+    }
+
+    void identify_next(fronts_iterator_t it) {
+      members_t members{};
+
+      for (auto& dominator : it->members()) {
+        for (auto& dominated : dominator.dominated()) {
+          if (dominated.clear_dominator()) {
+            members.push_back(&dominated);
+          }
+        }
+      }
+
+      if (members.empty()) {
+        completed_ = true;
+        return fronts_.end();
+      }
+
+      fronts_.emplace_back(fronts_.size(), std::move(members));
+      return fronts_.back();
+    }
+
   private:
     std::vector<wrapper_t> individuals_;
-    std::vector<front_t> fronts_;
+    collection_t fronts_;
+    bool completed_{false};
   };
 
 } // namespace details
@@ -254,6 +325,8 @@ private:
   using individual_t = Individual;
   using state_t = details::pareto_state<individual_t>;
 
+  using fronts_iterator_t = typename state_t::fronts_iterator_t;
+
 public:
   using difference_type = std::ptrdiff_t;
   using value_type = pareto_front<individual_t>;
@@ -265,11 +338,12 @@ public:
 
 public:
   inline explicit pareto_iterator(state_t& state) noexcept
-      : state_{&state} {
+      : state_{&state}
+      , base_{state.begin()} {
   }
 
   inline auto& operator++() {
-    // todo: generate new front
+    base_ = state_->next(base_);
     return *this;
   }
 
@@ -280,8 +354,7 @@ public:
   }
 
   inline auto operator*() const {
-    // todo: return front
-    return {};
+    return *base_;
   }
 
   inline pointer operator->() const {
@@ -297,6 +370,7 @@ public:
 
 private:
   state_t* state_;
+  fronts_iterator_t base_;
 };
 
 template<typename Ty>
@@ -364,7 +438,7 @@ public:
   }
 
 private:
-  details::pareto_state<individual_t> state_;
+  mutable details::pareto_state<individual_t> state_;
 };
 
 namespace details {
