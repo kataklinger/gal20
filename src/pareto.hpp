@@ -123,41 +123,28 @@ namespace pareto {
 
   } // namespace details
 
-  template<typename Derived>
+  template<typename Impl>
   class solution {
-    inline auto& individual() noexcept {
-      return derived().individual_impl();
+  public:
+    inline explicit solution(Impl* impl) noexcept
+        : impl_{impl} {
     }
 
-    inline auto const& individual() const noexcept {
-      return derived().individual_impl();
-    }
-
-    inline auto dominated() noexcept {
-      return derived().dominated_impl() |
-             std::views::transform(
-                 [](Derived& item) { return static_cast<solution&>(*item); });
+    inline auto& individual() const noexcept {
+      return impl_->individual();
     }
 
     inline auto dominated() const noexcept {
-      return derived().dominated_impl() |
-             std::views::transform([](Derived const& item) {
-               return static_cast<solution const&>(*item);
-             });
+      return impl_->dominated() |
+             std::views::transform([](Impl* item) { return solution{item}; });
     }
 
     inline auto dominators_total() const noexcept {
-      return derived().dominators_total_impl();
+      return impl_->dominators_total();
     }
 
   private:
-    inline auto& derived() noexcept {
-      return static_cast<Derived&>(*this);
-    }
-
-    inline auto const& derived() const noexcept {
-      return static_cast<Derived const&>(*this);
-    }
+    Impl* impl_;
   };
 
   namespace details {
@@ -185,23 +172,23 @@ namespace pareto {
         return dominators_left_ == 0;
       }
 
-      inline auto& individual_impl() noexcept {
+      inline auto& individual() noexcept {
         return individual_;
       }
 
-      inline auto const& individual_impl() const noexcept {
+      inline auto const& individual() const noexcept {
         return individual_;
       }
 
-      inline auto& dominated_impl() noexcept {
+      inline auto& dominated() noexcept {
         return dominated_;
       }
 
-      inline auto const& dominated_impl() const noexcept {
+      inline auto const& dominated() const noexcept {
         return dominated_;
       }
 
-      inline auto dominators_total_impl() const noexcept {
+      inline auto dominators_total() const noexcept {
         return dominators_total_;
       }
 
@@ -221,38 +208,28 @@ namespace pareto {
 
   } // namespace details
 
-  template<typename Derived>
-  class frontier : public Derived {
+  template<typename Impl>
+  class frontier {
   public:
-    inline auto level() const noexcept {
-      return derived().level();
+    inline explicit frontier(Impl* impl) noexcept
+        : impl_{&impl} {
     }
 
-    inline auto members() noexcept {
-      return derived().members_impl() |
-             std::views::transform(
-                 [](Derived& item) { return static_cast<frontier&>(*item); });
+    inline auto level() const noexcept {
+      return impl_.level();
     }
 
     inline auto members() const noexcept {
-      return derived().members_impl() |
-             std::views::transform([](Derived const& item) {
-               return static_cast<frontier const&>(*item);
-             });
+      return impl_->members() |
+             std::views::transform([](Impl* item) { return frontier{item}; });
     }
 
     inline auto empty() const noexcept {
-      return derived().empty();
+      return impl_->empty();
     }
 
   private:
-    inline auto& derived() noexcept {
-      return static_cast<Derived&>(*this);
-    }
-
-    inline auto const& derived() const noexcept {
-      return static_cast<Derived const&>(*this);
-    }
+    Impl* impl_;
   };
 
   namespace details {
@@ -280,11 +257,11 @@ namespace pareto {
         return level_;
       }
 
-      inline auto& members_impl() noexcept {
+      inline auto& members() noexcept {
         return members_;
       }
 
-      inline auto const& members_impl() const noexcept {
+      inline auto const& members() const noexcept {
         return members_;
       }
 
@@ -356,9 +333,8 @@ namespace pareto {
                                Comparator const& comparator) {
         auto& [fst, snd] = pair;
 
-        auto result = std::invoke(comparator,
-                                  fst.individual_impl().raw(),
-                                  snd.individual_impl().raw());
+        auto result = std::invoke(
+            comparator, fst.individual().raw(), snd.individual().raw());
 
         if (result == std::weak_ordering::greater) {
           fst.add_dominated(snd);
@@ -382,8 +358,8 @@ namespace pareto {
       void identify_next(frontiers_iterator_t it) {
         members_t members{};
 
-        for (auto& dominator : it->members_impl()) {
-          for (auto& dominated : dominator.dominated_impl()) {
+        for (auto& dominator : it->members()) {
+          for (auto& dominated : dominator.dominated()) {
             if (dominated.dec_dominators()) {
               members.push_back(&dominated);
             }
@@ -419,11 +395,22 @@ namespace pareto {
 
   public:
     using difference_type = std::ptrdiff_t;
-    using value_type = details::frontier_impl<individual_t>;
-    using reference = value_type&;
-    using pointer = value_type*;
+    using value_type = frontier<individual_t>;
+    using reference = value_type;
 
-    using iterator_category = std::forward_iterator_tag;
+    struct pointer {
+      value_type value;
+
+      inline value_type* operator->() noexcept {
+        return &value;
+      }
+
+      inline value_type const* operator->() const noexcept {
+        return &value;
+      }
+    };
+
+    using iterator_category = std::input_iterator_tag;
     using iterator_concept = std::forward_iterator_tag;
 
   public:
@@ -443,12 +430,12 @@ namespace pareto {
       return ret;
     }
 
-    inline auto& operator*() const {
-      return *base_;
+    inline auto operator*() const {
+      return value_type{&*base_};
     }
 
     inline pointer operator->() const {
-      return &**this;
+      return pointer{**this};
     }
 
     template<typename Ty>
