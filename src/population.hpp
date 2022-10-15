@@ -213,7 +213,7 @@ private:
   auto trim_impl(std::size_t size) {
     auto removed = ensure_removed(individuals_.size() - size);
 
-    std::ranges::move(std::ranges::views::drop(individuals_, size),
+    std::ranges::move(std::views::drop(individuals_, size),
                       std::back_inserter(removed));
 
     individuals_.erase(individuals_.begin() + size, individuals_.end());

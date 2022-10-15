@@ -126,7 +126,7 @@ namespace select {
 
       state_t state{};
       auto wheel = population.individuals() |
-                   std::ranges::views::transform([&state](auto& ind) {
+                   std::views::transform([&state](auto& ind) {
                      state = state.add(ind.evaluation().get(fitness_tag));
                      return state.sum();
                    }) |
