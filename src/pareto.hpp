@@ -217,6 +217,56 @@ namespace pareto {
 
   namespace details {
 
+    template<typename Range>
+    using get_individual_t =
+        std::ranges::range_value_t<std::remove_reference_t<Range>>;
+
+    template<typename Range>
+    inline auto wrap_all(Range&& range) {
+      using individual_t = get_individual_t<Range>;
+      using solution_t = solution_impl<individual_t>;
+
+      auto transformed =
+          range | std::views::transform([](individual_t& individual) {
+            return solution_t{individual};
+          });
+
+      return std::vector<solution_t>{std::ranges::begin(transformed),
+                                     std::ranges::end(transformed)};
+    }
+
+    template<typename Pair, typename Comparator>
+    inline static void compare_pair(Pair& pair, Comparator&& comparator) {
+      auto& [fst, snd] = pair;
+
+      auto result = std::invoke(std::forward<Comparator>(comparator),
+                                fst.individual().evaluation().raw(),
+                                snd.individual().evaluation().raw());
+
+      if (result == std::weak_ordering::greater) {
+        fst.add_dominated(snd);
+      }
+      else if (result == std::weak_ordering::less) {
+        snd.add_dominated(fst);
+      }
+    }
+
+    template<typename Solutions, typename Comparator>
+    inline void compare_all(Solutions& solutions, Comparator comparator) {
+      std::ranges::for_each(
+          details::paired_iterator{std::ranges::begin(solutions),
+                                   std::ranges::end(solutions)},
+          details::paired_iterator{std::ranges::end(solutions)},
+          [&comparator](auto pair) { compare_pair(pair, comparator); });
+    }
+
+    template<typename Range, typename Comparator>
+    auto analyze_impl(Range&& range, Comparator&& comparator) {
+      auto results = wrap_all(std::forward<Range>(range));
+      compare_all(results, std::forward<Comparator>(comparator));
+      return results;
+    }
+
     template<typename Individual>
     class frontier_impl {
     public:
@@ -277,9 +327,9 @@ namespace pareto {
 
     public:
       template<typename Range, typename Comparator>
-      inline explicit state(Range&& range, Comparator const& comparator)
-          : solutions_{wrap(std::forward<Range>(range))} {
-        compare_all(comparator);
+      inline explicit state(Range&& range, Comparator&& comparator)
+          : solutions_{analyze_impl(std::forward<Range>(range),
+                                    std::forward<Comparator>(comparator))} {
       }
 
       inline auto begin() {
@@ -296,45 +346,6 @@ namespace pareto {
       }
 
     private:
-      template<typename Range>
-      inline auto wrap(Range&& range) {
-        auto transformed =
-            range | std::views::transform([](individual_t& individual) {
-              return solution_t{individual};
-            });
-
-        return std::vector<solution_t>{std::ranges::begin(transformed),
-                                       std::ranges::end(transformed)};
-      }
-
-      template<typename Comparator>
-      inline void compare_all(Comparator const& comparator) {
-        std::ranges::for_each(
-            details::paired_iterator{std::ranges::begin(solutions_),
-                                     std::ranges::end(solutions_)},
-            details::paired_iterator{std::ranges::end(solutions_)},
-            [&comparator](solution_pair_t pair) {
-              compare_pair(pair, comparator);
-            });
-      }
-
-      template<typename Comparator>
-      inline static void compare_pair(solution_pair_t& pair,
-                                      Comparator const& comparator) {
-        auto& [fst, snd] = pair;
-
-        auto result = std::invoke(comparator,
-                                  fst.individual().evaluation().raw(),
-                                  snd.individual().evaluation().raw());
-
-        if (result == std::weak_ordering::greater) {
-          fst.add_dominated(snd);
-        }
-        else if (result == std::weak_ordering::less) {
-          snd.add_dominated(fst);
-        }
-      }
-
       auto identify_first() {
         auto filtered = solutions_ | std::views::filter([](auto const& item) {
                           return item.in_frontier();
@@ -560,6 +571,13 @@ namespace pareto {
 
   namespace views {
     inline details::sort_view_adaptor sort;
+  }
+
+  template<typename Range, typename Comparator>
+  inline auto analyze(Range&& range, Comparator&& comparator) {
+    return details::analyze_impl(std::forward<Range>(range),
+                                 std::forward<Comparator>(comparator)) |
+           std::views::transform([](auto& item) { return solution{&item}; });
   }
 
 } // namespace pareto

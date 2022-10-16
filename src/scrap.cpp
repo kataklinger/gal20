@@ -255,4 +255,6 @@ void test_ground() {
   auto v = par_indv | gal::pareto::views::sort(gal::dominate{std::less{}});
 
   std::ranges::for_each(v, [](auto&& f) {});
+
+  auto mm = gal::pareto::analyze(par_indv, gal::dominate{std::less{}});
 }
