@@ -252,9 +252,13 @@ void test_ground() {
       gal::individual<int, fit_t, gal::empty_fitness, gal::empty_tags>;
 
   std::vector<indv_t> par_indv{};
-  auto v = par_indv | gal::pareto::views::sort(gal::dominate{std::less{}});
+  gal::dominate comp{std::less{}};
+
+  auto v = par_indv | gal::pareto::views::sort(comp);
 
   std::ranges::for_each(v, [](auto&& f) {});
 
-  auto mm = gal::pareto::analyze(par_indv, gal::dominate{std::less{}});
+  auto mm1 = gal::pareto::analyze(par_indv, comp);
+
+  auto mm2 = gal::pareto::identify_dominated(par_indv, par_indv.end(), comp);
 }

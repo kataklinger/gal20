@@ -573,11 +573,68 @@ namespace pareto {
     inline details::sort_view_adaptor sort;
   }
 
-  template<typename Range, typename Comparator>
+  template<std::ranges::viewable_range Range, typename Comparator>
   inline auto analyze(Range&& range, Comparator&& comparator) {
     return details::analyze_impl(std::forward<Range>(range),
                                  std::forward<Comparator>(comparator)) |
            std::views::transform([](auto& item) { return solution{&item}; });
+  }
+
+  namespace details {
+
+    template<typename ItOut, typename Range, typename Comparator>
+    void identify_inner(ItOut outer,
+                        Range& inner,
+                        std::vector<bool>::iterator flag_out,
+                        std::vector<bool>::iterator flag_in,
+                        std::vector<ItOut>& output,
+                        Comparator& comparator) {
+      for (auto it = std::ranges::begin(inner), end = std::ranges::end(inner);
+           it != end;
+           ++it) {
+        if (!*(flag_in++)) {
+          auto result = std::invoke(
+              comparator, outer->evaluation().raw(), it->evaluation().raw());
+
+          if (result == std::weak_ordering::greater) {
+            *flag_in = true;
+            output.push_back(outer);
+          }
+          else if (result == std::weak_ordering::less) {
+            *flag_out = true;
+            output.push_back(it);
+            break;
+          }
+        }
+      }
+    }
+
+  } // namespace details
+
+  template<std::ranges::sized_range Range, typename Comparator>
+  auto identify_dominated(
+      Range&& range,
+      std::ranges::iterator_t<std::remove_reference_t<Range>> fence,
+      Comparator comparator) {
+    std::vector<bool> identified(std::ranges::size(range));
+    std::vector<decltype(fence)> dominated{};
+
+    auto i = std::begin(identified);
+    auto j = i + std::distance(std::ranges::begin(range), fence);
+
+    auto out = std::ranges::begin(range);
+    auto end = std::ranges::end(range);
+
+    for (std::ranges::subrange in{fence, end}; out != fence; ++out) {
+      details::identify_inner(out, in, i++, j, dominated, comparator);
+    }
+
+    for (auto it = out; out != end; ++out, ++i) {
+      std::ranges::subrange in{++it, end};
+      details::identify_inner(out, in, i, i + 1, dominated, comparator);
+    }
+
+    return dominated;
   }
 
 } // namespace pareto
