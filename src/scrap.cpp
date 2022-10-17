@@ -251,6 +251,15 @@ void test_ground() {
   using indv_t =
       gal::individual<int, fit_t, gal::empty_fitness, gal::empty_tags>;
 
+  struct dom_flag {
+    inline bool get(indv_t const&) const noexcept {
+      return true;
+    }
+
+    inline void set(indv_t&) const noexcept {
+    }
+  };
+
   std::vector<indv_t> par_indv{};
   gal::dominate comp{std::less{}};
 
@@ -260,5 +269,5 @@ void test_ground() {
 
   auto mm1 = gal::pareto::analyze(par_indv, comp);
 
-  auto mm2 = gal::pareto::identify_dominated(par_indv, par_indv.end(), comp);
+  gal::pareto::identify_dominated(par_indv, par_indv, dom_flag{}, comp);
 }

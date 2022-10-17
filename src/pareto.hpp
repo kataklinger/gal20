@@ -580,61 +580,63 @@ namespace pareto {
            std::views::transform([](auto& item) { return solution{&item}; });
   }
 
+  template<typename Tracker, typename Individual>
+  concept tracker = requires(Tracker t, Individual& i, Individual const& ic) {
+                      { t.set(i) };
+                      { t.get(ic) } -> std::convertible_to<bool>;
+                    };
+
   namespace details {
 
-    template<typename ItOut, typename Range, typename Comparator>
-    void identify_inner(ItOut outer,
+    template<typename Individual,
+             std::ranges::forward_range Range,
+             tracker<Individual> Tracker,
+             typename Comparator>
+    void identify_inner(Individual& outer,
                         Range& inner,
-                        std::vector<bool>::iterator flag_out,
-                        std::vector<bool>::iterator flag_in,
-                        std::vector<ItOut>& output,
+                        Tracker& track,
                         Comparator& comparator) {
-      for (auto it = std::ranges::begin(inner), end = std::ranges::end(inner);
-           it != end;
-           ++it) {
-        if (!*(flag_in++)) {
-          auto result = std::invoke(
-              comparator, outer->evaluation().raw(), it->evaluation().raw());
+      for (auto& in : inner) {
+        if (!track.get(in)) {
+          continue;
+        }
 
-          if (result == std::weak_ordering::greater) {
-            *flag_in = true;
-            output.push_back(outer);
-          }
-          else if (result == std::weak_ordering::less) {
-            *flag_out = true;
-            output.push_back(it);
-            break;
-          }
+        auto result = std::invoke(
+            comparator, in.evaluation().raw(), outer.evaluation().raw());
+
+        if (result == std::weak_ordering::greater) {
+          track.set(in);
+        }
+        else if (result == std::weak_ordering::less) {
+          track.set(outer);
+          break;
         }
       }
     }
 
   } // namespace details
 
-  template<std::ranges::sized_range Range, typename Comparator>
-  auto identify_dominated(
-      Range&& range,
-      std::ranges::iterator_t<std::remove_reference_t<Range>> fence,
-      Comparator comparator) {
-    std::vector<bool> identified(std::ranges::size(range));
-    std::vector<decltype(fence)> dominated{};
-
-    auto i = std::begin(identified);
-    auto j = i + std::distance(std::ranges::begin(range), fence);
-
-    auto out = std::ranges::begin(range);
-    auto end = std::ranges::end(range);
-
-    for (std::ranges::subrange in{fence, end}; out != fence; ++out) {
-      details::identify_inner(out, in, i++, j, dominated, comparator);
+  template<std::ranges::forward_range OldRange,
+           std::ranges::forward_range NewRange,
+           tracker<std::ranges::range_value_t<OldRange>> Tracker,
+           typename Comparator>
+    requires std::same_as<std::ranges::range_value_t<OldRange>,
+                          std::ranges::range_value_t<NewRange>>
+  void identify_dominated(OldRange&& oldRange,
+                          NewRange&& newRange,
+                          Tracker track,
+                          Comparator comparator) {
+    for (auto& out : oldRange) {
+      details::identify_inner(out, newRange, track, comparator);
     }
 
-    for (auto it = out; out != end; ++out, ++i) {
-      std::ranges::subrange in{++it, end};
-      details::identify_inner(out, in, i, i + 1, dominated, comparator);
-    }
+    auto first = std::ranges::begin(newRange);
+    auto last = std::ranges::end(newRange);
 
-    return dominated;
+    for (auto& out : newRange) {
+      std::ranges::subrange in{++first, last};
+      details::identify_inner(out, in, track, comparator);
+    }
   }
 
 } // namespace pareto
