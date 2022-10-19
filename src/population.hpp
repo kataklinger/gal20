@@ -294,4 +294,31 @@ template<typename Population, typename FitnessTag>
 concept averageable_population =
     arithmetic_fitness<get_fitness_t<FitnessTag, Population>>;
 
+namespace details {
+
+  template<typename Tuple, typename Tag>
+  struct has_tag_impl : std::false_type {};
+
+  template<typename Tag, typename... Tys>
+  struct has_tag_impl<std::tuple<Tys...>, Tag>
+      : std::conjunction<std::is_same<Tag, Tys>...> {};
+
+  template<typename Population, typename Tag>
+  struct is_tagged_with_single
+      : std::disjunction<std::is_same<typename Population::Tags, Tag>,
+                         has_tag_impl<typename Population::Tags, Tag>> {};
+
+} // namespace details
+
+template<typename Population, typename... Tags>
+struct is_tagged_with
+    : std::conjunction<details::is_tagged_with_single<Population, Tags>...> {};
+
+template<typename Population, typename... Tags>
+inline constexpr auto is_tagged_with_v =
+    is_tagged_with<Population, Tags...>::value;
+
+template<typename Population, typename... Tags>
+concept tagged_with = is_tagged_with_v<Population, Tags...>;
+
 } // namespace gal
