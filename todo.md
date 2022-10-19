@@ -29,3 +29,5 @@ List of task to implement or improve
 
 # Fitness
  - [x] fitness that can be used for defining uniform random distribution
+
+# Pareto

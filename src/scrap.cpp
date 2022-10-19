@@ -5,6 +5,7 @@
 #include "mutation.hpp"
 #include "observing.hpp"
 #include "pareto.hpp"
+#include "ranking.hpp"
 #include "replacement.hpp"
 #include "scaling.hpp"
 #include "selection.hpp"

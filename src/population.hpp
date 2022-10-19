@@ -290,6 +290,10 @@ concept ordered_population =
 
 // clang-format on
 
+template<typename Population>
+concept multiobjective_population =
+    multiobjective_fitness<typename Population::raw_fitness_t>;
+
 template<typename Population, typename FitnessTag>
 concept averageable_population =
     arithmetic_fitness<get_fitness_t<FitnessTag, Population>>;
