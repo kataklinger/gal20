@@ -107,7 +107,7 @@ void test_ground() {
   gal::select::roulette_scaled sl3{gal::select::unique<2>, gen};
   sl3(p);
 
-  gal::replace::random<std::mt19937> ro1{gen};
+  gal::replace::random<std::mt19937, 2> ro1{gen};
   ro1(p, std::vector<parent_replacement_t>{});
 
   gal::replace::worst<gal::raw_fitness_tag> ro2{};

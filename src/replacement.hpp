@@ -54,15 +54,9 @@ namespace replace {
              std::views::transform([](auto& o) { return get_child(o); });
     }
 
-    template<typename Population, std::ranges::sized_range Offspring>
-    auto get_size(Population const& population,
-                  Offspring const& offspring) noexcept {
-      return std::min(population.current_size(), std::ranges::size(offspring));
-    }
-
   } // namespace details
 
-  template<typename Generator>
+  template<typename Generator, std::size_t Elitism>
   class random {
   public:
     using generator_t = Generator;
@@ -80,13 +74,14 @@ namespace replace {
                                typename Population::individual_t> Offspring>
     inline auto operator()(Population& population,
                            Offspring&& offspring) const {
-      auto to_replace =
-          sample_many(population,
-                      unique_sample{details::get_size(population, offspring)},
-                      [&population, this]() {
-                        return distribution_t{0, population.current_size() - 1}(
-                            *generator_);
-                      });
+      auto allowed = population.current_size() - Elitism;
+
+      auto to_replace = sample_many(
+          population,
+          unique_sample{std::min(allowed, std::ranges::size(offspring))},
+          [dist = distribution_t{0, allowed - 1}, this]() {
+            return Elitism + dist(*generator_);
+          });
 
       return population.replace(details::apply_replaced(to_replace, offspring));
     }
@@ -111,12 +106,9 @@ namespace replace {
                            Offspring&& offspring) const {
       population.sort(fitness_tag);
 
-      auto size = details::get_size(population, offspring);
-      std::size_t idx{population.current_size() - size};
-      auto to_replace = sample_many(
-          population, nonunique_sample{size}, [&idx]() { return idx++; });
-
-      return population.replace(details::apply_replaced(to_replace, offspring));
+      auto removed = population.trim(std::ranges::size(offspring));
+      population.insert(details::extract_children(offspring));
+      return removed;
     }
   };
 
