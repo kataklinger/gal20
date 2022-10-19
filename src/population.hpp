@@ -143,6 +143,10 @@ public:
     return collection_t{};
   }
 
+  inline auto trim_to(std::size_t size) {
+    return trim_impl(size);
+  }
+
   inline auto trim(std::size_t to_trim) {
     return trim_impl(
         to_trim < individuals_.size() ? individuals_.size() - to_trim : 0);
