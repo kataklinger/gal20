@@ -3,8 +3,9 @@
 List of task to implement or improve
 
 ## General
- - [x] use std::invoke for calling operations
+ - [ ] improve tagging system
  - [ ] individual grouping
+ - [x] use std::invoke for calling operations
 
 ## Basic Operations
  - [ ] disable improving-only mutation when fitness is not totally ordered
