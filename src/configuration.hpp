@@ -435,9 +435,9 @@ namespace config {
         : details::ptype_base<Built, tags_ptype>{current} {
     }
 
-    template<typename Tags>
+    template<typename... Tags>
     inline constexpr auto tag() const {
-      return this->next(tags_body<Tags>{});
+      return this->next(tags_body<std::tuple<Tags...>>{});
     }
 
     inline constexpr auto tag() const {

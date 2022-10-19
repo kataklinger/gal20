@@ -3,8 +3,8 @@
 List of task to implement or improve
 
 ## General
- - [ ] improve tagging system
  - [ ] individual grouping
+ - [x] improve tagging system
  - [x] use std::invoke for calling operations
 
 ## Basic Operations
