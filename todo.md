@@ -11,8 +11,8 @@ List of task to implement or improve
  - [ ] initializator to produce tags
  - [ ] verify duplicates parents for parent replacement
  - [ ] roulette wheele selection when minimizing fintess
- - [ ] insert-only replacement
  - [ ] replacement with forbidden regions
+ - [x] insert-only replacement
  - [x] elitism parameter for random replacement
  - [x] constraints on fitness types for scaling
  - [x] verify population size for selection/replacement operations

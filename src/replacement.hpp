@@ -163,5 +163,17 @@ namespace replace {
     }
   };
 
+  class insert{
+  public:
+    template<typename Population,
+             replacement_range<typename Population::iterator_t,
+                               typename Population::individual_t> Offspring>
+    inline auto operator()(Population& population,
+                           Offspring&& offspring) const {
+      population.insert(details::extract_children(offspring));
+      return typename Population::collection_t{};
+    }
+  };
+
 } // namespace replace
 } // namespace gal

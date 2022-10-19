@@ -122,6 +122,9 @@ void test_ground() {
   gal::replace::parents<10> ro5{};
   ro5(p, std::vector<parent_replacement_t>{});
 
+  gal::replace::insert ro6{};
+  ro6(p, std::vector<parent_replacement_t>{});
+
   using stat_t = gal::stats::statistics<
       pop_t,
       gal::stats::generation,
