@@ -97,7 +97,7 @@ namespace rank {
                                            binary_rank::undefined;
                                   });
 
-      identify_dominated(
+      pareto::identify_dominated(
           ranked, nonranked, tracker{}, population.raw_comparator());
     }
   };
