@@ -68,7 +68,6 @@ namespace rank {
 
   } // namespace details
 
-  // non-dominated vs dominated (pesa, pesa-ii, paes)
   class binary {
   private:
     struct tracker {
@@ -102,7 +101,6 @@ namespace rank {
     }
   };
 
-  // pareto front level (nsga & nsga-ii)
   class level {
   public:
     template<ranked_population<int_rank_t> Population>
@@ -119,7 +117,6 @@ namespace rank {
     }
   };
 
-  // number of dominated, first front (spea)
   class strength {
   public:
     template<ranked_population<fp_rank_t> Population>
@@ -153,7 +150,6 @@ namespace rank {
     }
   };
 
-  // number of dominated, all fronts (spea-ii)
   class acc_strength {
   public:
     template<ranked_population<int_rank_t> Population>
@@ -170,7 +166,6 @@ namespace rank {
     }
   };
 
-  // accumulated pareto level (rdga)
   class acc_level {
   public:
     template<ranked_population<int_rank_t> Population>
