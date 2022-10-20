@@ -4,8 +4,6 @@
 #include "pareto.hpp"
 #include "population.hpp"
 
-#include <concepts>
-
 namespace gal {
 namespace rank {
 
@@ -90,24 +88,17 @@ namespace rank {
     void operator()(Population& population) const {
       using individual_t = typename Population::individual_t;
 
-      auto ranked =
-          population.individuals() |
-          std::views::filter([](individual_t const& ind) {
-            return details::get<bin_rank_t>(ind) != binary_rank::undefined;
-          });
-
-      auto nonranked =
-          population.individuals() |
-          std::views::filter([](individual_t const& ind) {
-            return details::get<bin_rank_t>(ind) == binary_rank::undefined;
-          });
+      std::vector<individual_t> ranked, nonranked;
+      std::ranges::partition_copy(population.individuals(),
+                                  std::back_inserter(ranked),
+                                  std::back_inserter(nonranked),
+                                  [](individual_t const& ind) {
+                                    return details::get<bin_rank_t>(ind) !=
+                                           binary_rank::undefined;
+                                  });
 
       identify_dominated(
-          ranked,
-          std::vector<individual_t>{std::ranges::begin(nonranked),
-                                    std::ranges::end(nonranked)},
-          tracker{},
-          population.raw_comparator());
+          ranked, nonranked, tracker{}, population.raw_comparator());
     }
   };
 
