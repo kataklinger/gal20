@@ -122,8 +122,16 @@ namespace pareto {
              std::views::transform([](Impl* item) { return solution{item}; });
     }
 
+    inline auto dominated_total() const noexcept {
+      return impl_->dominated().size();
+    }
+
     inline auto dominators_total() const noexcept {
       return impl_->dominators_total();
+    }
+
+    inline auto nondominated() const noexcept {
+      return impl_->dominators_total() == 0;
     }
 
   private:
