@@ -126,25 +126,21 @@ namespace rank {
       auto analized =
           pareto::analyze(population.indviduals(), population.raw_comparator());
 
-      std::size_t total_count{};
-      for (auto& individual : analized) {
-        if (!individual.nondominated()) {
-          details::get<fp_rank_t>(individual) += 1.0;
-          total_count++;
-        }
-      }
-
-      double div = static_cast<double>(total_count);
+      auto total_count = static_cast<double>(
+          std::ranges::count_if(analized, [](auto& individual) {
+            return !individual.nondominated();
+          }));
 
       for (auto& individual : analized) {
         if (individual.nondominated()) {
           auto s = individual.dominated_total() / div;
-
           details::get<fp_rank_t>(individual) = s;
-
           for (auto& dominated : individual.dominated()) {
             details::get<fp_rank_t>(dominated) += s;
           }
+        }
+        else {
+          details::get<fp_rank_t>(individual) += 1.0;
         }
       }
     }
