@@ -25,7 +25,8 @@ namespace rank {
     }
 
     inline rank& operator=(value_t value) noexcept {
-      return value_ = value;
+      value_ = value;
+      return *this;
     }
 
     inline value_t get() const noexcept {
