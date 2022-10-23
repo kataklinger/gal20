@@ -31,3 +31,6 @@ List of task to implement or improve
  - [x] fitness that can be used for defining uniform random distribution
 
 # Pareto
+ - [ ] skip comparing dominant solution from the previous gen. between themselves
+ - [ ] propagate the number of solutions that are required to be ranked by later operations
+ - [ ] preserver pareto front to which the solution belongs
