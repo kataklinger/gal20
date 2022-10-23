@@ -24,6 +24,10 @@ namespace rank {
       return value_;
     }
 
+    inline rank& operator=(value_t value) noexcept {
+      return value_ = value;
+    }
+
     inline value_t get() const noexcept {
       return value_;
     }
