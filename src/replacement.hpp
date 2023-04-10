@@ -76,12 +76,11 @@ namespace replace {
                            Offspring&& offspring) const {
       auto allowed = population.current_size() - Elitism;
 
+      distribution_t dist{0, allowed - 1};
       auto to_replace = sample_many(
           population,
           unique_sample{std::min(allowed, std::ranges::size(offspring))},
-          [dist = distribution_t{0, allowed - 1}, this]() {
-            return Elitism + dist(*generator_);
-          });
+          [this, &dist]() { return Elitism + dist(*generator_); });
 
       return population.replace(details::apply_replaced(to_replace, offspring));
     }
@@ -163,7 +162,7 @@ namespace replace {
     }
   };
 
-  class insert{
+  class insert {
   public:
     template<typename Population,
              replacement_range<typename Population::iterator_t,

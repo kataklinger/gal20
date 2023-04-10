@@ -9,19 +9,19 @@
 #include "selection.hpp"
 #include "soo.hpp"
 
-const std::uniform_real_distribution<> dist{-10.0, 10.0};
-
 int main() {
   using namespace gal;
 
   std::mt19937 rng{};
   std::stop_token stop{};
 
+  std::uniform_real_distribution<> dist{-10.0, 10.0};
+
   config::for_map<soo::algo_config_map>()
       .begin()
       .limit(20)
       .tag()
-      .spawn([&rng] {
+      .spawn([&rng, &dist] {
         return std::vector<double>{dist(rng), dist(rng)};
       })
       .evaluate([](auto& c) { return std::pow(c[0] + c[1], 2.0); }, std::less{})

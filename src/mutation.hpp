@@ -199,9 +199,10 @@ namespace mutate {
     using distribution_t = Distribution;
 
   public:
-    inline constexpr roller(generator_t& generator, distribution_t distribution)
+    inline constexpr roller(generator_t& generator,
+                            distribution_t& distribution)
         : generator_{&generator}
-        , distribution_{distribution} {
+        , distribution_{&distribution} {
     }
 
     template<typename Value>
@@ -210,12 +211,12 @@ namespace mutate {
     }
 
     inline auto operator()() const {
-      return distribution_(*generator_);
+      return (*distribution_)(*generator_);
     }
 
   private:
     generator_t* generator_;
-    distribution_t distribution_;
+    distribution_t* distribution_;
   };
 
   template<std::size_t Count, typename Generator, typename Roll>
@@ -226,7 +227,7 @@ namespace mutate {
 
   template<std::size_t Count, typename Generator, typename Distribution>
   inline constexpr auto make_simple_create(Generator& generator,
-                                           Distribution distribution) {
+                                           Distribution& distribution) {
     using roll_t = roller<Generator, Distribution>;
     return create<Generator, roll_t, Count>{generator,
                                             roll_t{generator, distribution}};
@@ -240,7 +241,7 @@ namespace mutate {
 
   template<std::size_t Count, typename Generator, typename Distribution>
   inline constexpr auto make_simple_flip(Generator& generator,
-                                         Distribution distribution) {
+                                         Distribution& distribution) {
     using roll_t = roller<Generator, Distribution>;
     return flip<Generator, roll_t, Count>{generator,
                                           roll_t{generator, distribution}};
