@@ -707,6 +707,7 @@ namespace config {
   public:
     using population_t = Population;
     using statistics_t = stats::statistics<population_t, Models...>;
+    using history_t = stats::history<statistics_t>;
     using population_context_t = population_context<population_t, statistics_t>;
 
   public:

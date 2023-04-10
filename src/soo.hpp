@@ -68,7 +68,8 @@ namespace soo {
   concept scaling_config =
       is_empty_fitness_v<typename Config::scaled_fitness_t> ||
       requires(Config c) {
-        scaling<typename Config::scaling_t, typename Config::population_t>;
+        requires scaling<typename Config::scaling_t,
+                         typename Config::population_t>;
 
         {
           c.scaling(std::declval<typename Config::population_context_t>())
@@ -79,49 +80,53 @@ namespace soo {
   concept algo_config =
       scaling_config<Config> &&
       requires(Config c) {
-        chromosome<typename Config::chromosome_t>;
-        fitness<typename Config::raw_fitness_t>;
-        fitness<typename Config::scaled_fitness_t>;
+        requires chromosome<typename Config::chromosome_t>;
+        requires fitness<typename Config::raw_fitness_t>;
+        requires fitness<typename Config::scaled_fitness_t>;
 
-        std::same_as<typename Config::population_t,
-                     population<typename Config::chromosome_t,
-                                typename Config::raw_fitness_t,
-                                typename Config::raw_comparator_t,
-                                typename Config::scaled_fitness_t,
-                                typename Config::scaled_comparator_t,
-                                typename Config::tags_t>>;
+        requires std::same_as<typename Config::population_t,
+                              population<typename Config::chromosome_t,
+                                         typename Config::raw_fitness_t,
+                                         typename Config::raw_comparator_t,
+                                         typename Config::scaled_fitness_t,
+                                         typename Config::scaled_comparator_t,
+                                         typename Config::tags_t>>;
 
-        initializator<typename Config::initializator_t>;
-        crossover<typename Config::crossover_t, typename Config::chromosome_t>;
-        mutation<typename Config::mutation_t, typename Config::chromosome_t>;
-        evaluator<typename Config::evaluator_t, typename Config::chromosome_t>;
-
-        comparator<typename Config::raw_comparator_t,
-                   typename Config::raw_fitness_t>;
-
-        comparator<typename Config::scaled_comparator_t,
-                   typename Config::raw_fitness_t>;
-
-        util::boolean_flag<typename Config::is_global_scaling_t>;
-        util::boolean_flag<typename Config::is_stable_scaling_t>;
-
-        selection_range<typename Config::selection_result_t,
-                        typename Config::population_t::const_iterator_t>;
-        replacement_range<typename Config::copuling_result_t,
-                          typename Config::population_t::const_iterator_t,
+        requires initializator<typename Config::initializator_t>;
+        requires crossover<typename Config::crossover_t,
+                           typename Config::chromosome_t>;
+        requires mutation<typename Config::mutation_t,
                           typename Config::chromosome_t>;
+        requires evaluator<typename Config::evaluator_t,
+                           typename Config::chromosome_t>;
 
-        selection<typename Config::selection_t, typename Config::population_t>;
-        coupling<typename Config::selection_t,
-                 typename Config::population_t,
-                 typename Config::selection_result_t>;
-        replacement<typename Config::selection_t,
-                    typename Config::population_t,
-                    typename Config::copuling_result_t>;
+        requires comparator<typename Config::raw_comparator_t,
+                            typename Config::raw_fitness_t>;
 
-        criterion<typename Config::criterion_t,
-                  typename Config::population_t,
-                  typename Config::statistics_t>;
+        requires comparator<typename Config::scaled_comparator_t,
+                            typename Config::raw_fitness_t>;
+
+        requires util::boolean_flag<typename Config::is_global_scaling_t>;
+        requires util::boolean_flag<typename Config::is_stable_scaling_t>;
+
+        requires selection_range<typename Config::selection_result_t,
+                                 typename Config::population_t::iterator_t>;
+        requires replacement_range<typename Config::copuling_result_t,
+                                   typename Config::population_t::iterator_t,
+                                   typename Config::population_t::individual_t>;
+
+        requires selection<typename Config::selection_t,
+                           typename Config::population_t>;
+        requires coupling<typename Config::coupling_t,
+                          typename Config::population_t,
+                          typename Config::selection_result_t>;
+        requires replacement<typename Config::replacement_t,
+                             typename Config::population_t,
+                             typename Config::copuling_result_t>;
+
+        requires criterion<typename Config::criterion_t,
+                           typename Config::population_t,
+                           typename Config::history_t>;
 
         {
           c.initializator()

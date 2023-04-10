@@ -128,8 +128,8 @@ namespace scale {
   template<typename Fitness>
   concept sigma_fitness =
       stats::deviation_fitness<Fitness> &&
+      std::convertible_to<stats::fitness_deviation_t<Fitness>, double> &&
       requires(Fitness f) {
-        std::convertible_to<stats::fitness_deviation_t<Fitness>, double>;
         { f / 1.0 } -> std::convertible_to<double>;
       };
 

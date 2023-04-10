@@ -64,9 +64,9 @@ concept multiobjective_fitness =
 
 template<typename Totalizator>
 concept fitness_totalizator =
+    std::semiregular<Totalizator> &&
     requires(Totalizator t) {
-      std::semiregular<Totalizator>;
-      arithmetic_fitness<typename Totalizator::value_t>;
+      requires arithmetic_fitness<typename Totalizator::value_t>;
 
       {
         t.add(std::declval<typename Totalizator::value_t>())
