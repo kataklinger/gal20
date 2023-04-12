@@ -274,8 +274,8 @@ namespace couple {
 
       auto size = std::ranges::size(parents);
       auto first = std::ranges::begin(parents);
-      auto last =
-          size % 2 != 0 ? adv(first, size - 1) : std::ranges::end(parents);
+      auto last = size % 2 != 0 ? std::ranges::next(first, size - 1)
+                                : std::ranges::end(parents);
 
       loop(incubate, first, last);
 
@@ -289,12 +289,6 @@ namespace couple {
         auto fst = first++;
         incubate(*fst, *first);
       }
-    }
-
-    template<typename It, typename Diff>
-    inline It adv(It it, Diff off) const {
-      std::advance(it, off);
-      return it;
     }
 
   private:

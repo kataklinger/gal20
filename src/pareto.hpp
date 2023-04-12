@@ -345,7 +345,7 @@ namespace pareto {
       }
 
       inline auto next(frontiers_iterator_t it) {
-        auto n = std::next(it);
+        auto n = std::ranges::next(it);
         return completed_ || n != frontiers_.end() ? n : identify_next(it);
       }
 

@@ -38,12 +38,12 @@ inline auto draft(Chromosome& target, std::size_t /*unused*/) noexcept {
 template<typename Value, std::size_t Size>
 inline auto draft(std::array<Value, Size>& target,
                   std::size_t /*unused*/) noexcept {
-  return std::begin(target);
+  return std::ranges::begin(target);
 }
 
 template<typename Value, std::size_t Size>
 inline auto draft(Value (&target)[Size], std::size_t /*unused*/) noexcept {
-  return std::begin(target);
+  return std::ranges::begin(target);
 }
 
 template<typename... Tys>

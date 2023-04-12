@@ -33,9 +33,7 @@ namespace mutate {
 
     template<range_chromosome Chromosome>
     inline auto get_iter(Chromosome& target, std::size_t index) noexcept {
-      auto it = std::begin(target);
-      std::advance(it, index);
-      return it;
+      return std::ranges::next(std::ranges::begin(target), index);
     }
 
     template<range_chromosome Chromosome, typename Generator>
@@ -99,7 +97,7 @@ namespace mutate {
                to = details::get_random_iter(target, *generator_);
 
           if (from != to) {
-            std::move(from, std::next(from), to);
+            std::move(from, std::ranges::next(from), to);
             --i;
           }
         }

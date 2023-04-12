@@ -11,8 +11,9 @@ namespace cross {
     using distribution_t = std::uniform_int_distribution<std::size_t>;
 
     template<range_chromosome Chromosome>
-    using get_iterator_type = std::remove_reference_t<decltype(std::begin(
-        std::declval<std::add_lvalue_reference_t<Chromosome>>()))>;
+    using get_iterator_type =
+        std::remove_reference_t<decltype(std::ranges::begin(
+            std::declval<std::add_lvalue_reference_t<Chromosome>>()))>;
 
     template<range_chromosome Chromosome>
     inline auto distribute(Chromosome const& parent) noexcept {
@@ -35,12 +36,12 @@ namespace cross {
                        std::size_t point_right) {
       auto size = point_left + std::ranges::size(right) - point_right;
 
-      auto right_it = std::begin(right);
-      std::advance(right_it, point_right);
-
-      std::copy(right_it,
-                std::end(right),
-                std::copy_n(std::begin(left), point_left, draft(dest, size)));
+      std::ranges::copy(std::next(std::ranges::begin(right), point_right),
+                        std::ranges::end(right),
+                        std::ranges::copy_n(std::ranges::begin(left),
+                                            point_left,
+                                            draft(dest, size))
+                            .out);
     }
 
   } // namespace details
@@ -127,7 +128,7 @@ namespace cross {
       std::ranges::sort(selected);
 
       if (selected.size() % 2 == 1) {
-        std::swap(size1, size2);
+        std::ranges::swap(size1, size2);
       }
 
       std::pair<Chromosome, Chromosome> children{};
@@ -146,19 +147,20 @@ namespace cross {
                 std::vector<std::size_t> const& selected,
                 It out1,
                 It out2) const {
-      std::pair in{std::begin(p1), std::begin(p2)};
+      std::pair in{std::ranges::begin(p1), std::ranges::begin(p2)};
       for (auto point : selected) {
-        std::pair next{std::begin(p1) + point, std::begin(p2) + point};
+        std::pair next{std::ranges::begin(p1) + point,
+                       std::ranges::begin(p2) + point};
 
-        out1 = std::copy(in.first, next.first, out1);
-        out2 = std::copy(in.second, next.second, out2);
+        out1 = std::ranges::copy(in.first, next.first, out1).out;
+        out2 = std::ranges::copy(in.second, next.second, out2).out;
 
         in = next;
-        std::swap(out1, out2);
+        std::ranges::swap(out1, out2);
       }
 
-      std::copy(in.first, std::end(p1), out1);
-      std::copy(in.second, std::end(p2), out2);
+      std::ranges::copy(in.first, std::ranges::end(p1), out1);
+      std::ranges::copy(in.second, std::ranges::end(p2), out2);
     }
 
     template<std::ranges::forward_range Chromosome, typename It>
@@ -167,7 +169,7 @@ namespace cross {
                 std::vector<std::size_t> const& selected,
                 It out1,
                 It out2) const {
-      auto in1 = std::begin(p1), in2 = std::begin(p2);
+      auto in1 = std::ranges::begin(p1), in2 = std::ranges::begin(p2);
 
       std::size_t current = 0;
       for (auto point : selected) {
@@ -176,11 +178,11 @@ namespace cross {
           *(out2++) = *(in2++);
         }
 
-        std::swap(out1, out2);
+        std::ranges::swap(out1, out2);
       }
 
-      std::copy(in1, std::end(p1), out1);
-      std::copy(in2, std::end(p2), out2);
+      std::ranges::copy(in1, std::ranges::end(p1), out1);
+      std::ranges::copy(in2, std::ranges::end(p2), out2);
     }
 
   private:
@@ -225,7 +227,7 @@ namespace cross {
 
       auto out1 = draft(children.first, 0), out2 = draft(children.second, 0);
 
-      auto in1 = std::begin(p1), in2 = std::begin(p2);
+      auto in1 = std::ranges::begin(p1), in2 = std::ranges::begin(p2);
 
       std::size_t current1 = 0, current2 = 0;
       for (int i = 0; i < count; ++i) {
@@ -237,11 +239,11 @@ namespace cross {
           *(out2++) = *(in2++);
         }
 
-        std::swap(out1, out2);
+        std::ranges::swap(out1, out2);
       }
 
-      std::copy(in1, std::end(p1), out1);
-      std::copy(in2, std::end(p2), out2);
+      std::ranges::copy(in1, std::ranges::end(p1), out1);
+      std::ranges::copy(in2, std::ranges::end(p2), out2);
 
       return children;
     }
@@ -265,19 +267,20 @@ namespace cross {
 
     template<range_chromosome Chromosome>
     auto operator()(Chromosome const& p1, Chromosome const& p2) const {
-      auto size1 = std::ranges::size(p1), size2 = std::ranges::size(p2);
+      namespace rg = std::ranges;
+
+      auto size1 = rg::size(p1), size2 = rg::size(p2);
 
       std::pair<Chromosome, Chromosome> children{};
 
       auto out1 = draft(children.first, size1),
            out2 = draft(children.second, size2);
 
-      auto in1 = std::begin(p1), in2 = std::begin(p2);
+      auto in1 = rg::begin(p1), in2 = rg::begin(p2);
 
       auto [short_it, short_end, long_it, long_end, long_out] =
-          size1 < size2
-              ? std::tuple{in1, std::end(p1), in2, std::end(p2), out2}
-              : std::tuple{in2, std::end(p2), in1, std::end(p1), out1};
+          size1 < size2 ? std::tuple{in1, rg::end(p1), in2, rg::end(p2), out2}
+                        : std::tuple{in2, rg::end(p2), in1, rg::end(p1), out1};
 
       for (; short_it != short_end; ++in1, ++in2, ++short_it, ++long_it) {
         auto [v1, v2] = blender_(*in1, *in2);
@@ -285,9 +288,7 @@ namespace cross {
         *(out2++) = std::move(v2);
       }
 
-      for (; long_it != long_end; ++long_it) {
-        *(long_out++) = *long_it;
-      }
+      std::ranges::copy(long_it, long_end, long_out);
 
       return children;
     }

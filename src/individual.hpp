@@ -66,11 +66,9 @@ public:
 
   inline void swap(individual& other) noexcept(
       std::is_nothrow_swappable_v<individual>) {
-    using std::swap;
-
-    swap(chromosome_, other.chromosome_);
-    std::swap(evaluation_, other.evaluation_);
-    swap(tags_, other.tags_);
+    std::ranges::swap(chromosome_, other.chromosome_);
+    std::ranges::swap(evaluation_, other.evaluation_);
+    std::ranges::swap(tags_, other.tags_);
   }
 
   inline auto const& chromosome() const noexcept {

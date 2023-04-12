@@ -237,10 +237,8 @@ public:
 
   inline void swap(evaluation& other) noexcept(
       std::is_nothrow_swappable_v<evaluation>) {
-    using std::swap;
-
-    swap(raw_, other.raw_);
-    swap(scaled_, other.scaled_);
+    std::ranges::swap(raw_, other.raw_);
+    std::ranges::swap(scaled_, other.scaled_);
   }
 
   template<util::forward_ref<raw_t> F>
