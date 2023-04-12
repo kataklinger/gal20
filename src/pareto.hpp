@@ -18,15 +18,14 @@ namespace pareto {
       using base_iterator_t = Base;
 
     private:
-      using iter_traits_t = std::iterator_traits<base_iterator_t>;
       using base_value_ref_t =
-          std::add_lvalue_reference_t<typename iter_traits_t::value_type>;
+          std::add_lvalue_reference_t<std::iter_value_t<base_iterator_t>>;
 
     public:
       using iterator_category = std::input_iterator_tag;
       using iterator_concept = std::forward_iterator_tag;
 
-      using difference_type = typename iter_traits_t::difference_type;
+      using difference_type = std::iter_difference_t<base_iterator_t>;
       using value_type = std::pair<base_value_ref_t, base_value_ref_t>;
       using reference = value_type;
 
