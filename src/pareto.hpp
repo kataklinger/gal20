@@ -233,10 +233,11 @@ namespace pareto {
       using individual_t = get_individual_t<Range>;
       using solution_t = solution_impl<individual_t>;
 
-      auto transformed =
-          range | std::views::transform([](individual_t& individual) {
-            return solution_t{individual};
-          });
+      auto transformed = range |
+                         std::views::transform([](individual_t& individual) {
+                           return solution_t{individual};
+                         }) |
+                         std::views::common;
 
       return std::vector<solution_t>{std::ranges::begin(transformed),
                                      std::ranges::end(transformed)};
