@@ -604,7 +604,7 @@ namespace pareto {
                         Range& inner,
                         Tracker& track,
                         Comparator& comparator) {
-      for (auto& in : inner) {
+      for (auto&& in : inner) {
         if (!track.get(in)) {
           continue;
         }
@@ -634,14 +634,14 @@ namespace pareto {
                           NewRange&& newRange,
                           Tracker track,
                           Comparator comparator) {
-    for (auto& out : oldRange) {
+    for (auto&& out : oldRange) {
       details::identify_inner(out, newRange, track, comparator);
     }
 
     auto first = std::ranges::begin(newRange);
     auto last = std::ranges::end(newRange);
 
-    for (auto& out : newRange) {
+    for (auto&& out : newRange) {
       std::ranges::subrange in{++first, last};
       details::identify_inner(out, in, track, comparator);
     }

@@ -66,7 +66,7 @@ namespace rank {
 
     template<typename Rank, ranked_population<Rank> Population>
     inline void clean(Population& population) {
-      for (auto& individual : population.individuals()) {
+      for (auto&& individual : population.individuals()) {
         get<Rank>(individual) = {};
       }
     }
@@ -112,10 +112,10 @@ namespace rank {
     void operator()(Population& population) const {
       details::clean<int_rank_t>(population);
 
-      for (auto& frontier :
+      for (auto&& frontier :
            population.indviduals() |
                pareto::views::sort(population.raw_comparator())) {
-        for (auto& individual : frontier.members()) {
+        for (auto&& individual : frontier.members()) {
           details::get<int_rank_t>(individual) = frontier.level();
         }
       }
@@ -136,11 +136,11 @@ namespace rank {
             return !individual.nondominated();
           }));
 
-      for (auto& individual : analized) {
+      for (auto&& individual : analized) {
         if (individual.nondominated()) {
           auto s = individual.dominated_total() / div;
           details::get<fp_rank_t>(individual) = s;
-          for (auto& dominated : individual.dominated()) {
+          for (auto&& dominated : individual.dominated()) {
             details::get<fp_rank_t>(dominated) += s;
           }
         }
@@ -157,10 +157,10 @@ namespace rank {
     void operator()(Population& population) const {
       details::clean<int_rank_t>(population);
 
-      for (auto& individual : pareto::analyze(population.indviduals(),
+      for (auto&& individual : pareto::analyze(population.indviduals(),
                                               population.raw_comparator())) {
         auto s = individual.dominated_total();
-        for (auto& dominated : individual.dominated()) {
+        for (auto&& dominated : individual.dominated()) {
           details::get<int_rank_t>(dominated) += s;
         }
       }
@@ -173,13 +173,13 @@ namespace rank {
     void operator()(Population& population) const {
       details::clean<int_rank_t>(population);
 
-      for (auto& frontier :
+      for (auto&& frontier :
            population.indviduals() |
                pareto::views::sort(population.raw_comparator())) {
-        for (auto& individual : frontier.members()) {
+        for (auto&& individual : frontier.members()) {
           details::get<int_rank_t>(individual) += 1;
 
-          for (auto& dominated : individual.dominated()) {
+          for (auto&& dominated : individual.dominated()) {
             details::get<int_rank_t>(dominated) +=
                 details::get<int_rank_t>(individual);
           }
