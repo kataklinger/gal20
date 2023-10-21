@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 
-add_executable(simple "main.cpp")
+add_executable(simple main.cpp)
 
 target_link_libraries(simple PRIVATE warnings gal20_lib)
 

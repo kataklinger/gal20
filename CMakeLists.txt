@@ -2,7 +2,7 @@
 
 project (gal20 CXX)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 add_subdirectory(src bin)
 add_subdirectory(sample)
