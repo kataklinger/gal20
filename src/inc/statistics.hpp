@@ -198,7 +198,7 @@ namespace stats {
     public:
       body() = default;
 
-      inline body(Population const& population, body const& previous) noexcept
+      inline body(Population const& /*unused*/, body const& previous) noexcept
           : value_{previous.value_ + 1} {
       }
 

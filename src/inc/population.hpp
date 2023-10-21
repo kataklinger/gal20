@@ -18,7 +18,7 @@ enum class sort_by { none, raw, scaled, both };
 
 template<typename FitnessTag>
 struct sort_policy_base {
-  const sort_by by;
+  sort_by const by;
 
   inline explicit sort_policy_base(bool stable_scaling, sort_by value) noexcept
       : by{stable_scaling ? sort_by::both : value} {
@@ -26,17 +26,17 @@ struct sort_policy_base {
 
   template<typename Collection, typename Comparator>
   inline auto minmax(Collection const& individuals,
-                     Comparator&& comparator) noexcept {
+                     Comparator&& compare) noexcept {
     return std::ranges::minmax_element(
-        individuals, std::forward<Comparator>(comparator), [](auto const& i) {
+        individuals, std::forward<Comparator>(compare), [](auto const& i) {
           return i.evaluation().get(FitnessTag{});
         });
   }
 
   template<typename Collection, typename Comparator>
-  inline void sort(Collection& individuals, Comparator&& comparator) {
+  inline void sort(Collection& individuals, Comparator&& compare) {
     std::ranges::sort(
-        individuals, std::forward<Comparator>(comparator), [](auto const& i) {
+        individuals, std::forward<Comparator>(compare), [](auto const& i) {
           return i.evaluation().get(FitnessTag{});
         });
   }
@@ -124,12 +124,12 @@ public:
 
     sorted_ = sort_by::none;
 
-    for (auto&& replacement : replacements) {
-      auto parent = get_parent(replacement);
+    for (auto&& replace_pair : replacements) {
+      auto parent = get_parent(replace_pair);
 
       removed.emplace_back(std::move(*parent));
 
-      *parent = std::move(get_child(replacement));
+      *parent = std::move(get_child(replace_pair));
     }
 
     return removed;

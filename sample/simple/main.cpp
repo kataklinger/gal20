@@ -38,7 +38,7 @@ int main() {
       .couple(couple::factorize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::worst_raw{})
       .observe(observe{soo::generation_event,
-                       [](auto const& pop, auto const& hist) {}})
+                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
       .build<soo::algo>()
       .run(stop);
 

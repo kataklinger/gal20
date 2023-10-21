@@ -115,7 +115,7 @@ namespace config {
       inline constexpr section_node() noexcept {
       }
 
-      inline constexpr section_node(section_t const& section,
+      inline constexpr section_node(section_t const& /*unused*/,
                                     base_t const& /*unused*/) noexcept {
       }
     };
@@ -128,9 +128,9 @@ namespace config {
       using base_t = section_node<Sections...>;
 
     public:
-      inline constexpr section_node(section_t const& section,
+      inline constexpr section_node(section_t const& current,
                                     base_t const& base)
-          : section_t{section}
+          : section_t{current}
           , base_t{base} {
       }
     };
@@ -297,9 +297,9 @@ namespace config {
       inline constexpr built() noexcept {
       }
 
-      inline constexpr built(section_t const& section,
+      inline constexpr built(section_t const& current,
                              previous_t const& previous)
-          : base_t{section, previous} {
+          : base_t{current, previous} {
       }
 
       template<template<typename> class This,
@@ -758,8 +758,8 @@ namespace config {
 
   public:
     inline constexpr explicit scale_fitness_body(
-        scaled_comparator_t const& comparator)
-        : scaled_comparator_{comparator} {
+        scaled_comparator_t const& compare)
+        : scaled_comparator_{compare} {
     }
 
     inline auto const& scaled_comparator() const noexcept {
@@ -779,9 +779,8 @@ namespace config {
     }
 
     template<fitness Scaled, comparator<Scaled> Comparator>
-    inline constexpr auto scale(Comparator const& comparator) const {
-      return scale_impl<Scaled, Comparator, scale_fitness_body_base>(
-          comparator);
+    inline constexpr auto scale(Comparator const& compare) const {
+      return scale_impl<Scaled, Comparator, scale_fitness_body_base>(compare);
     }
 
     inline constexpr auto scale() const {
@@ -792,9 +791,8 @@ namespace config {
 
   private:
     template<typename Scaled, typename Comparator, typename Base>
-    inline constexpr auto scale_impl(Comparator const& comparator) const {
-      return this->next(
-          scale_fitness_body<Scaled, Comparator, Base>{comparator});
+    inline constexpr auto scale_impl(Comparator const& compare) const {
+      return this->next(scale_fitness_body<Scaled, Comparator, Base>{compare});
     }
   };
 
@@ -838,9 +836,9 @@ namespace config {
         evaluator<chromosome_t> Evaluator,
         comparator<get_evaluator_result_t<chromosome_t, Evaluator>> Comparator>
     inline constexpr auto evaluate(Evaluator const& evaluator,
-                                   Comparator const& comparator) const {
+                                   Comparator const& compare) const {
       return this->next(evaluate_body<Evaluator, chromosome_t, Comparator>{
-          evaluator, comparator});
+          evaluator, compare});
     }
   };
 

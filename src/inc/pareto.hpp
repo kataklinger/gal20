@@ -244,10 +244,10 @@ namespace pareto {
     }
 
     template<typename Pair, typename Comparator>
-    inline static void compare_pair(Pair& pair, Comparator&& comparator) {
+    inline static void compare_pair(Pair& pair, Comparator&& compare) {
       auto& [fst, snd] = pair;
 
-      auto result = std::invoke(std::forward<Comparator>(comparator),
+      auto result = std::invoke(std::forward<Comparator>(compare),
                                 fst.individual().evaluation().raw(),
                                 snd.individual().evaluation().raw());
 
@@ -260,18 +260,18 @@ namespace pareto {
     }
 
     template<typename Solutions, typename Comparator>
-    inline void compare_all(Solutions& solutions, Comparator comparator) {
+    inline void compare_all(Solutions& solutions, Comparator compare) {
       std::ranges::for_each(
           details::paired_iterator{std::ranges::begin(solutions),
                                    std::ranges::end(solutions)},
           details::paired_iterator{std::ranges::end(solutions)},
-          [&comparator](auto pair) { compare_pair(pair, comparator); });
+          [&compare](auto pair) { compare_pair(pair, compare); });
     }
 
     template<typename Range, typename Comparator>
-    auto analyze_impl(Range&& range, Comparator&& comparator) {
+    auto analyze_impl(Range&& range, Comparator&& compare) {
       auto results = wrap_all(std::forward<Range>(range));
-      compare_all(results, std::forward<Comparator>(comparator));
+      compare_all(results, std::forward<Comparator>(compare));
       return results;
     }
 
@@ -335,9 +335,9 @@ namespace pareto {
 
     public:
       template<typename Range, typename Comparator>
-      inline explicit state(Range&& range, Comparator&& comparator)
+      inline explicit state(Range&& range, Comparator&& compare)
           : solutions_{analyze_impl(std::forward<Range>(range),
-                                    std::forward<Comparator>(comparator))} {
+                                    std::forward<Comparator>(compare))} {
       }
 
       inline auto begin() {
@@ -514,8 +514,8 @@ namespace pareto {
   public:
     sort_view() = default;
 
-    inline sort_view(Range range, comparator_t const& comparator)
-        : state_{std::make_shared<state_t>(std::move(range), comparator)} {
+    inline sort_view(Range range, comparator_t const& compare)
+        : state_{std::make_shared<state_t>(std::move(range), compare)} {
     }
 
     inline auto begin() const {
@@ -539,12 +539,12 @@ namespace pareto {
     template<typename Comparator>
     class sort_view_closure {
     public:
-      inline explicit sort_view_closure(Comparator const& comparator)
-          : comparator_{comparator} {
+      inline explicit sort_view_closure(Comparator const& compare)
+          : comparator_{compare} {
       }
 
-      inline explicit sort_view_closure(Comparator&& comparator)
-          : comparator_{std::move(comparator)} {
+      inline explicit sort_view_closure(Comparator&& compare)
+          : comparator_{std::move(compare)} {
       }
 
       template<std::ranges::viewable_range Range>
@@ -558,14 +558,14 @@ namespace pareto {
 
     struct sort_view_adaptor {
       template<std::ranges::viewable_range Range, typename Comparator>
-      inline auto operator()(Range&& range, Comparator&& comparator) const {
+      inline auto operator()(Range&& range, Comparator&& compare) const {
         return sort_view{std::forward<Range>(range),
-                         std::forward<Comparator>(comparator)};
+                         std::forward<Comparator>(compare)};
       }
 
       template<typename Comparator>
-      inline auto operator()(Comparator&& comparator) const {
-        return sort_view_closure{std::forward<Comparator>(comparator)};
+      inline auto operator()(Comparator&& compare) const {
+        return sort_view_closure{std::forward<Comparator>(compare)};
       }
     };
 
@@ -582,17 +582,17 @@ namespace pareto {
   }
 
   template<std::ranges::viewable_range Range, typename Comparator>
-  inline auto analyze(Range&& range, Comparator&& comparator) {
+  inline auto analyze(Range&& range, Comparator&& compare) {
     return details::analyze_impl(std::forward<Range>(range),
-                                 std::forward<Comparator>(comparator)) |
+                                 std::forward<Comparator>(compare)) |
            std::views::transform([](auto& item) { return solution{&item}; });
   }
 
   template<typename Tracker, typename Individual>
   concept tracker = requires(Tracker t, Individual& i, Individual const& ic) {
-                      { t.set(i) };
-                      { t.get(ic) } -> std::convertible_to<bool>;
-                    };
+    { t.set(i) };
+    { t.get(ic) } -> std::convertible_to<bool>;
+  };
 
   namespace details {
 
@@ -603,14 +603,14 @@ namespace pareto {
     void identify_inner(Individual& outer,
                         Range& inner,
                         Tracker& track,
-                        Comparator& comparator) {
+                        Comparator& compare) {
       for (auto&& in : inner) {
         if (!track.get(in)) {
           continue;
         }
 
         auto result = std::invoke(
-            comparator, in.evaluation().raw(), outer.evaluation().raw());
+            compare, in.evaluation().raw(), outer.evaluation().raw());
 
         if (result == std::weak_ordering::greater) {
           track.set(in);
@@ -633,9 +633,9 @@ namespace pareto {
   void identify_dominated(OldRange&& oldRange,
                           NewRange&& newRange,
                           Tracker track,
-                          Comparator comparator) {
+                          Comparator compare) {
     for (auto&& out : oldRange) {
-      details::identify_inner(out, newRange, track, comparator);
+      details::identify_inner(out, newRange, track, compare);
     }
 
     auto first = std::ranges::begin(newRange);
@@ -643,7 +643,7 @@ namespace pareto {
 
     for (auto&& out : newRange) {
       std::ranges::subrange in{++first, last};
-      details::identify_inner(out, in, track, comparator);
+      details::identify_inner(out, in, track, compare);
     }
   }
 

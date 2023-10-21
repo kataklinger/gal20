@@ -357,7 +357,7 @@ namespace scale {
     using individual_t = typename population_t::individual_t;
 
   public:
-    inline explicit power(context_t& context) {
+    inline explicit power(context_t& /*unused*/) {
     }
 
     inline void operator()(individual_t& individual) const {

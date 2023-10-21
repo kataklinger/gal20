@@ -2,13 +2,11 @@ cmake_minimum_required(VERSION 3.26)
 
 add_library(warnings INTERFACE)
 
-#[==[
 if(MSVC)
   target_compile_options(warnings INTERFACE /W4 /WX)
 else()
   target_compile_options(warnings INTERFACE -Wall -Wextra -Wpedantic -Werror)
 endif()
-]==]
 
 add_library(gal20_lib STATIC scrap.cpp)
 

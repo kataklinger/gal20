@@ -126,12 +126,12 @@ public:
   inline constexpr reproduction_context_with_scaling(
       population_t& population,
       history_t& statistics,
-      crossover_t const& crossover,
-      mutation_t const& mutation,
-      evaluator_t const& evaluator,
-      scaling_t const& scaling) noexcept
-      : base_t{population, statistics, crossover, mutation, evaluator}
-      , scaling_{scaling} {
+      crossover_t const& crossover_op,
+      mutation_t const& mutation_op,
+      evaluator_t const& evaluator_op,
+      scaling_t const& scaling_op) noexcept
+      : base_t{population, statistics, crossover_op, mutation_op, evaluator_op}
+      , scaling_{scaling_op} {
   }
 
   inline scaling_t const& scaling() const noexcept {

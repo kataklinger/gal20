@@ -37,34 +37,35 @@ pop_t::individual_t& get_child(parent_replacement_t&& x) {
 
 template<typename Population,
          gal::selection_range<typename Population::iterator_t> Range>
-void test_selection_range(Range&& r) {
+void test_selection_range(Range&& /*unused*/) {
 }
 
 template<typename Population, gal::selection<Population> Selection>
-void test_selection(Selection&& s) {
+void test_selection(Selection&& /*unused*/) {
 }
 
 template<typename Population,
          gal::coupling<Population, std::vector<pop_t::iterator_t>> Coupling>
-void test_coupling(Coupling&& s) {
+void test_coupling(Coupling&& /*unused*/) {
 }
 
 template<
     typename Population,
     gal::replacement<Population, std::vector<parent_replacement_t>> Replacement>
-void test_replacement(Replacement&& r) {
+void test_replacement(Replacement&& /*unused*/) {
 }
 
-std::vector<pop_t::iterator_t> s(pop_t const& p) {
+std::vector<pop_t::iterator_t> s(pop_t const& /*unused*/) {
   return {};
 }
 
-std::vector<parent_replacement_t> c(std::vector<pop_t::iterator_t>&& p) {
+std::vector<parent_replacement_t>
+    c(std::vector<pop_t::iterator_t>&& /*unused*/) {
   return {};
 }
 
-std::vector<pop_t::individual_t> r(pop_t& p,
-                                   std::vector<parent_replacement_t>&& v) {
+std::vector<pop_t::individual_t>
+    r(pop_t& /*unused*/, std::vector<parent_replacement_t>&& /*unused*/) {
   return {};
 }
 
@@ -269,7 +270,7 @@ void test_ground() {
 
   auto v = par_indv | gal::pareto::views::sort(comp);
 
-  std::ranges::for_each(v, [](auto&& f) {});
+  std::ranges::for_each(v, [](auto&& /*unused*/) {});
 
   auto mm1 = gal::pareto::analyze(par_indv, comp);
 
