@@ -18,31 +18,31 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/inc>)
 
 list(APPEND HEADER_LIST
-  "chromosome.hpp"
-  "configuration.hpp"
-  "context.hpp"
-  "coupling.hpp"
-  "criteria.hpp"
-  "crossover.hpp"
-  "elitism.hpp"
-  "fitness.hpp"
-  "individual.hpp"
-  "mutation.hpp"
-  "niching.hpp"
-  "observing.hpp"
-  "operation.hpp"
-  "pareto.hpp"
-  "population.hpp"
-  "projection.hpp"
-  "pruning.hpp"
-  "ranking.hpp"
-  "replacement.hpp"
-  "sampling.hpp"
-  "scaling.hpp"
-  "selection.hpp"
-  "soo.hpp"
-  "statistics.hpp"
-  "utility.hpp")
+  chromosome.hpp
+  configuration.hpp
+  context.hpp
+  coupling.hpp
+  criteria.hpp
+  crossover.hpp
+  elitism.hpp
+  fitness.hpp
+  individual.hpp
+  mutation.hpp
+  niching.hpp
+  observing.hpp
+  operation.hpp
+  pareto.hpp
+  population.hpp
+  projection.hpp
+  pruning.hpp
+  ranking.hpp
+  replacement.hpp
+  sampling.hpp
+  scaling.hpp
+  selection.hpp
+  soo.hpp
+  statistics.hpp
+  utility.hpp)
 
 list(TRANSFORM HEADER_LIST PREPEND $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 list(TRANSFORM HEADER_LIST PREPEND $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/inc/>)

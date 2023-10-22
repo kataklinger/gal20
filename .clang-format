@@ -70,6 +70,6 @@ BreakBeforeConceptDeclarations: Always
 IndentRequiresClause: 'true'
 InsertBraces: 'true'
 QualifierAlignment: Custom
-QualifierOrder: ['inline', 'static', 'constexpr', 'type', 'const', 'volatile']
+QualifierOrder: ['inline', 'static', 'friend', 'constexpr', 'type', 'const', 'volatile']
 
 ...
