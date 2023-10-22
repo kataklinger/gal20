@@ -198,6 +198,8 @@ namespace pareto {
 
   } // namespace details
 
+  using frontier_level = std::size_t;
+
   template<typename Impl>
   class frontier {
   public:
@@ -285,12 +287,12 @@ namespace pareto {
     public:
       template<std::ranges::range Members>
         requires std::same_as<member_t, std::ranges::range_value_t<Members>>
-      inline explicit frontier_impl(std::size_t level, Members&& members)
+      inline explicit frontier_impl(frontier_level level, Members&& members)
           : level_{level}
           , members_{std::ranges::begin(members), std::ranges::end(members)} {
       }
 
-      inline explicit frontier_impl(std::size_t level, members_t&& members)
+      inline explicit frontier_impl(frontier_level level, members_t&& members)
           : level_{level}
           , members_{std::move(members)} {
       }
@@ -312,7 +314,7 @@ namespace pareto {
       }
 
     private:
-      std::size_t level_;
+      frontier_level level_;
       members_t members_;
     };
 
