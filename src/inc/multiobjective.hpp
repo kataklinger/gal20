@@ -102,16 +102,16 @@ private:
 };
 
 struct pareto_preserved_t {};
-inline constexpr pareto_preserved_t pareto_preserved{};
+inline constexpr pareto_preserved_t pareto_preserved_tag{};
 
 struct pareto_reduced_t {};
-inline constexpr pareto_reduced_t pareto_reduced{};
+inline constexpr pareto_reduced_t pareto_reduced_tag{};
 
 struct pareto_nondominated_t {};
-inline constexpr pareto_nondominated_t pareto_nondominated{};
+inline constexpr pareto_nondominated_t pareto_nondominated_tag{};
 
 struct pareto_erased_t {};
-inline constexpr pareto_erased_t pareto_erased{};
+inline constexpr pareto_erased_t pareto_erased_tag{};
 
 namespace details {
 
