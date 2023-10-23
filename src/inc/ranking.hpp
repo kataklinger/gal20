@@ -1,58 +1,23 @@
 
 #pragma once
 
+#include "multiobjective.hpp"
 #include "pareto.hpp"
-#include "population.hpp"
 
 namespace gal {
 namespace rank {
 
-  template<typename Value>
-  concept rank_value = std::regular<Value> && std::totally_ordered<Value>;
+  struct pareto_preserved_t {};
+  inline constexpr pareto_preserved_t pareto_preserved{};
 
-  template<rank_value Value>
-  class rank_tag {
-  public:
-    using value_t = Value;
+  struct pareto_reduced_t {};
+  inline constexpr pareto_reduced_t pareto_reduced{};
 
-  public:
-    inline rank_tag(value_t value) noexcept
-        : value_{value} {
-    }
+  struct pareto_nondominated_t {};
+  inline constexpr pareto_nondominated_t pareto_nondominated{};
 
-    inline operator value_t() const noexcept {
-      return value_;
-    }
-
-    inline rank_tag& operator=(value_t value) noexcept {
-      value_ = value;
-      return *this;
-    }
-
-    inline value_t get() const noexcept {
-      return value_;
-    }
-
-  private:
-    value_t value_;
-  };
-
-  enum class binary_rank : std::uint8_t { nondominated, dominated, undefined };
-
-  inline auto operator<=>(binary_rank lhs, binary_rank rhs) noexcept {
-    using type = std::underlying_type_t<binary_rank>;
-    return static_cast<type>(lhs) <=> static_cast<type>(rhs);
-  }
-
-  using frontier_id = std::size_t;
-
-  using bin_rank_t = rank_tag<binary_rank>;
-  using int_rank_t = rank_tag<std::size_t>;
-  using real_rank_t = rank_tag<double>;
-
-  template<typename Population, typename RankTag>
-  concept ranked_population =
-      multiobjective_population<Population> && tagged_with<Population, RankTag>;
+  struct pareto_erased_t {};
+  inline constexpr pareto_erased_t pareto_erased{};
 
   namespace details {
 
@@ -67,84 +32,26 @@ namespace rank {
     }
 
     template<typename RankTag, ranked_population<RankTag> Population>
-    inline void clean(Population& population) {
+    inline void clean_tag(Population& population) {
       for (auto&& individual : population.individuals()) {
         get<RankTag>(individual) = {};
       }
     }
 
-  } // namespace details
-
-  struct fronts_preserved_t {};
-  inline constexpr fronts_preserved_t fronts_preserved{};
-
-  struct fronts_reduced_t {};
-  inline constexpr fronts_reduced_t fronts_reduced{};
-
-  struct fronts_nondominated_t {};
-  inline constexpr fronts_nondominated_t fronts_nondominated{};
-
-  struct fronts_erased_t {};
-  inline constexpr fronts_erased_t fronts_erased{};
-
-  template<typename Individual>
-  class pareto_fronts {
-  public:
-    using individual_t = Individual;
-    using individuals_t = std::vector<individual_t*>;
-    using front_boundery = typename std::vector<individual_t*>::iterator;
-
-  public:
-    inline explicit pareto_fronts(std::size_t max_individuals)
-        : max_individuals_{max_individuals} {
-      individuals_.reserve(max_individuals);
-    }
-
-    inline void add_inidividual(individual_t& individual) {
-      assert(individuals_.size() < max_individuals_);
-      individuals_.push_back(&individual);
-    }
-
-    inline void next() {
-      front_boundaries_.push_back(individuals_.end());
-    }
-
-    inline auto count() const noexcept {
-      front_boundaries_.size() + 1;
-    }
-
-    inline auto at(std::size_t front) const noexcept {
-      return std::ranges::subrange{front == 0 ? individuals_.begin()
-                                              : front_boundaries_[front - 1],
-                                   front_boundaries_[front]};
-    }
-
-    inline auto operator[](std::size_t front) const noexcept {
-      return at(front);
-    }
-
-  private:
-    std::size_t max_individuals_;
-    std::vector<individual_t*> individuals_;
-    std::vector<front_boundery> front_boundaries_;
-  };
-
-  namespace details {
-
     template<typename Population>
-    using population_fronts = pareto_fronts<typename Population::individual_t>;
+    using population_pareto = pareto_sets<typename Population::individual_t>;
 
     template<typename Population, typename Preserve>
-    class wrapped_fronts;
+    class wrapped_pareto;
 
     template<typename Population>
-    class wrapped_fronts<Population, fronts_preserved_t> {
+    class wrapped_pareto<Population, pareto_preserved_t> {
     public:
-      using base_fronts_t = population_fronts<Population>;
+      using base_pareto_t = population_pareto<Population>;
       using individual_t = typename Population::individual_t;
 
     public:
-      inline explicit wrapped_fronts(std::size_t max_individuals)
+      inline explicit wrapped_pareto(std::size_t max_individuals)
           : base_{max_individuals} {
       }
 
@@ -161,17 +68,17 @@ namespace rank {
       }
 
     private:
-      base_fronts_t base_;
+      base_pareto_t base_;
     };
 
     template<typename Population>
-    class wrapped_fronts<Population, fronts_reduced_t> {
+    class wrapped_pareto<Population, pareto_reduced_t> {
     public:
-      using base_fronts_t = population_fronts<Population>;
+      using base_pareto_t = population_pareto<Population>;
       using individual_t = typename Population::individual_t;
 
     public:
-      inline explicit wrapped_fronts(std::size_t max_individuals)
+      inline explicit wrapped_pareto(std::size_t max_individuals)
           : base_{max_individuals} {
       }
 
@@ -190,17 +97,17 @@ namespace rank {
       }
 
     private:
-      base_fronts_t base_;
+      base_pareto_t base_;
     };
 
     template<typename Population>
-    class wrapped_fronts<Population, fronts_nondominated_t> {
+    class wrapped_pareto<Population, pareto_nondominated_t> {
     public:
-      using base_fronts_t = population_fronts<Population>;
+      using base_pareto_t = population_pareto<Population>;
       using individual_t = typename Population::individual_t;
 
     public:
-      inline explicit wrapped_fronts(std::size_t max_individuals)
+      inline explicit wrapped_pareto(std::size_t max_individuals)
           : base_{max_individuals} {
       }
 
@@ -220,14 +127,14 @@ namespace rank {
 
     private:
       bool done_{};
-      base_fronts_t base_;
+      base_pareto_t base_;
     };
 
     template<typename Population>
-    class wrapped_fronts<Population, fronts_erased_t> {
+    class wrapped_pareto<Population, pareto_erased_t> {
       using individual_t = typename Population::individual_t;
 
-      inline explicit wrapped_fronts(std::size_t /*unused*/) {
+      inline explicit wrapped_pareto(std::size_t /*unused*/) {
       }
 
       inline void add_inidividual(individual_t& individual) noexcept {
@@ -237,49 +144,48 @@ namespace rank {
       }
 
       inline auto unwrap() noexcept {
-        return population_fronts<Population>{};
+        return population_pareto<Population>{};
       }
     };
 
     template<typename Population>
-    inline void
-        populate_binary_front(Population& population,
-                              details::population_fronts<Population>& fronts,
-                              binary_rank which) {
+    inline void populate_binary_pareto(Population& population,
+                                       population_pareto<Population>& output,
+                                       binary_rank which) {
       for (auto&& individual : population.individuals()) {
-        if (details::get<bin_rank_t>(individual) == which) {
-          fronts.add_individuals(individual);
+        if (get<bin_rank_t>(individual) == which) {
+          output.add_individuals(individual);
         }
       }
 
-      fronts.next();
+      output.next();
     }
 
     template<typename Population>
-    inline auto generate_binary_fronts(Population& population,
-                                       fronts_reduced_t /*unused*/) {
-      details::population_fronts<Population> fronts{population.size()};
+    inline auto generate_binary_pareto(Population& population,
+                                       pareto_reduced_t /*unused*/) {
+      population_pareto<Population> output{population.size()};
 
-      populate_binary_front(population, fronts, binary_rank::nondominated);
-      populate_binary_front(population, fronts, binary_rank::dominated);
+      populate_binary_pareto(population, output, binary_rank::nondominated);
+      populate_binary_pareto(population, output, binary_rank::dominated);
 
-      return fronts;
+      return output;
     }
 
     template<typename Population>
-    inline auto generate_binary_fronts(Population& population,
-                                       fronts_nondominated_t /*unused*/) {
-      details::population_fronts<Population> fronts{population.size()};
+    inline auto generate_binary_pareto(Population& population,
+                                       pareto_nondominated_t /*unused*/) {
+      population_pareto<Population> output{population.size()};
 
-      populate_binary_front(population, fronts, binary_rank::nondominated);
+      populate_binary_pareto(population, output, binary_rank::nondominated);
 
-      return fronts;
+      return output;
     }
 
     template<typename Population>
-    inline auto generate_binary_fronts(Population& population,
-                                       fronts_erased_t /*unused*/) {
-      return details::population_fronts<Population>{};
+    inline auto generate_binary_pareto(Population& population,
+                                       pareto_erased_t /*unused*/) {
+      return population_pareto<Population>{};
     }
 
   } // namespace details
@@ -302,10 +208,10 @@ namespace rank {
   public:
     template<ranked_population<bin_rank_t> Population>
     auto operator()(Population& population,
-                    fronts_preserved_t /*unused*/) const {
-      details::clean<bin_rank_t>(population);
+                    pareto_preserved_t /*unused*/) const {
+      details::clean_tag<bin_rank_t>(population);
 
-      details::population_fronts<Population> fronts{population.size()};
+      details::population_pareto<Population> output{population.size()};
       auto current = binary_rank::nondominated;
 
       for (auto&& frontier :
@@ -315,18 +221,18 @@ namespace rank {
           auto& ind = solution.individual();
           details::get<bin_rank_t>(ind) = current;
 
-          fronts.add_inidividual(ind);
+          output.add_inidividual(ind);
         }
 
         current = binary_rank::dominated;
-        fronts.next();
+        output.next();
       }
 
-      return fronts;
+      return output;
     }
 
-    template<ranked_population<bin_rank_t> Population, typename Fronts>
-    void operator()(Population& population, Fronts preserve) const {
+    template<ranked_population<bin_rank_t> Population, typename Pareto>
+    void operator()(Population& population, Pareto preserve) const {
       std::vector<typename Population::individual_t> ranked, nonranked;
       std::ranges::partition_copy(population.individuals(),
                                   std::back_inserter(ranked),
@@ -339,18 +245,18 @@ namespace rank {
       pareto::identify_dominated(
           ranked, nonranked, tracker{}, population.raw_comparator());
 
-      return details::generate_binary_fronts(population, preserve);
+      return details::generate_binary_pareto(population, preserve);
     }
   };
 
   // pareto front level (nsga & nsga-ii)
   class level {
   public:
-    template<ranked_population<int_rank_t> Population, typename Fronts>
-    auto operator()(Population& population, Fronts /*unused*/) const {
-      details::clean<int_rank_t>(population);
+    template<ranked_population<int_rank_t> Population, typename Pareto>
+    auto operator()(Population& population, Pareto /*unused*/) const {
+      details::clean_tag<int_rank_t>(population);
 
-      details::wrapped_fronts<Population, Fronts> fronts{population.size()};
+      details::wrapped_pareto<Population, Pareto> output{population.size()};
 
       for (auto&& frontier :
            population.indviduals() |
@@ -359,13 +265,13 @@ namespace rank {
           auto& ind = solution.individual();
           details::get<int_rank_t>(ind) = frontier.level();
 
-          fronts.add_individual(ind);
+          output.add_individual(ind);
         }
 
-        fronts.next();
+        output.next();
       }
 
-      return fronts.extract();
+      return output.extract();
     }
   };
 
@@ -373,60 +279,60 @@ namespace rank {
 
     template<typename Population, typename RankTag>
     inline auto prepare_strength_fast(Population& pop) {
-      clean<RankTag>(pop);
+      clean_tag<RankTag>(pop);
       return pareto::analyze(pop.indviduals(), pop.raw_comparator());
     }
 
     template<typename Population, typename RankTag>
     inline auto prepare_strength_slow(Population& pop) {
-      clean<RankTag>(pop);
-      return population_fronts<Population>{pop.size()};
+      clean_tag<RankTag>(pop);
+      return population_pareto<Population>{pop.size()};
     }
 
-    template<typename Solutions, typename Front>
-    inline void populate_strength_front(Solutions& solutions,
-                                        Front& fronts,
-                                        bool which) {
+    template<typename Solutions, typename Pareto>
+    inline void populate_strength_pareto(Solutions& solutions,
+                                         Pareto& output,
+                                         bool which) {
       for (auto&& solution : solutions) {
         if (solution.nondominated() == which) {
-          fronts.add_individuals(solution.individual());
+          output.add_individuals(solution.individual());
         }
       }
 
-      fronts.next();
+      output.next();
     }
 
     template<typename Solutions>
-    inline auto generate_strength_fronts(Solutions& solutions,
+    inline auto generate_strength_pareto(Solutions& solutions,
                                          std::size_t size,
-                                         fronts_reduced_t /*unused*/) {
+                                         pareto_reduced_t /*unused*/) {
       using individual_t = typename Solutions::value_type::individual_t;
-      pareto_fronts<individual_t> fronts{size};
+      pareto_sets<individual_t> output{size};
 
-      populate_strength_front(solutions, fronts, true);
-      populate_strength_front(solutions, fronts, false);
+      populate_strength_pareto(solutions, output, true);
+      populate_strength_pareto(solutions, output, false);
 
-      return fronts;
+      return output;
     }
 
     template<typename Solutions>
-    inline auto generate_strength_fronts(Solutions& solutions,
+    inline auto generate_strength_pareto(Solutions& solutions,
                                          std::size_t size,
-                                         fronts_nondominated_t /*unused*/) {
+                                         pareto_nondominated_t /*unused*/) {
       using individual_t = typename Solutions::value_type::individual_t;
-      pareto_fronts<individual_t> fronts{size};
+      pareto_sets<individual_t> output{size};
 
-      populate_strength_front(solutions, fronts, true);
+      populate_strength_pareto(solutions, output, true);
 
-      return fronts;
+      return output;
     }
 
     template<typename Solutions>
-    inline auto generate_strength_fronts(Solutions& solutions,
+    inline auto generate_strength_pareto(Solutions& solutions,
                                          std::size_t /*unused*/,
-                                         fronts_erased_t /*unused*/) {
+                                         pareto_erased_t /*unused*/) {
       using individual_t = typename Solutions::value_type::individual_t;
-      return pareto_fronts<individual_t>{};
+      return pareto_sets<individual_t>{};
     }
 
   } // namespace details
@@ -434,11 +340,11 @@ namespace rank {
   // accumulated pareto level (rdga)
   class accumulated_level {
   public:
-    template<ranked_population<int_rank_t> Population, typename Fronts>
-    void operator()(Population& population, Fronts /*unused*/) const {
-      details::clean<int_rank_t>(population);
+    template<ranked_population<int_rank_t> Population, typename Pareto>
+    void operator()(Population& population, Pareto /*unused*/) const {
+      details::clean_tag<int_rank_t>(population);
 
-      details::wrapped_fronts<Population, Fronts> fronts{population.size()};
+      details::wrapped_pareto<Population, Pareto> output{population.size()};
 
       for (auto&& frontier :
            population.indviduals() |
@@ -453,13 +359,13 @@ namespace rank {
                 details::get<int_rank_t>(ind);
           }
 
-          fronts.add_individual(ind);
+          output.add_individual(ind);
         }
 
-        fronts.next();
+        output.next();
       }
 
-      return fronts.extract();
+      return output.extract();
     }
   };
 
@@ -468,8 +374,8 @@ namespace rank {
   public:
     template<ranked_population<real_rank_t> Population>
     auto operator()(Population& population,
-                    fronts_preserved_t /*unused*/) const {
-      auto fronts = details::prepare_strength_slow(population);
+                    pareto_preserved_t /*unused*/) const {
+      auto output = details::prepare_strength_slow(population);
 
       auto sorted = population.indviduals() |
                     pareto::views::sort(population.raw_comparator());
@@ -482,27 +388,27 @@ namespace rank {
       for (auto&& solution : first->members()) {
         assign_nondominated_strength(solution, dominated_count);
 
-        fronts.add_inidividual(solution.individual());
+        output.add_inidividual(solution.individual());
       }
 
-      fronts.next();
+      output.next();
 
       for (auto&& frontier : std::ranges::subrange{std::ranges::next(first),
                                                    std::ranges::end(sorted)}) {
         for (auto&& solution : frontier.members()) {
           assign_dominated_strength(solution);
 
-          fronts.add_inidividual(solution.individual());
+          output.add_inidividual(solution.individual());
         }
 
-        fronts.next();
+        output.next();
       }
 
-      return fronts;
+      return output;
     }
 
-    template<ranked_population<real_rank_t> Population, typename Fronts>
-    auto operator()(Population& population, Fronts preserved) const {
+    template<ranked_population<real_rank_t> Population, typename Pareto>
+    auto operator()(Population& population, Pareto preserved) const {
       auto analyzed = details::prepare_strength_fast<real_rank_t>(population);
 
       auto dominated_count = std::ranges::count_if(
@@ -517,7 +423,7 @@ namespace rank {
         }
       }
 
-      return details::generate_strength_fronts(
+      return details::generate_strength_pareto(
           analyzed, population.size(), preserved);
     }
 
@@ -546,8 +452,8 @@ namespace rank {
   public:
     template<ranked_population<int_rank_t> Population>
     auto operator()(Population& population,
-                    fronts_preserved_t /*unused*/) const {
-      auto fronts = details::prepare_strength_slow(population);
+                    pareto_preserved_t /*unused*/) const {
+      auto output = details::prepare_strength_slow(population);
 
       for (auto&& frontier :
            population.indviduals() |
@@ -555,24 +461,24 @@ namespace rank {
         for (auto&& solution : frontier.members()) {
           assign_strength(solution);
 
-          fronts.add_inidividual(solution.individual());
+          output.add_inidividual(solution.individual());
         }
 
-        fronts.next();
+        output.next();
       }
 
-      return fronts;
+      return output;
     }
 
-    template<ranked_population<int_rank_t> Population, typename Fronts>
-    auto operator()(Population& population, Fronts preserved) const {
+    template<ranked_population<int_rank_t> Population, typename Pareto>
+    auto operator()(Population& population, Pareto preserved) const {
       auto analyzed = details::prepare_strength_fast<int_rank_t>(population);
 
       for (auto&& solution : analyzed) {
         assign_strength(solution);
       }
 
-      return details::generate_strength_fronts(
+      return details::generate_strength_pareto(
           analyzed, population.size(), preserved);
     }
 

@@ -27,6 +27,7 @@ list(APPEND HEADER_LIST
   elitism.hpp
   fitness.hpp
   individual.hpp
+  multiobjective.hpp
   mutation.hpp
   niching.hpp
   observing.hpp
