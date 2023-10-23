@@ -6,19 +6,6 @@
 
 namespace gal {
 namespace rank {
-
-  struct pareto_preserved_t {};
-  inline constexpr pareto_preserved_t pareto_preserved{};
-
-  struct pareto_reduced_t {};
-  inline constexpr pareto_reduced_t pareto_reduced{};
-
-  struct pareto_nondominated_t {};
-  inline constexpr pareto_nondominated_t pareto_nondominated{};
-
-  struct pareto_erased_t {};
-  inline constexpr pareto_erased_t pareto_erased{};
-
   namespace details {
 
     template<typename RankTag, typename Individual>

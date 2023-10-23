@@ -101,4 +101,39 @@ private:
   std::vector<set_boundery> set_boundaries_;
 };
 
+struct pareto_preserved_t {};
+inline constexpr pareto_preserved_t pareto_preserved{};
+
+struct pareto_reduced_t {};
+inline constexpr pareto_reduced_t pareto_reduced{};
+
+struct pareto_nondominated_t {};
+inline constexpr pareto_nondominated_t pareto_nondominated{};
+
+struct pareto_erased_t {};
+inline constexpr pareto_erased_t pareto_erased{};
+
+namespace details {
+
+  template<typename Operation, typename Population, typename PreserveTag>
+  concept ranking_base =
+      std::is_invocable_v<
+          Operation,
+          std::add_lvalue_reference_t<Population>,
+          std::add_lvalue_reference_t<std::add_const_t<PreserveTag>>> &&
+      std::same_as<std::invoke_result_t<Operation,
+                                        std::add_lvalue_reference_t<Population>,
+                                        std::add_lvalue_reference_t<
+                                            std::add_const_t<PreserveTag>>>,
+                   pareto_sets<typename Population::individual_t>>;
+
+}
+
+template<typename Operation, typename Population>
+concept ranking =
+    details::ranking_base<Operation, Population, pareto_preserved_t> &&
+    details::ranking_base<Operation, Population, pareto_reduced_t> &&
+    details::ranking_base<Operation, Population, pareto_nondominated_t> &&
+    details::ranking_base<Operation, Population, pareto_erased_t>;
+
 } // namespace gal
