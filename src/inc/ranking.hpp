@@ -7,16 +7,16 @@
 namespace gal {
 namespace rank {
 
-  template<typename Rank>
-  concept ranking = std::regular<Rank> && std::totally_ordered<Rank>;
+  template<typename Value>
+  concept rank_value = std::regular<Value> && std::totally_ordered<Value>;
 
-  template<ranking Value>
-  class rank {
+  template<rank_value Value>
+  class rank_tag {
   public:
     using value_t = Value;
 
   public:
-    inline rank(value_t value) noexcept
+    inline rank_tag(value_t value) noexcept
         : value_{value} {
     }
 
@@ -24,7 +24,7 @@ namespace rank {
       return value_;
     }
 
-    inline rank& operator=(value_t value) noexcept {
+    inline rank_tag& operator=(value_t value) noexcept {
       value_ = value;
       return *this;
     }
@@ -46,30 +46,30 @@ namespace rank {
 
   using frontier_id = std::size_t;
 
-  using bin_rank_t = rank<binary_rank>;
-  using int_rank_t = rank<std::size_t>;
-  using real_rank_t = rank<double>;
+  using bin_rank_t = rank_tag<binary_rank>;
+  using int_rank_t = rank_tag<std::size_t>;
+  using real_rank_t = rank_tag<double>;
 
-  template<typename Population, typename Rank>
+  template<typename Population, typename RankTag>
   concept ranked_population =
-      multiobjective_population<Population> && tagged_with<Population, Rank>;
+      multiobjective_population<Population> && tagged_with<Population, RankTag>;
 
   namespace details {
 
-    template<typename Rank, typename Individual>
+    template<typename RankTag, typename Individual>
     inline auto& get(Individual& individual) noexcept {
-      return std::get<Rank>(individual.tags());
+      return std::get<RankTag>(individual.tags());
     }
 
-    template<typename Rank, typename Individual>
+    template<typename RankTag, typename Individual>
     inline auto const& get(Individual const& individual) noexcept {
-      return std::get<Rank>(individual.tags());
+      return std::get<RankTag>(individual.tags());
     }
 
-    template<typename Rank, ranked_population<Rank> Population>
+    template<typename RankTag, ranked_population<RankTag> Population>
     inline void clean(Population& population) {
       for (auto&& individual : population.individuals()) {
-        get<Rank>(individual) = {};
+        get<RankTag>(individual) = {};
       }
     }
 
@@ -371,15 +371,15 @@ namespace rank {
 
   namespace details {
 
-    template<typename Population, typename Rank>
+    template<typename Population, typename RankTag>
     inline auto prepare_strength_fast(Population& pop) {
-      clean<Rank>(pop);
+      clean<RankTag>(pop);
       return pareto::analyze(pop.indviduals(), pop.raw_comparator());
     }
 
-    template<typename Population, typename Rank>
+    template<typename Population, typename RankTag>
     inline auto prepare_strength_slow(Population& pop) {
-      clean<Rank>(pop);
+      clean<RankTag>(pop);
       return population_fronts<Population>{pop.size()};
     }
 
