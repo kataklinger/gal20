@@ -8,14 +8,10 @@
 namespace gal {
 namespace config {
 
-  // clang-format off
-
   template<typename Section>
   concept section =
       !std::is_final_v<Section> && std::copy_constructible<Section> &&
       std::move_constructible<Section>;
-
-  // clang-format on
 
   template<template<typename> class... Interfaces>
   struct plist {};

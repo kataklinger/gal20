@@ -32,21 +32,32 @@ struct disabled_comparator {
   }
 };
 
+namespace details {
+
+  template<typename Type>
+  concept additive = requires(Type a) {
+    { a + a } -> std::same_as<Type>;
+    { a - a } -> std::same_as<Type>;
+  };
+
+  template<typename Type>
+  concept averageable = requires(Type a) {
+    { a / std::size_t(1) } -> std::same_as<Type>;
+  };
+
+} // namespace details
+
 template<typename Type>
-concept arithmetic_fitness = fitness<Type> && requires(Type a) {
-                                                { a + a } -> std::same_as<Type>;
-                                                { a - a } -> std::same_as<Type>;
-                                                {
-                                                  a / std::size_t(1)
-                                                  } -> std::same_as<Type>;
-                                              };
+concept averageable_fitness =
+    fitness<Type> && details::additive<Type> && details::averageable<Type>;
 
 template<typename Fitness>
-concept integer_fitness = arithmetic_fitness<Fitness> && std::integral<Fitness>;
+concept integer_fitness =
+    averageable_fitness<Fitness> && std::integral<Fitness>;
 
 template<typename Fitness>
 concept real_fitness =
-    arithmetic_fitness<Fitness> && std::floating_point<Fitness>;
+    averageable_fitness<Fitness> && std::floating_point<Fitness>;
 
 template<fitness Fitness>
 struct multiobjective_value {
@@ -60,22 +71,28 @@ using multiobjective_value_t = typename multiobjective_value<Fitness>::type;
 template<typename Fitness>
 concept multiobjective_fitness =
     std::ranges::sized_range<Fitness> &&
+    std::ranges::random_access_range<Fitness> &&
     std::totally_ordered<multiobjective_value_t<Fitness>>;
+
+template<typename Fitness>
+concept crowding_fitness =
+    multiobjective_fitness<Fitness> &&
+    details::additive<multiobjective_value_t<Fitness>> &&
+    std::convertible_to<multiobjective_value_t<Fitness>, double>;
 
 template<typename Totalizator>
 concept fitness_totalizator =
-    std::semiregular<Totalizator> &&
-    requires(Totalizator t) {
-      requires arithmetic_fitness<typename Totalizator::value_t>;
+    std::semiregular<Totalizator> && requires(Totalizator t) {
+      requires averageable_fitness<typename Totalizator::value_t>;
 
       {
         t.add(std::declval<typename Totalizator::value_t>())
-        } -> std::convertible_to<Totalizator>;
+      } -> std::convertible_to<Totalizator>;
 
       { t.sum() } -> std::convertible_to<typename Totalizator::value_t>;
     };
 
-template<arithmetic_fitness Value>
+template<averageable_fitness Value>
 class integer_fitness_totalizator {
 public:
   using value_t = Value;
@@ -100,7 +117,7 @@ private:
   value_t sum_{};
 };
 
-template<arithmetic_fitness Value>
+template<averageable_fitness Value>
 class real_fitness_totalizator {
 public:
   using value_t = Value;
@@ -224,8 +241,8 @@ public:
   }
 
   inline explicit evaluation(raw_t const& raw, scaled_t const& scaled) noexcept(
-      std::is_nothrow_copy_constructible_v<raw_t>&&
-          std::is_nothrow_copy_constructible_v<scaled_t>)
+      std::is_nothrow_copy_constructible_v<raw_t> &&
+      std::is_nothrow_copy_constructible_v<scaled_t>)
       : raw_{raw}
       , scaled_{scaled} {
   }

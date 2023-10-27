@@ -31,6 +31,19 @@ concept evaluator =
         Operation,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>>;
 
+template<typename Operation, typename Chromosome>
+concept proximation =
+    std::is_invocable_v<
+        Operation,
+        std::add_lvalue_reference_t<std::add_const_t<Chromosome>>,
+        std::add_lvalue_reference_t<std::add_const_t<Chromosome>>> &&
+    std::convertible_to<
+        std::invoke_result_t<
+            Operation,
+            std::add_lvalue_reference_t<std::add_const_t<Chromosome>>,
+            std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>,
+        double>;
+
 template<chromosome Chromosome, evaluator<Chromosome> Evaluator>
 using get_evaluator_result_t = std::invoke_result_t<
     Evaluator,
@@ -81,17 +94,13 @@ template<typename Scaling, typename Population>
 inline constexpr auto can_scale_global_v =
     can_scale_global<Scaling, Population>::value;
 
-// clang-format off
-
 template<typename Scaling, typename Population>
 concept local_scaling = can_scale_local_v<Scaling, Population> &&
-    !can_scale_global_v<Scaling, Population>;
+                        !can_scale_global_v<Scaling, Population>;
 
 template<typename Scaling, typename Population>
 concept global_scaling = can_scale_global_v<Scaling, Population> &&
-    !can_scale_local_v<Scaling, Population>;
-
-// clang-format on
+                         !can_scale_local_v<Scaling, Population>;
 
 template<typename Scaling, typename Population>
 concept scaling =

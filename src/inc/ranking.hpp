@@ -8,23 +8,6 @@ namespace gal {
 namespace rank {
   namespace details {
 
-    template<typename RankTag, typename Individual>
-    inline auto& get(Individual& individual) noexcept {
-      return std::get<RankTag>(individual.tags());
-    }
-
-    template<typename RankTag, typename Individual>
-    inline auto const& get(Individual const& individual) noexcept {
-      return std::get<RankTag>(individual.tags());
-    }
-
-    template<typename RankTag, ranked_population<RankTag> Population>
-    inline void clean_tag(Population& population) {
-      for (auto&& individual : population.individuals()) {
-        get<RankTag>(individual) = {};
-      }
-    }
-
     template<typename Population>
     using population_pareto = pareto_sets<typename Population::individual_t>;
 
@@ -183,12 +166,12 @@ namespace rank {
     struct tracker {
       template<typename Individual>
       inline bool get(Individual const& individual) const noexcept {
-        return details::get<bin_rank_t>(individual) == binary_rank::dominated;
+        return get_tag<bin_rank_t>(individual) == binary_rank::dominated;
       }
 
       template<typename Individual>
       inline void set(Individual& individual) const noexcept {
-        details::get<bin_rank_t>(individual) = binary_rank::dominated;
+        get_tag<bin_rank_t>(individual) = binary_rank::dominated;
       }
     };
 
@@ -196,7 +179,7 @@ namespace rank {
     template<ranked_population<bin_rank_t> Population>
     auto operator()(Population& population,
                     pareto_preserved_t /*unused*/) const {
-      details::clean_tag<bin_rank_t>(population);
+      clean_tags<bin_rank_t>(population);
 
       details::population_pareto<Population> output{population.size()};
       auto current = binary_rank::nondominated;
@@ -206,7 +189,7 @@ namespace rank {
                pareto::views::sort(population.raw_comparator())) {
         for (auto&& solution : frontier.members()) {
           auto& ind = solution.individual();
-          details::get<bin_rank_t>(ind) = current;
+          get_tag<bin_rank_t>(ind) = current;
 
           output.add_inidividual(ind);
         }
@@ -225,7 +208,7 @@ namespace rank {
                                   std::back_inserter(ranked),
                                   std::back_inserter(nonranked),
                                   [](auto const& ind) {
-                                    return details::get<bin_rank_t>(ind) !=
+                                    return get_tag<bin_rank_t>(ind) !=
                                            binary_rank::undefined;
                                   });
 
@@ -241,7 +224,7 @@ namespace rank {
   public:
     template<ranked_population<int_rank_t> Population, typename Pareto>
     auto operator()(Population& population, Pareto /*unused*/) const {
-      details::clean_tag<int_rank_t>(population);
+      clean_tags<int_rank_t>(population);
 
       details::wrapped_pareto<Population, Pareto> output{population.size()};
 
@@ -250,7 +233,7 @@ namespace rank {
                pareto::views::sort(population.raw_comparator())) {
         for (auto&& solution : frontier.members()) {
           auto& ind = solution.individual();
-          details::get<int_rank_t>(ind) = frontier.level();
+          get_tag<int_rank_t>(ind) = frontier.level();
 
           output.add_individual(ind);
         }
@@ -266,13 +249,13 @@ namespace rank {
 
     template<typename Population, typename RankTag>
     inline auto prepare_strength_fast(Population& pop) {
-      clean_tag<RankTag>(pop);
+      clean_tags<RankTag>(pop);
       return pareto::analyze(pop.indviduals(), pop.raw_comparator());
     }
 
     template<typename Population, typename RankTag>
     inline auto prepare_strength_slow(Population& pop) {
-      clean_tag<RankTag>(pop);
+      clean_tags<RankTag>(pop);
       return population_pareto<Population>{pop.size()};
     }
 
@@ -329,7 +312,7 @@ namespace rank {
   public:
     template<ranked_population<int_rank_t> Population, typename Pareto>
     void operator()(Population& population, Pareto /*unused*/) const {
-      details::clean_tag<int_rank_t>(population);
+      clean_tags<int_rank_t>(population);
 
       details::wrapped_pareto<Population, Pareto> output{population.size()};
 
@@ -339,11 +322,11 @@ namespace rank {
         for (auto&& solution : frontier.members()) {
           auto& ind = solution.individual();
 
-          details::get<int_rank_t>(ind) += 1;
+          get_tag<int_rank_t>(ind) += 1;
 
           for (auto&& dominated : solution.dominated()) {
-            details::get<int_rank_t>(dominated.individual()) +=
-                details::get<int_rank_t>(ind);
+            get_tag<int_rank_t>(dominated.individual()) +=
+                get_tag<int_rank_t>(ind);
           }
 
           output.add_individual(ind);
@@ -421,16 +404,16 @@ namespace rank {
                                      std::size_t dominated_count) noexcept {
       auto s =
           solution.dominated_total() / static_cast<double>(dominated_count);
-      details::get<real_rank_t>(solution.individual()) = s;
+      get_tag<real_rank_t>(solution.individual()) = s;
 
       for (auto&& dominated : solution.dominated()) {
-        details::get<real_rank_t>(dominated.individual()) += s;
+        get_tag<real_rank_t>(dominated.individual()) += s;
       }
     };
 
     template<typename Solution>
     inline static void assign_dominated_strength(Solution& solution) noexcept {
-      details::get<real_rank_t>(solution.individual()) += 1.0;
+      get_tag<real_rank_t>(solution.individual()) += 1.0;
     };
   };
 
@@ -475,7 +458,7 @@ namespace rank {
       auto s = solution.dominated_total();
 
       for (auto&& dominated : solution.dominated()) {
-        details::get<int_rank_t>(dominated.individual()) += s;
+        get_tag<int_rank_t>(dominated.individual()) += s;
       }
     }
   };

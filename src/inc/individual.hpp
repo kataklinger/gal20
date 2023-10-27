@@ -23,8 +23,8 @@ public:
   template<util::forward_ref<chromosome_t> C, util::forward_ref<evaluation_t> E>
   inline individual(C&& chromosome, E&& evaluation) noexcept(
       util::is_nothrow_forward_constructibles_v<decltype(chromosome),
-                                                decltype(evaluation)>&&
-          std::is_nothrow_default_constructible_v<tags_t>)
+                                                decltype(evaluation)> &&
+      std::is_nothrow_default_constructible_v<tags_t>)
       : chromosome_{std::forward<C>(chromosome)}
       , evaluation_{std::forward<E>(evaluation)}
       , tags_{} {
@@ -46,8 +46,8 @@ public:
            util::forward_ref<raw_fitness_t> F>
   inline individual(C&& chromosome, F&& fitness) noexcept(
       util::is_nothrow_forward_constructibles_v<decltype(chromosome),
-                                                decltype(fitness)>&&
-          std::is_nothrow_default_constructible_v<tags_t>)
+                                                decltype(fitness)> &&
+      std::is_nothrow_default_constructible_v<tags_t>)
       : individual{std::forward<C>(chromosome),
                    evaluation_t{std::forward<F>(fitness)}} {
   }
@@ -97,26 +97,30 @@ private:
   [[no_unique_address]] tags_t tags_;
 };
 
+template<typename Tag, typename... Tys>
+inline auto& get_tag(individual<Tys...>& individual) noexcept {
+  return std::get<Tag>(individual.tags());
+}
+
+template<typename Tag, typename... Tys>
+inline auto const& get_tag(individual<Tys...> const& individual) noexcept {
+  return std::get<Tag>(individual.tags());
+}
+
 using ordinal_t = std::optional<std::size_t>;
 
 template<typename Range, typename Selected>
-concept selection_range = std::ranges::random_access_range<Range> &&
-                          requires(Range r) {
-                            {
-                              *std::ranges::begin(r)
-                              } -> util::decays_to<Selected>;
-                          };
+concept selection_range =
+    std::ranges::random_access_range<Range> && requires(Range r) {
+      { *std::ranges::begin(r) } -> util::decays_to<Selected>;
+    };
 
 template<typename Range, typename Replaced, typename Replacement>
-concept replacement_range = std::ranges::random_access_range<Range> &&
-                            requires(Range r) {
-                              {
-                                get_parent(*std::ranges::begin(r))
-                                } -> util::decays_to<Replaced>;
+concept replacement_range =
+    std::ranges::random_access_range<Range> && requires(Range r) {
+      { get_parent(*std::ranges::begin(r)) } -> util::decays_to<Replaced>;
 
-                              {
-                                get_child(*std::ranges::begin(r))
-                                } -> util::decays_to<Replacement>;
-                            };
+      { get_child(*std::ranges::begin(r)) } -> util::decays_to<Replacement>;
+    };
 
 } // namespace gal

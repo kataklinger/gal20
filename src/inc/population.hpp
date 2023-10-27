@@ -281,22 +281,22 @@ template<typename FitnessType, typename Population>
 using get_fitness_comparator_t =
     typename get_fitness_comparator<FitnessType>::template type<Population>;
 
-// clang-format off
-
 template<typename Population, typename FitnessTag>
 concept ordered_population =
     !std::same_as<get_fitness_comparator_t<FitnessTag, Population>,
                   disabled_comparator>;
 
-// clang-format on
-
 template<typename Population>
 concept multiobjective_population =
     multiobjective_fitness<typename Population::raw_fitness_t>;
 
+template<typename Population>
+concept crowding_population =
+    crowding_fitness<typename Population::raw_fitness_t>;
+
 template<typename Population, typename FitnessTag>
 concept averageable_population =
-    arithmetic_fitness<get_fitness_t<FitnessTag, Population>>;
+    averageable_fitness<get_fitness_t<FitnessTag, Population>>;
 
 namespace details {
 
@@ -324,5 +324,21 @@ inline constexpr auto is_tagged_with_v =
 
 template<typename Population, typename... Tags>
 concept tagged_with = is_tagged_with_v<Population, Tags...>;
+
+template<std::default_initializable Tag,
+         chromosome Chromosome,
+         fitness Raw,
+         comparator<Raw> RawCompare,
+         fitness Scaled,
+         comparator<Scaled> ScaledCompare,
+         typename Tags>
+inline void clean_tags(
+    population<Chromosome, Raw, RawCompare, Scaled, ScaledCompare, Tags>& pop)
+  requires(details::has_tag_impl<Tags, Tag>::value)
+{
+  for (auto&& individual : pop.individuals()) {
+    get_tag<Tag>(individual) = {};
+  }
+}
 
 } // namespace gal

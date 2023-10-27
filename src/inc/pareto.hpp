@@ -405,7 +405,7 @@ namespace pareto {
     using individual_t = Individual;
     using state_t = details::state<individual_t>;
 
-    using frontiers_iterator_t = typename state_t::frontiers_iterator_t;
+    using base_iterator_t = typename state_t::frontiers_iterator_t;
 
   public:
     using difference_type = std::ptrdiff_t;
@@ -462,7 +462,7 @@ namespace pareto {
 
   private:
     state_t* state_;
-    frontiers_iterator_t base_;
+    base_iterator_t base_;
   };
 
   template<typename Ty>

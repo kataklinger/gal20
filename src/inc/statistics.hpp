@@ -112,14 +112,10 @@ namespace stats {
 
   } // namespace details
 
-  // clang-format off
-
   template<typename Model, typename Population>
   concept model = std::semiregular<typename Model::template body<Population>> &&
                   !std::is_final_v<typename Model::template body<Population>> &&
                   details::is_model_constructor_v<Model, Population>;
-
-  // clang-format on
 
   namespace details {
 
@@ -442,11 +438,10 @@ namespace stats {
   using square_root_result_t = typename square_root<Value>::result_t;
 
   template<typename Fitness>
-  concept deviation_fitness =
-      arithmetic_fitness<Fitness> && requires {
-                                       typename square_root<Fitness>::result_t;
-                                       typename square_root<Fitness>::result_t;
-                                     };
+  concept deviation_fitness = averageable_fitness<Fitness> && requires {
+    typename square_root<Fitness>::result_t;
+    typename square_root<Fitness>::result_t;
+  };
 
   template<deviation_fitness Fitness>
   struct fitness_deviation_types {
@@ -590,14 +585,13 @@ namespace stats {
   concept tracked_models = tracks_models_v<Statistics, Models...>;
 
   template<typename Statistics>
-  concept statistical =
-      requires(Statistics s) {
-        typename Statistics::population_t;
+  concept statistical = requires(Statistics s) {
+    typename Statistics::population_t;
 
-        {
-          s.next(std::declval<typename Statistics::population_t&>())
-          } -> std::convertible_to<Statistics>;
-      };
+    {
+      s.next(std::declval<typename Statistics::population_t&>())
+    } -> std::convertible_to<Statistics>;
+  };
 
   struct disabled_timer {};
 
@@ -669,13 +663,10 @@ namespace stats {
     using compute_result_t = std::remove_cvref_t<std::invoke_result_t<Fn>>;
   }
 
-  // clang-format off
-
   template<typename Fn>
-  concept simple_computation = std::is_invocable_v<Fn> &&
+  concept simple_computation =
+      std::is_invocable_v<Fn> &&
       !std::is_same_v<details::compute_result_t<Fn>, void>;
-
-  // clang-format on
 
   template<typename Tag, typename Statistics, simple_computation Fn>
   inline void compute_simple(Statistics& statistics, Tag /*unused*/, Fn&& fn) {

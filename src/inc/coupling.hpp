@@ -87,8 +87,8 @@ namespace couple {
 
     template<typename Context, typename Population>
     concept with_scaling = requires(Context ctx) {
-                             { ctx.scaling() } -> scaling<Population>;
-                           };
+      { ctx.scaling() } -> scaling<Population>;
+    };
 
     template<typename Population, typename Context>
     struct has_scaling : std::false_type {};

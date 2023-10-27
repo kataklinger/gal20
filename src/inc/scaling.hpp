@@ -45,12 +45,9 @@ namespace scale {
   } // namespace details
 
   template<typename Fitness>
-  concept linear_fitness =
-      arithmetic_fitness<Fitness> && requires(Fitness f) {
-                                       {
-                                         1.0 * f
-                                         } -> std::convertible_to<double>;
-                                     };
+  concept linear_fitness = averageable_fitness<Fitness> && requires(Fitness f) {
+    { 1.0 * f } -> std::convertible_to<double>;
+  };
 
   template<typename Context>
   concept linear_context =
@@ -282,8 +279,8 @@ namespace scale {
 
   template<typename Fitness, typename Proportion, typename Output>
   concept proportional_fitness = requires(Fitness f, Proportion p) {
-                                   { p* f } -> std::convertible_to<Output>;
-                                 };
+    { p* f } -> std::convertible_to<Output>;
+  };
 
   template<typename Context, typename Proportion>
   concept proportional_context =
@@ -332,8 +329,8 @@ namespace scale {
 
   template<typename Fitness, typename Power, typename Output>
   concept power_fitness = requires(Fitness f, Power p) {
-                            { std::pow(f, p) } -> std::convertible_to<Output>;
-                          };
+    { std::pow(f, p) } -> std::convertible_to<Output>;
+  };
 
   template<typename Context, typename Power>
   concept power_context =
@@ -368,7 +365,7 @@ namespace scale {
 
   template<typename Context>
   concept window_context =
-      arithmetic_fitness<typename Context::population_t::raw_fitness_t> &&
+      averageable_fitness<typename Context::population_t::raw_fitness_t> &&
       std::constructible_from<typename Context::population_t::scaled_fitness_t,
                               typename Context::population_t::raw_fitness_t> &&
       stats::tracked_models<typename Context::statistics_t,
