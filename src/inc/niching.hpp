@@ -75,6 +75,9 @@ namespace niche {
           auto first = std::ranges::begin(set);
           auto last = --std::ranges::end(set);
 
+          get_tag<density_tag>(**first) = std::numeric_limits<float>::max();
+          get_tag<density_tag>(**last) = std::numeric_limits<float>::max();
+
           while (++first != last) {
             auto distance = static_cast<double>(
                 (*(first + 1))->evaluation().raw()[objective] -
