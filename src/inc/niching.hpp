@@ -31,6 +31,8 @@ namespace niche {
     void
         operator()(Population& population,
                    pareto_sets<typename Population::individual_t>& sets) const {
+      clean_tags<density_value_t>(population);
+
       for (auto&& set : sets) {
         for (auto&& left : set) {
           for (auto&& right :
@@ -62,6 +64,8 @@ namespace niche {
                crowding_population<Population>)
     void operator()(Population& population,
                     pareto_sets<typename Population::individual_t>& sets) {
+      clean_tags<density_value_t>(population);
+
       auto objectives =
           std::ranges::size(population.individuals().evaluation().raw());
 
