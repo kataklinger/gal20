@@ -58,9 +58,11 @@ using int_rank_t = tag_adapted_value<rank_tag, std::size_t>;
 using real_rank_t = tag_adapted_value<rank_tag, double>;
 
 namespace details {
+
   template<typename Population, typename... Tags>
   concept mo_tagged_population =
       multiobjective_population<Population> && tagged_with<Population, Tags...>;
+
 }
 
 template<typename Population, typename RankTag>
@@ -192,6 +194,9 @@ private:
   set_boundaries_t set_boundaries_;
 };
 
+template<multiobjective_population Population>
+using population_pareto_t = pareto_sets<typename Population::individual_t>;
+
 struct pareto_preserved_t {};
 inline constexpr pareto_preserved_t pareto_preserved_tag{};
 
@@ -216,7 +221,7 @@ namespace details {
                                         std::add_lvalue_reference_t<Population>,
                                         std::add_lvalue_reference_t<
                                             std::add_const_t<PreserveTag>>>,
-                   pareto_sets<typename Population::individual_t>>;
+                   population_pareto_t<Population>>;
 
 } // namespace details
 
@@ -230,16 +235,16 @@ concept ranking =
 struct density_tag {};
 
 using density_value_t = tag_adapted_value<density_tag, double>;
+using density_label_t = tag_adapted_value<density_tag, std::size_t>;
 
-template<typename Population>
+template<typename Population, typename DensityTag>
 concept density_population =
-    details::mo_tagged_population<Population, density_value_t>;
+    details::mo_tagged_population<Population, DensityTag>;
 
 template<typename Operation, typename Population>
-concept niching =
-    std::invocable<Operation,
-                   std::add_lvalue_reference_t<Population>,
-                   std::add_lvalue_reference_t<
-                       pareto_sets<typename Population::individual_t>>>;
+concept niching = std::invocable<
+    Operation,
+    std::add_lvalue_reference_t<Population>,
+    std::add_lvalue_reference_t<population_pareto_t<Population>>>;
 
 } // namespace gal

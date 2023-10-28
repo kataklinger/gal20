@@ -8,16 +8,13 @@ namespace gal {
 namespace rank {
   namespace details {
 
-    template<typename Population>
-    using population_pareto = pareto_sets<typename Population::individual_t>;
-
     template<typename Population, typename Preserve>
     class wrapped_pareto;
 
     template<typename Population>
     class wrapped_pareto<Population, pareto_preserved_t> {
     public:
-      using base_pareto_t = population_pareto<Population>;
+      using base_pareto_t = population_pareto_t<Population>;
       using individual_t = typename Population::individual_t;
 
     public:
@@ -44,7 +41,7 @@ namespace rank {
     template<typename Population>
     class wrapped_pareto<Population, pareto_reduced_t> {
     public:
-      using base_pareto_t = population_pareto<Population>;
+      using base_pareto_t = population_pareto_t<Population>;
       using individual_t = typename Population::individual_t;
 
     public:
@@ -73,7 +70,7 @@ namespace rank {
     template<typename Population>
     class wrapped_pareto<Population, pareto_nondominated_t> {
     public:
-      using base_pareto_t = population_pareto<Population>;
+      using base_pareto_t = population_pareto_t<Population>;
       using individual_t = typename Population::individual_t;
 
     public:
@@ -114,13 +111,13 @@ namespace rank {
       }
 
       inline auto unwrap() noexcept {
-        return population_pareto<Population>{};
+        return population_pareto_t<Population>{};
       }
     };
 
     template<typename Population>
     inline void populate_binary_pareto(Population& population,
-                                       population_pareto<Population>& output,
+                                       population_pareto_t<Population>& output,
                                        binary_rank which) {
       for (auto&& individual : population.individuals()) {
         if (get<bin_rank_t>(individual) == which) {
@@ -134,7 +131,7 @@ namespace rank {
     template<typename Population>
     inline auto generate_binary_pareto(Population& population,
                                        pareto_reduced_t /*unused*/) {
-      population_pareto<Population> output{population.size()};
+      population_pareto_t<Population> output{population.size()};
 
       populate_binary_pareto(population, output, binary_rank::nondominated);
       populate_binary_pareto(population, output, binary_rank::dominated);
@@ -145,7 +142,7 @@ namespace rank {
     template<typename Population>
     inline auto generate_binary_pareto(Population& population,
                                        pareto_nondominated_t /*unused*/) {
-      population_pareto<Population> output{population.size()};
+      population_pareto_t<Population> output{population.size()};
 
       populate_binary_pareto(population, output, binary_rank::nondominated);
 
@@ -155,7 +152,7 @@ namespace rank {
     template<typename Population>
     inline auto generate_binary_pareto(Population& population,
                                        pareto_erased_t /*unused*/) {
-      return population_pareto<Population>{};
+      return population_pareto_t<Population>{};
     }
 
   } // namespace details
@@ -181,7 +178,7 @@ namespace rank {
                     pareto_preserved_t /*unused*/) const {
       clean_tags<bin_rank_t>(population);
 
-      details::population_pareto<Population> output{population.size()};
+      population_pareto_t<Population> output{population.size()};
       auto current = binary_rank::nondominated;
 
       for (auto&& frontier :
@@ -256,7 +253,7 @@ namespace rank {
     template<typename Population, typename RankTag>
     inline auto prepare_strength_slow(Population& pop) {
       clean_tags<RankTag>(pop);
-      return population_pareto<Population>{pop.size()};
+      return population_pareto_t<Population>{pop.size()};
     }
 
     template<typename Solutions, typename Pareto>
