@@ -116,8 +116,8 @@ namespace niche {
 
         for (auto const& outer : members_) {
           for (auto const& inner : other.members_) {
-            total_distance +=
-                distance(outer->evaluation().raw(), inner->evaluation().raw());
+            total_distance += euclidean_distance(outer->evaluation().raw(),
+                                                 inner->evaluation().raw());
           }
         }
 
@@ -134,22 +134,6 @@ namespace niche {
         }
 
         return true;
-      }
-
-    private:
-      template<typename Fitness>
-      double distance(Fitness const& left, Fitness const& right) {
-        double result = 0.;
-
-        auto ir = std::ranges::begin(right);
-        for (auto&& vl : left) {
-          auto d = static_cast<double>(vl - *ir);
-          result += d * d;
-
-          ++ir;
-        }
-
-        return std::sqrt(result);
       }
 
     private:
@@ -226,7 +210,61 @@ namespace niche {
   };
 
   // kth nearest neighbor (spea-ii)
-  class neighbor {};
+  class neighbor {
+  public:
+    template<typename Population>
+      requires(density_population<Population, density_value_t> &&
+               crowding_population<Population>)
+    inline void operator()(Population& population,
+                           population_pareto_t<Population>& sets) {
+      auto distances = compute_distances(population.individuals());
+      assign_density(distances, population.individuals());
+    }
+
+  private:
+    template<typename Individuals>
+    std::vector<double> compute_distances(Individuals& individuals) {
+      auto count = individuals.size();
+      std::vector<double> distances(count * count);
+
+      std::size_t i = 0, h = 0, v = 0;
+      for (auto first = individuals.begin(), last = individuals.end();
+           first != last;
+           ++first) {
+
+        h = v = i * count + i;
+        distances[h] = distances[v] = 0;
+
+        for (auto other = first + 1; other != last; ++other) {
+          h += 1;
+          v += count;
+
+          distances[h] = distances[v] = euclidean_distance(
+              first->evaluation().raw(), other->evaluation().raw());
+        }
+
+        ++i;
+      }
+    }
+
+    template<typename Individuals>
+    void assign_density(std::vector<double>& distances,
+                        Individuals& individuals) noexcept {
+      auto count = individuals.size();
+
+      auto kth = static_cast<std::size_t>(std::sqrt(count)) + 1;
+      auto first = distances.begin(), last = distances.begin() + count;
+      for (std::size_t i = 0; i < count; ++i) {
+
+        auto d =
+            *std::ranges::nth_element(first, first + kth, last, std::less{});
+        get_tag<density_value_t>(individuals[i]) = 1. / (d + 2.);
+
+        first = last;
+        last += count;
+      }
+    }
+  };
 
   // cell-sharing (pesa, pesa-ii, paes)
   class hypergrid {};

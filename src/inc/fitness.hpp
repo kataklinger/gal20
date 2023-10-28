@@ -80,6 +80,22 @@ concept crowding_fitness =
     details::additive<multiobjective_value_t<Fitness>> &&
     std::convertible_to<multiobjective_value_t<Fitness>, double>;
 
+template<crowding_fitness Fitness>
+inline auto euclidean_distance(Fitness const& left,
+                               Fitness const& right) noexcept {
+  double result = 0.;
+
+  auto ir = std::ranges::begin(right);
+  for (auto&& vl : left) {
+    auto d = static_cast<double>(vl - *ir);
+    result += d * d;
+
+    ++ir;
+  }
+
+  return std::sqrt(result);
+}
+
 template<typename Totalizator>
 concept fitness_totalizator =
     std::semiregular<Totalizator> && requires(Totalizator t) {
