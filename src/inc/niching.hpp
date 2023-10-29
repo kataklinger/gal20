@@ -93,6 +93,19 @@ namespace niche {
     }
   };
 
+  namespace details {
+    template<typename Range>
+    inline void assing_density_data(Range&& range,
+                                    std::size_t label,
+                                    double density) noexcept {
+      for (auto&& member : range) {
+        get_tag<density_label_t>(member) = label;
+        get_tag<density_value_t>(member) = density;
+      }
+    }
+
+  } // namespace details
+
   // average linkage (spea)
   class cluster {
   private:
@@ -124,16 +137,14 @@ namespace niche {
         return total_distance / (members_.size() * other.members_.size());
       }
 
-      inline bool label_if_merged(std::size_t label) noexcept {
-        if (members_.size() < 1) {
-          return false;
+      inline bool assign(std::size_t label) noexcept {
+        if (members_.size() == 1) {
+          details::assing_density_data(members_, 0, 1.);
+          return true;
         }
 
-        for (auto&& member : members_) {
-          get_tag<density_label_t>(member) = label;
-        }
-
-        return true;
+        details::assing_density_data(members_, label, 1. / members_.size());
+        return false;
       }
 
     private:
@@ -142,36 +153,36 @@ namespace niche {
 
   public:
     template<typename Population>
-      requires(density_population<Population, density_label_t> &&
+      requires(density_population<Population, density_value_t> &&
+               density_population<Population, density_label_t> &&
                crowding_population<Population>)
     void operator()(Population& population,
                     population_pareto_t<Population>& sets) const {
-      using individual_t = typename Population::individual_t;
-
-      clean_tags<density_label_t>(population);
-
-      std::size_t populated_count = 0, cluster_label = 1;
+      std::size_t filled = 0, taget = population.target_size(),
+                  cluster_label = 1;
       for (auto&& set : sets) {
-        auto added_count = std::ranges::size(set);
-        auto available_space =
-            std::max(population.target_size() - populated_count, added_count);
+        if (auto n = std::ranges::size(set); filled < taget) {
+          if (auto remain = std::max(taget - filled, n); remain < n) {
+            auto clusters = generate_clusters(set);
+            while (clusters.size() > remain) {
+              merge_closest(clusters);
+            }
 
-        if (available_space < added_count) {
-          auto clusters = generate_clusters(set);
-          while (clusters.size() > available_space) {
-            merge_closest(clusters);
-          }
-
-          for (auto&& c : clusters) {
-            if (c.lable_if_merged(cluster_label)) {
-              ++cluster_label;
+            for (auto&& c : clusters) {
+              if (c.assign(cluster_label)) {
+                ++cluster_label;
+              }
             }
           }
+          else {
+            details::assing_density_data(set, 0, 1.);
+          }
 
-          break;
+          filled += n;
         }
-
-        populated_count += added_count;
+        else {
+          details::assing_density_data(set, cluster_label, 1.);
+        }
       }
     }
 
@@ -267,7 +278,11 @@ namespace niche {
   };
 
   // cell-sharing (pesa, pesa-ii, paes)
-  class hypergrid {};
+  template<multiobjective_fitness Fitness,
+           multiobjective_value_t<Fitness>... BoxDimensions>
+  class hypergrid {
+  public:
+  };
 
   // adaptive cell-sharing (rdga)
   class adaptive_hypergrid {};
