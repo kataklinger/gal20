@@ -94,8 +94,9 @@ namespace niche {
   };
 
   namespace details {
+
     template<typename Range>
-    inline void assing_density_data(Range&& range,
+    inline void assign_density_data(Range&& range,
                                     std::size_t label,
                                     double density) noexcept {
       for (auto&& member : range) {
@@ -139,11 +140,11 @@ namespace niche {
 
       inline bool assign(std::size_t label) noexcept {
         if (members_.size() == 1) {
-          details::assing_density_data(members_, 0, 1.);
+          details::assign_density_data(members_, 0, 1.);
           return true;
         }
 
-        details::assing_density_data(members_, label, 1. / members_.size());
+        details::assign_density_data(members_, label, 1. / members_.size());
         return false;
       }
 
@@ -175,13 +176,13 @@ namespace niche {
             }
           }
           else {
-            details::assing_density_data(set, 0, 1.);
+            details::assign_density_data(set, 0, 1.);
           }
 
           filled += n;
         }
         else {
-          details::assing_density_data(set, cluster_label, 1.);
+          details::assign_density_data(set, cluster_label, 1.);
         }
       }
     }
@@ -277,11 +278,97 @@ namespace niche {
     }
   };
 
+  namespace details {
+
+    template<typename Ty>
+    struct hypercooridnate_element_impl {
+      using type = Ty;
+    };
+
+    template<std::floating_point Ty>
+    struct hypercooridnate_element_impl {
+      using type = std::ptrdiff_t;
+    };
+
+    template<typename Ty>
+    using hypercooridnate_element_t =
+        typename hypercooridnate_element_impl<Ty>::type;
+
+    template<typename Ty, std::size_t>
+    struct hypercooridnates_map_element {
+      using type = Ty;
+    };
+
+    template<typename Ty, typename Idxs>
+    struct hypercooridnates_impl;
+
+    template<typename Ty, std ::size_t... Idxs>
+    struct hypercooridnates_impl<Ty, std::index_sequence<Idxs...>> {
+      using type =
+          std::tuple<typename hypercooridnates_map_element<Ty, Idxs>::type...>;
+    };
+
+    template<typename BaseType, std::size_t Dimensions>
+    using hypercooridnates_t = typename hypercooridnates_impl<
+        hypercooridnate_element_t<BaseType>,
+        std::make_index_sequence<Dimensions>>::type;
+
+    template<typename Value>
+    inline Value cacluate_hypercoordinate(Value value, Value size) noexcept {
+      constexpr Value zero{0}, neg_1{-1};
+      return value >= zero ? value / size : neg_1 - (neg_1 - value) / size;
+    }
+
+    template<std::unsigned_integral Value>
+    inline Value cacluate_hypercoordinate(Value value, Value size) noexcept {
+      return value / size;
+    }
+
+    template<std::floating_point Value>
+    inline std::ptrdiff_t cacluate_hypercoordinate(Value value,
+                                                   Value size) noexcept {
+      return static_cast<std::ptrdiff_t>(std::floor(value / size));
+    }
+
+    template<multiobjective_fitness Fitness,
+             multiobjective_value_t<Fitness>... BoxDimensions,
+             std::size_t... Idxs>
+    inline auto
+        get_hypercoordinates(Fitness const& fitness,
+                             std::index_sequence<Idxs...> /*unused*/) noexcept {
+      return details::hypercooridnates_t<multiobjective_value_t<Fitness>,
+                                         sizeof...(BoxDimensions)>{
+          cacluate_hypercoordinate(fitness[Idxs], BoxDimensions)...};
+    }
+
+    template<multiobjective_fitness Fitness,
+             multiobjective_value_t<Fitness>... BoxDimensions>
+    inline auto get_hypercoordinates(Fitness const& fitness) noexcept {
+      return get_hypercoordinates<Fitness, BoxDimensions...>(
+          fitness, std::make_index_sequence<sizeof...(BoxDimensions)>{});
+    }
+
+  } // namespace details
+
   // cell-sharing (pesa, pesa-ii, paes)
   template<multiobjective_fitness Fitness,
            multiobjective_value_t<Fitness>... BoxDimensions>
+
+  // multiobjective_value_t must have Ty / Ty, Ty{-1}, Ty - Ty
   class hypergrid {
   public:
+    using coordinates_t =
+        details::hypercooridnates_t<multiobjective_value_t<Fitness>,
+                                    sizeof...(BoxDimensions)>;
+
+  public:
+    template<typename Population>
+      requires(density_population<Population, density_value_t> &&
+               density_population<Population, density_label_t> &&
+               crowding_population<Population>)
+    void operator()(Population& population,
+                    population_pareto_t<Population>& sets) const {
+    }
   };
 
   // adaptive cell-sharing (rdga)
