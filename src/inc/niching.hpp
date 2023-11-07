@@ -5,6 +5,7 @@
 #include "operation.hpp"
 
 #include <cmath>
+#include <unordered_set>
 
 namespace gal {
 namespace niche {
@@ -330,44 +331,71 @@ namespace niche {
       return static_cast<std::ptrdiff_t>(std::floor(value / size));
     }
 
-    template<multiobjective_fitness Fitness,
-             multiobjective_value_t<Fitness>... BoxDimensions,
+    template<grid_fitness Fitness,
+             multiobjective_value_t<Fitness>... Granularity,
              std::size_t... Idxs>
     inline auto
         get_hypercoordinates(Fitness const& fitness,
                              std::index_sequence<Idxs...> /*unused*/) noexcept {
       return details::hypercooridnates_t<multiobjective_value_t<Fitness>,
-                                         sizeof...(BoxDimensions)>{
-          cacluate_hypercoordinate(fitness[Idxs], BoxDimensions)...};
+                                         sizeof...(Granularity)>{
+          cacluate_hypercoordinate(fitness[Idxs], Granularity)...};
     }
 
-    template<multiobjective_fitness Fitness,
-             multiobjective_value_t<Fitness>... BoxDimensions>
+    template<grid_fitness Fitness,
+             multiobjective_value_t<Fitness>... Granularity>
     inline auto get_hypercoordinates(Fitness const& fitness) noexcept {
-      return get_hypercoordinates<Fitness, BoxDimensions...>(
-          fitness, std::make_index_sequence<sizeof...(BoxDimensions)>{});
+      return get_hypercoordinates<Fitness, Granularity...>(
+          fitness, std::make_index_sequence<sizeof...(Granularity)>{});
     }
 
   } // namespace details
 
   // cell-sharing (pesa, pesa-ii, paes)
-  template<multiobjective_fitness Fitness,
-           multiobjective_value_t<Fitness>... BoxDimensions>
-
-  // multiobjective_value_t must have Ty / Ty, Ty{-1}, Ty - Ty
+  template<grid_fitness Fitness,
+           double Alpha = 2.0,
+           multiobjective_value_t<Fitness>... Granularity>
   class hypergrid {
   public:
     using coordinates_t =
         details::hypercooridnates_t<multiobjective_value_t<Fitness>,
-                                    sizeof...(BoxDimensions)>;
+                                    sizeof...(Granularity)>;
 
   public:
     template<typename Population>
       requires(density_population<Population, density_value_t> &&
                density_population<Population, density_label_t> &&
-               crowding_population<Population>)
+               grid_population<Population>)
     void operator()(Population& population,
                     population_pareto_t<Population>& sets) const {
+
+      std::vector<std::size_t> densities{};
+      densities.reserve(population.current_size());
+
+      for (auto&& set : sets) {
+        std::unordered_set<coordinates_t> labels{};
+
+        for (auto&& individual : set) {
+          auto const& hyperbox =
+              details::get_hypercoordinates(individual.evaluation().raw());
+
+          if (auto [it, added] = labels.try_emplace(hyperbox); added) {
+            densities.push_back(1);
+          }
+          else {
+            *densities.rbegin() += 1;
+          }
+
+          get_tag<density_label_t>(individual) = densities.size() - 1;
+        }
+
+        for (auto&& individual : set) {
+          auto label = get_tag<density_label_t>(individual);
+          auto density = static_cast<double>(densities[label]);
+
+          get_tag<density_value_t>(individual) = 1. / std::pow(density, Alpha);
+        }
+      }
     }
   };
 

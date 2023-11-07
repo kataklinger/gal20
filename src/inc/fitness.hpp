@@ -45,6 +45,18 @@ namespace details {
     { a / std::size_t(1) } -> std::same_as<Type>;
   };
 
+  template<typename Type>
+  concept divisable = requires(Type a) {
+    { a / a } -> std::same_as<Type>;
+  };
+
+  template<typename Type>
+  concept crowding_value = additive<Type> && std::convertible_to<Type, double>;
+
+  template<typename Type>
+  concept grid_point =
+      additive<Type> && divisable<Type> && std::constructible_from<Type, int>;
+
 } // namespace details
 
 template<typename Type>
@@ -77,8 +89,11 @@ concept multiobjective_fitness =
 template<typename Fitness>
 concept crowding_fitness =
     multiobjective_fitness<Fitness> &&
-    details::additive<multiobjective_value_t<Fitness>> &&
-    std::convertible_to<multiobjective_value_t<Fitness>, double>;
+    details::crowding_value<multiobjective_value_t<Fitness>>;
+
+template<typename Fitness>
+concept grid_fitness = multiobjective_fitness<Fitness> &&
+                       details::grid_point<multiobjective_value_t<Fitness>>;
 
 template<crowding_fitness Fitness>
 inline auto euclidean_distance(Fitness const& left,

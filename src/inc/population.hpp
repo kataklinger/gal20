@@ -294,6 +294,9 @@ template<typename Population>
 concept crowding_population =
     crowding_fitness<typename Population::raw_fitness_t>;
 
+template<typename Population>
+concept grid_population = grid_fitness<typename Population::raw_fitness_t>;
+
 template<typename Population, typename FitnessTag>
 concept averageable_population =
     averageable_fitness<get_fitness_t<FitnessTag, Population>>;
