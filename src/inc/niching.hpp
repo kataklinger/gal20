@@ -342,49 +342,35 @@ namespace niche {
           cacluate_hypercoordinate(fitness[Idxs], granularity[Idxs])...};
     }
 
-    template<grid_fitness Fitness, std::size_t Size>
-    inline auto
-        get_hypercoordinates(Fitness const& fitness,
-                             std::array<multiobjective_value_t<Fitness>,
-                                        Size> const& granularity) noexcept {
+    template<grid_fitness Fitness, std::size_t Dimensions>
+    inline auto get_hypercoordinates(
+        Fitness const& fitness,
+        std::array<multiobjective_value_t<Fitness>, Dimensions> const&
+            granularity) noexcept {
       return get_hypercoordinates<Fitness>(
-          fitness, granularity, std::make_index_sequence<Size>{});
+          fitness, granularity, std::make_index_sequence<Dimensions>{});
     }
 
-  } // namespace details
-
-  // cell-sharing (pesa, pesa-ii, paes)
-  template<grid_fitness Fitness,
-           double Alpha = 2.0,
-           multiobjective_value_t<Fitness>... Granularity>
-  class hypergrid {
-  public:
-    using coordinates_t =
-        details::hypercooridnates_t<multiobjective_value_t<Fitness>,
-                                    sizeof...(Granularity)>;
-
-  private:
-    inline static constexpr std::array<multiobjective_value_t<Fitness>,
-                                       sizeof...(Granularity)>
-        granularity{Granularity...};
-
-  public:
-    template<typename Population>
-      requires(density_population<Population, density_value_t> &&
-               density_population<Population, density_label_t> &&
-               grid_population<Population>)
-    void operator()(Population& population,
-                    population_pareto_t<Population>& sets) const {
+    template<typename Population,
+             std::size_t Dimensions,
+             typename Fitness = get_fitness_t<raw_fitness_tag, Population>>
+    void calculate_hyperbox_density(
+        Population& population,
+        population_pareto_t<Population>& sets,
+        std::array<Fitness, Dimensions> const& granularity,
+        double alpha) {
+      using label_set_t = std::unordered_set<
+          hypercooridnates_t<multiobjective_value_t<Fitness>, Dimensions>>;
 
       std::vector<std::size_t> densities{};
       densities.reserve(population.current_size());
 
       for (auto&& set : sets) {
-        std::unordered_set<coordinates_t> labels{};
+        label_set_t labels{};
 
         for (auto&& individual : set) {
-          auto hyperbox = details::get_hypercoordinates(
-              individual.evaluation().raw(), granularity);
+          auto hyperbox =
+              get_hypercoordinates(individual.evaluation().raw(), granularity);
 
           if (auto [it, added] = labels.try_emplace(hyperbox); added) {
             densities.push_back(1);
@@ -395,19 +381,56 @@ namespace niche {
 
           get_tag<density_label_t>(individual) = densities.size() - 1;
         }
-
-        for (auto&& individual : set) {
-          auto label = get_tag<density_label_t>(individual);
-          auto density = static_cast<double>(densities[label]);
-
-          get_tag<density_value_t>(individual) = 1. / std::pow(density, Alpha);
-        }
       }
+
+      for (auto&& individual : population.individuals()) {
+        auto label = get_tag<density_label_t>(individual);
+        auto density = static_cast<double>(densities[label]);
+
+        get_tag<density_value_t>(individual) = 1. / std::pow(density, alpha);
+      }
+    }
+
+  } // namespace details
+
+  // cell-sharing (pesa, pesa-ii, paes)
+  template<grid_fitness Fitness,
+           double Alpha = 2.0,
+           multiobjective_value_t<Fitness>... Granularity>
+  class hypergrid {
+  private:
+    inline static constexpr std::array<multiobjective_value_t<Fitness>,
+                                       sizeof...(Granularity)>
+        granularity{Granularity...};
+
+  public:
+    template<typename Population>
+      requires(density_population<Population, density_value_t> &&
+               density_population<Population, density_label_t> &&
+               grid_population<Population>)
+    inline void operator()(Population& population,
+                           population_pareto_t<Population>& sets) const {
+      details::calculate_hyperbox_density(population, sets, granularity, Alpha);
     }
   };
 
   // adaptive cell-sharing (rdga)
-  class adaptive_hypergrid {};
+  template<double Alpha = 2.0, std::size_t... Divisions>
+  class adaptive_hypergrid {
+  public:
+    template<typename Population>
+      requires(density_population<Population, density_value_t> &&
+               density_population<Population, density_label_t> &&
+               grid_population<Population>)
+    void operator()(Population& population,
+                    population_pareto_t<Population>& sets) const {
+      // calculate granularity for each dimension:
+      //   (max[f.x] - min[f.x]) / Div[x]
+      //
+      // details::calculate_hyperbox_density(
+      //   population, sets, granularity, Alpha);
+    }
+  };
 
 } // namespace niche
 } // namespace gal
