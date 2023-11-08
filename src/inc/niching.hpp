@@ -331,22 +331,24 @@ namespace niche {
       return static_cast<std::ptrdiff_t>(std::floor(value / size));
     }
 
-    template<grid_fitness Fitness,
-             multiobjective_value_t<Fitness>... Granularity,
-             std::size_t... Idxs>
+    template<grid_fitness Fitness, std::size_t... Idxs>
     inline auto
         get_hypercoordinates(Fitness const& fitness,
+                             std::array<multiobjective_value_t<Fitness>,
+                                        sizeof...(Idxs)> const& granularity,
                              std::index_sequence<Idxs...> /*unused*/) noexcept {
       return details::hypercooridnates_t<multiobjective_value_t<Fitness>,
-                                         sizeof...(Granularity)>{
-          cacluate_hypercoordinate(fitness[Idxs], Granularity)...};
+                                         sizeof...(Idxs)>{
+          cacluate_hypercoordinate(fitness[Idxs], granularity[Idxs])...};
     }
 
-    template<grid_fitness Fitness,
-             multiobjective_value_t<Fitness>... Granularity>
-    inline auto get_hypercoordinates(Fitness const& fitness) noexcept {
-      return get_hypercoordinates<Fitness, Granularity...>(
-          fitness, std::make_index_sequence<sizeof...(Granularity)>{});
+    template<grid_fitness Fitness, std::size_t Size>
+    inline auto
+        get_hypercoordinates(Fitness const& fitness,
+                             std::array<multiobjective_value_t<Fitness>,
+                                        Size> const& granularity) noexcept {
+      return get_hypercoordinates<Fitness>(
+          fitness, granularity, std::make_index_sequence<Size>{});
     }
 
   } // namespace details
@@ -360,6 +362,11 @@ namespace niche {
     using coordinates_t =
         details::hypercooridnates_t<multiobjective_value_t<Fitness>,
                                     sizeof...(Granularity)>;
+
+  private:
+    inline static constexpr std::array<multiobjective_value_t<Fitness>,
+                                       sizeof...(Granularity)>
+        granularity{Granularity...};
 
   public:
     template<typename Population>
@@ -376,8 +383,8 @@ namespace niche {
         std::unordered_set<coordinates_t> labels{};
 
         for (auto&& individual : set) {
-          auto const& hyperbox =
-              details::get_hypercoordinates(individual.evaluation().raw());
+          auto hyperbox = details::get_hypercoordinates(
+              individual.evaluation().raw(), granularity);
 
           if (auto [it, added] = labels.try_emplace(hyperbox); added) {
             densities.push_back(1);
