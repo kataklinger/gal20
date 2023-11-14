@@ -417,6 +417,10 @@ namespace niche {
   // adaptive cell-sharing (rdga)
   template<double Alpha = 2.0, std::size_t... Divisions>
   class adaptive_hypergrid {
+  private
+    inline static constexpr std::array<std::size_t, sizeof...(Divisions)>
+        divisions{Divisions...};
+
   public:
     template<typename Population>
       requires(density_population<Population, density_value_t> &&
@@ -424,11 +428,39 @@ namespace niche {
                grid_population<Population>)
     void operator()(Population& population,
                     population_pareto_t<Population>& sets) const {
-      // calculate granularity for each dimension:
-      //   (max[f.x] - min[f.x]) / Div[x]
-      //
-      // details::calculate_hyperbox_density(
-      //   population, sets, granularity, Alpha);
+      using granularity_t =
+          multiobjective_value_t<get_fitness_t<raw_fitness_tag, Population>>;
+
+      auto first = population.individuals().begin();
+      auto minimums = first->evaluation().raw();
+      auto maximums = first->evaluation().raw();
+
+      for (auto last = population.individuals().end(); first != last; ++first) {
+        auto min_first = minimums.begin(), max_first = maximums.begin();
+        for (auto&& v : first->evaluation().raw()) {
+          if (v < *min_first) {
+            *min_first = v;
+          }
+          else if (v > *max_first) {
+            *max_first = v;
+          }
+
+          ++min_first;
+          ++max_first;
+        }
+      }
+
+      std::array<granularity_t, sizeof...(Divisions)> granularity{};
+
+      auto gr_first = granularity.begin();
+      auto div_first = divisions.begin();
+      auto min_first = minimums.begin(), max_first = maximums.begin();
+      for (auto last = minimums.end(); min_first != last;
+           ++gr_first, ++div_first, ++min_first, ++max_first) {
+        *gr_first = (*max_first - *min_first) / *div_first;
+      }
+
+      details::calculate_hyperbox_density(population, sets, granularity, Alpha);
     }
   };
 
