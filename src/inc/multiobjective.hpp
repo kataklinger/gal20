@@ -60,8 +60,8 @@ using real_rank_t = tag_adapted_value<rank_tag, double>;
 namespace details {
 
   template<typename Population, typename... Tags>
-  concept mo_tagged_population =
-      multiobjective_population<Population> && tagged_with<Population, Tags...>;
+  concept mo_tagged_population = multiobjective_population<Population> &&
+                                 population_tagged_with<Population, Tags...>;
 
 }
 
