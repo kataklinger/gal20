@@ -247,4 +247,13 @@ concept niching = std::invocable<
     std::add_lvalue_reference_t<Population>,
     std::add_lvalue_reference_t<population_pareto_t<Population>>>;
 
+template<typename Individual, typename RankTag>
+concept niched_individual =
+    individual_tagged_with<Individual, RankTag, density_value_t>;
+
+template<typename Operation, typename Population>
+concept projection = std::invocable<
+    Operation,
+    std::add_lvalue_reference_t<typename Population::individual_t>>;
+
 } // namespace gal
