@@ -55,7 +55,8 @@ namespace details {
 
   template<typename Type>
   concept grid_point =
-      additive<Type> && divisable<Type> && std::constructible_from<Type, int>;
+      additive<Type> && divisable<Type> && std::constructible_from<Type, int> &&
+      std::assignable_from<Type, int>;
 
 } // namespace details
 
