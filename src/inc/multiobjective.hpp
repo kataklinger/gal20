@@ -3,6 +3,8 @@
 
 #include "population.hpp"
 
+#include <cassert>
+
 namespace gal {
 
 template<typename Value>
@@ -212,16 +214,11 @@ inline constexpr pareto_erased_t pareto_erased_tag{};
 namespace details {
 
   template<typename Operation, typename Population, typename PreserveTag>
-  concept ranking_base =
-      std::is_invocable_v<
-          Operation,
-          std::add_lvalue_reference_t<Population>,
-          std::add_lvalue_reference_t<std::add_const_t<PreserveTag>>> &&
-      std::same_as<std::invoke_result_t<Operation,
-                                        std::add_lvalue_reference_t<Population>,
-                                        std::add_lvalue_reference_t<
-                                            std::add_const_t<PreserveTag>>>,
-                   population_pareto_t<Population>>;
+  concept ranking_base = std::is_invocable_r_v<
+      population_pareto_t<Population>,
+      Operation,
+      std::add_lvalue_reference_t<Population>,
+      std::add_lvalue_reference_t<std::add_const_t<PreserveTag>>>;
 
 } // namespace details
 
@@ -232,28 +229,126 @@ concept ranking =
     details::ranking_base<Operation, Population, pareto_nondominated_t> &&
     details::ranking_base<Operation, Population, pareto_erased_t>;
 
-struct density_tag {};
+class niche_label {
+public:
+  constexpr niche_label() = default;
 
-using density_value_t = tag_adapted_value<density_tag, double>;
-using density_label_t = tag_adapted_value<density_tag, std::size_t>;
+  inline constexpr niche_label(std::size_t front, std::size_t group) noexcept
+      : front_{front}
+      , group_{group} {
+  }
 
-template<typename Population, typename DensityTag>
-concept density_population =
-    details::mo_tagged_population<Population, DensityTag>;
+  inline constexpr explicit niche_label(std::size_t front) noexcept
+      : front_{front}
+      , group_{0} {
+  }
+
+  inline auto front() const noexcept {
+    return front_ - 1;
+  }
+
+  inline auto group() const noexcept {
+    return group_ - 1;
+  }
+
+  inline auto is_proper() const noexcept {
+    return front_ != 0 && group_ != 0;
+  }
+
+  inline auto is_unassigned() const noexcept {
+    return front_ == 0 && group_ == 0;
+  }
+
+  inline auto is_unique() const noexcept {
+    return front_ != 0 && group_ == 0;
+  }
+
+private:
+  std::size_t front_{};
+  std::size_t group_{};
+};
+
+struct niche_tag {};
+
+using niche_density_t = tag_adapted_value<niche_tag, double>;
+
+template<typename Population>
+concept niched_population =
+    details::mo_tagged_population<Population, niche_density_t, niche_label>;
+
+class niche_membership {
+public:
+  inline niche_membership(niche_label label, std::size_t member_count) noexcept
+      : label_{label}
+      , member_count_{member_count} {
+  }
+
+  inline void add_member() noexcept {
+    ++member_count_;
+  }
+
+  inline auto const& label() const noexcept {
+    return label_;
+  }
+
+  inline auto member_count() const noexcept {
+    return member_count_;
+  }
+
+private:
+  niche_label label_;
+  std::size_t member_count_{};
+};
+
+class niche_set {
+public:
+  inline auto& add_front() noexcept {
+    ++fronts_count_;
+    return *this;
+  }
+
+  inline auto& add_niche(std::size_t member_count) {
+    assert(fronts_count_ > 0);
+
+    return niches_.emplace_back(niche_label{fronts_count_, niches_.size() + 1},
+                                member_count);
+  }
+
+  inline auto& operator[](niche_label const& label) noexcept {
+    return niches_[label.group() - 1];
+  }
+
+  inline auto const& operator[](niche_label const& label) const noexcept {
+    return niches_[label.group() - 1];
+  }
+
+  inline auto unique_label() const noexcept {
+    assert(fronts_count_ > 0);
+
+    return niche_label{fronts_count_, 0};
+  }
+
+  inline auto fronts_count() const noexcept {
+    return fronts_count_;
+  }
+
+  inline auto niches_count() const noexcept {
+    return niches_.size();
+  }
+
+private:
+  std::size_t fronts_count_{};
+  std::vector<niche_membership> niches_;
+};
 
 template<typename Operation, typename Population>
-concept niching = std::invocable<
+concept niching = std::is_invocable_r_v<
+    niche_set,
     Operation,
     std::add_lvalue_reference_t<Population>,
     std::add_lvalue_reference_t<population_pareto_t<Population>>>;
 
-template<typename Individual, typename RankTag>
-concept niched_individual =
-    individual_tagged_with<Individual, RankTag, density_value_t>;
-
 template<typename Operation, typename Population>
-concept projection = std::invocable<
-    Operation,
-    std::add_lvalue_reference_t<typename Population::individual_t>>;
+concept projection = std::invocable<Operation, niche_set const&>;
 
 } // namespace gal

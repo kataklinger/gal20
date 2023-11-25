@@ -52,14 +52,9 @@ namespace scale {
   namespace details {
 
     template<typename Context, typename From>
-    concept scalable_from =
-        std::constructible_from<
-            typename Context::population_t::scaled_fitness_t,
-            From> &&
-        std::assignable_from<
-            std::add_lvalue_reference_t<
-                typename Context::population_t::scaled_fitness_t>,
-            From>;
+    concept scalable_from = std::constructible_from<
+        typename Context::population_t::scaled_fitness_t,
+        From>;
 
   }
 

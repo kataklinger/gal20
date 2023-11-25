@@ -15,9 +15,9 @@ public:
 
 public:
   inline constexpr population_context(population_t& population,
-                                      history_t& statistics) noexcept
+                                      history_t& history) noexcept
       : population_{&population}
-      , statistics_{&statistics} {
+      , history_{&history} {
   }
 
   inline auto& population() noexcept {
@@ -29,11 +29,11 @@ public:
   }
 
   inline auto& history() noexcept {
-    return *statistics_;
+    return *history_;
   }
 
   inline auto const& history() const noexcept {
-    return *statistics_;
+    return *history_;
   }
 
   inline auto& comparator() const noexcept {
@@ -42,7 +42,7 @@ public:
 
 private:
   population_t* population_;
-  history_t* statistics_;
+  history_t* history_;
 };
 
 template<typename Population,

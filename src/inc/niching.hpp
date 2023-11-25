@@ -5,7 +5,7 @@
 #include "operation.hpp"
 
 #include <cmath>
-#include <unordered_set>
+#include <unordered_map>
 
 namespace gal {
 namespace niche {
@@ -28,13 +28,22 @@ namespace niche {
     }
 
   public:
-    template<density_population<density_value_t> Population>
-    void operator()(Population& population,
+    template<niched_population Population>
+    auto operator()(Population& population,
                     population_pareto_t<Population>& sets) const {
-      clean_tags<density_value_t>(population);
+      clean_tags<niche_density_t>(population);
+
+      niche_set niches;
 
       for (auto&& set : sets) {
+        double total = 0.;
+
+        auto& label =
+            niches.add_front().add_niche(std::ranges::size(set)).label();
+
         for (auto&& left : set) {
+          get_tag<niche_label>(*left) = label;
+
           for (auto&& right :
                std::ranges::subrange{std::ranges::next(std::ranges::begin(set)),
                                      std::ranges::end(set)}) {
@@ -45,11 +54,19 @@ namespace niche {
                                ? 1. - std::pow(proximity / cutoff, alpha)
                                : 0.;
 
-            get_tag<density_value_t>(*left) += niching;
-            get_tag<density_value_t>(*right) += niching;
+            get_tag<niche_density_t>(*left) += niching;
+            get_tag<niche_density_t>(*right) += niching;
+            total += niching
           }
         }
+
+        for (auto&& inidividual : set) {
+          auto& tag = get_tag<niche_density_t>(*inidividual);
+          tag += static_cast<double>(tag) / total;
+        }
       }
+
+      return niches;
     }
 
   private:
@@ -59,15 +76,16 @@ namespace niche {
   // crowding distance (nsga-ii)
   class distance {
   public:
-    template<typename Population>
-      requires(density_population<Population, density_value_t> &&
-               crowding_population<Population>)
-    void operator()(Population& population,
+    template<niched_population Population>
+      requires(crowding_population<Population>)
+    auto operator()(Population& population,
                     population_pareto_t<Population>& sets) {
-      clean_tags<density_value_t>(population);
+      clean_tags<niche_density_t>(population);
 
       auto objectives =
           std::ranges::size(population.individuals().evaluation().raw());
+
+      niche_set niches;
 
       for (auto&& set : sets) {
         for (std::size_t objective = 0; objective < objectives; ++objective) {
@@ -79,7 +97,7 @@ namespace niche {
           auto first = std::ranges::begin(set);
           auto last = --std::ranges::end(set);
 
-          get_tag<density_tag>(**first) = get_tag<density_tag>(**last) =
+          get_tag<niche_density_t>(**first) = get_tag<niche_density_t>(**last) =
               std::numeric_limits<double>::infinity();
 
           while (++first != last) {
@@ -87,10 +105,29 @@ namespace niche {
                 (*(first + 1))->evaluation().raw()[objective] -
                 (*(first - 1))->evaluation().raw()[objective]);
 
-            get_tag<density_tag>(**first) += distance;
+            get_tag<niche_density_t>(**first) += distance;
           }
         }
+
+        auto& label =
+            niches.add_front().add_niche(std::ranges::size(set)).label();
+
+        auto max_distance = std::numeric_limits<double>::min();
+        for (auto&& inidividual : set) {
+          get_tag<niche_label>(*inidividual) = label;
+
+          auto distance =
+              static_cast<double>(get_tag<niche_density_t>(*inidividual));
+          max_distance = std::max(max_distance, distance);
+        }
+
+        for (auto&& inidividual : set) {
+          auto& distance = get_tag<niche_density_t>(*inidividual);
+          distance = static_cast<double>(distance) / max_distance;
+        }
       }
+
+      return niches;
     }
   };
 
@@ -98,11 +135,11 @@ namespace niche {
 
     template<typename Range>
     inline void assign_density_data(Range&& range,
-                                    std::size_t label,
+                                    niche_label const& label,
                                     double density) noexcept {
       for (auto&& member : range) {
-        get_tag<density_label_t>(member) = label;
-        get_tag<density_value_t>(member) = density;
+        get_tag<niche_label>(member) = label;
+        get_tag<niche_density_t>(member) = density;
       }
     }
 
@@ -139,14 +176,14 @@ namespace niche {
         return total_distance / (members_.size() * other.members_.size());
       }
 
-      inline bool assign(std::size_t label) noexcept {
+      inline void assign(niche_set& niches) noexcept {
         if (members_.size() == 1) {
-          details::assign_density_data(members_, 0, 1.);
-          return true;
+          details::assign_density_data(members_, niches.unique_label(), 1.);
         }
-
-        details::assign_density_data(members_, label, 1. / members_.size());
-        return false;
+        else {
+          auto& label = niches.add_niche(members_.size()).label();
+          details::assign_density_data(members_, label, 1. / members_.size());
+        }
       }
 
     private:
@@ -154,38 +191,40 @@ namespace niche {
     };
 
   public:
-    template<typename Population>
-      requires(density_population<Population, density_value_t> &&
-               density_population<Population, density_label_t> &&
-               crowding_population<Population>)
-    void operator()(Population& population,
+    template<niched_population Population>
+      requires(crowding_population<Population>)
+    auto operator()(Population& population,
                     population_pareto_t<Population>& sets) const {
-      std::size_t filled = 0, taget = population.target_size(),
-                  cluster_label = 1;
+      std::size_t filled = 0, target = population.target_size();
+
+      niche_set niches;
+
       for (auto&& set : sets) {
-        if (auto n = std::ranges::size(set); filled < taget) {
-          if (auto remain = std::max(taget - filled, n); remain < n) {
+        niches.add_front();
+
+        if (auto n = std::ranges::size(set); filled < target) {
+          if (auto remain = std::max(target - filled, n); remain < n) {
             auto clusters = generate_clusters(set);
             while (clusters.size() > remain) {
               merge_closest(clusters);
             }
 
             for (auto&& c : clusters) {
-              if (c.assign(cluster_label)) {
-                ++cluster_label;
-              }
+              c.assign(niches);
             }
           }
           else {
-            details::assign_density_data(set, 0, 1.);
+            details::assign_density_data(set, niches.unique_label(), 1.);
           }
 
           filled += n;
         }
         else {
-          details::assign_density_data(set, cluster_label, 1.);
+          details::assign_density_data(set, {}, 1.);
         }
       }
+
+      return niches;
     }
 
   private:
@@ -225,13 +264,25 @@ namespace niche {
   // kth nearest neighbor (spea-ii)
   class neighbor {
   public:
-    template<typename Population>
-      requires(density_population<Population, density_value_t> &&
-               crowding_population<Population>)
-    inline void operator()(Population& population,
+    template<niched_population Population>
+      requires(crowding_population<Population>)
+    inline auto operator()(Population& population,
                            population_pareto_t<Population>& sets) {
+      niche_set niches;
+
       auto distances = compute_distances(population.individuals());
       assign_density(distances, population.individuals());
+
+      for (auto&& set : sets) {
+        auto& label =
+            niches.add_front().add_niche(std::ranges::size(set)).label();
+
+        for (auto&& individual : set) {
+          get_tag<niche_label>(*individual) = label;
+        }
+      }
+
+      return niches;
     }
 
   private:
@@ -271,7 +322,7 @@ namespace niche {
 
         auto d =
             *std::ranges::nth_element(first, first + kth, last, std::less{});
-        get_tag<density_value_t>(individuals[i]) = 1. / (d + 2.);
+        get_tag<niche_density_t>(individuals[i]) = 1. / (d + 2.);
 
         first = last;
         last += count;
@@ -354,41 +405,47 @@ namespace niche {
     template<typename Population,
              std::size_t Dimensions,
              typename Fitness = get_fitness_t<raw_fitness_tag, Population>>
-    void calculate_hyperbox_density(
+    auto calculate_hyperbox_density(
         Population& population,
         population_pareto_t<Population>& sets,
         std::array<Fitness, Dimensions> const& granularity,
         double alpha) {
-      using label_set_t = std::unordered_set<
-          hypercooridnates_t<multiobjective_value_t<Fitness>, Dimensions>>;
+      using individual_t = typename Population::individual_t;
+      using hypermap_t = std::unordered_map<
+          hypercooridnates_t<multiobjective_value_t<Fitness>, Dimensions>,
+          std::vector<individual_t*>>;
 
-      std::vector<std::size_t> densities{};
-      densities.reserve(population.current_size());
+      niche_set niches;
 
       for (auto&& set : sets) {
-        label_set_t labels{};
+        niches.add_front();
 
+        hypermap_t hypermap{};
         for (auto&& individual : set) {
-          auto hyperbox =
+          auto coords =
               get_hypercoordinates(individual.evaluation().raw(), granularity);
 
-          if (auto [it, added] = labels.try_emplace(hyperbox); added) {
-            densities.push_back(1);
+          hypermap[coords].push_back(&individual);
+        }
+
+        for (auto&& [coord, individuals] : hypermap) {
+          if (auto count = individuals.size(); count == 1) {
+            get_tag<niche_label>(*individuals[0]) = niches.unique_label();
+            get_tag<niche_density_t>(*individuals[0]) = 1.;
           }
           else {
-            *densities.rbegin() += 1;
-          }
+            auto& label = niches.add_niche(count).label();
+            auto density = 1. / std::pow(count, alpha);
 
-          get_tag<density_label_t>(individual) = densities.size() - 1;
+            for (auto&& individual : individuals) {
+              get_tag<niche_label>(*individual) = label;
+              get_tag<niche_density_t>(*individual) = density;
+            }
+          }
         }
       }
 
-      for (auto&& individual : population.individuals()) {
-        auto label = get_tag<density_label_t>(individual);
-        auto density = static_cast<double>(densities[label]);
-
-        get_tag<density_value_t>(individual) = 1. / std::pow(density, alpha);
-      }
+      return niches;
     }
 
   } // namespace details
@@ -404,13 +461,12 @@ namespace niche {
         granularity{Granularity...};
 
   public:
-    template<typename Population>
-      requires(density_population<Population, density_value_t> &&
-               density_population<Population, density_label_t> &&
-               grid_population<Population>)
-    inline void operator()(Population& population,
+    template<niched_population Population>
+      requires(grid_population<Population>)
+    inline auto operator()(Population& population,
                            population_pareto_t<Population>& sets) const {
-      details::calculate_hyperbox_density(population, sets, granularity, Alpha);
+      return details::calculate_hyperbox_density(
+          population, sets, granularity, Alpha);
     }
   };
 
@@ -422,11 +478,9 @@ namespace niche {
         divisions{Divisions...};
 
   public:
-    template<typename Population>
-      requires(density_population<Population, density_value_t> &&
-               density_population<Population, density_label_t> &&
-               grid_population<Population>)
-    void operator()(Population& population,
+    template<niched_population Population>
+      requires(grid_population<Population>)
+    auto operator()(Population& population,
                     population_pareto_t<Population>& sets) const {
       using granularity_t =
           multiobjective_value_t<get_fitness_t<raw_fitness_tag, Population>>;
@@ -460,7 +514,8 @@ namespace niche {
         *gr_first = (*max_first - *min_first) / *div_first;
       }
 
-      details::calculate_hyperbox_density(population, sets, granularity, Alpha);
+      return details::calculate_hyperbox_density(
+          population, sets, granularity, Alpha);
     }
   };
 
