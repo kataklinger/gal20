@@ -135,6 +135,11 @@ public:
     return removed;
   }
 
+  template<std::predicate<individual_t const&> Pred>
+  inline void remove_if(Pred&& predicate) noexcept {
+    std::erase_if(individuals_, std::forward<Pred>(predicate));
+  }
+
   inline auto trim() {
     if (target_size_ && *target_size_ < individuals_.size()) {
       return trim_impl(*target_size_);

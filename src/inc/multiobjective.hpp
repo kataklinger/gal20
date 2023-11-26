@@ -154,10 +154,10 @@ public:
 private:
   using individuals_t = std::vector<individual_t*>;
   using set_boundery = typename std::vector<individual_t*>::iterator;
-  using set_boundaries_t = std::vector<set_boundery>;
 
 public:
-  using iterator_t = pareto_sets_iterator<typename set_boundaries_t::iterator>;
+  using iterator_t =
+      pareto_sets_iterator<typename std::vector<set_boundery>::iterator>;
 
 public:
   inline explicit pareto_sets(std::size_t max_individuals)
@@ -174,6 +174,13 @@ public:
     return iterator_t{set_boundaries_.end()};
   }
 
+  inline void trim() noexcept {
+    if (set_boundaries_.size() > 2) {
+      set_boundaries_.resize(2);
+      individuals_.erase(set_boundaries_[1], individuals_.end());
+    }
+  }
+
   inline void add_inidividual(individual_t& individual) {
     assert(individuals_.size() < max_individuals_);
     individuals_.push_back(&individual);
@@ -187,19 +194,27 @@ public:
     set_boundaries_.size() - 1;
   }
 
-  inline auto at(std::size_t level) const noexcept {
-    return std::ranges::subrange{set_boundaries_[level],
-                                 set_boundaries_[level + 1]};
+  inline auto get_count_of(pareto::frontier_level level) {
+    return set_boundaries_[level] - set_boundaries_[level - 1];
   }
 
-  inline auto operator[](std::size_t level) const noexcept {
+  inline auto empty() const noexcept {
+    return set_boundaries_.size() <= 1;
+  }
+
+  inline auto at(pareto::frontier_level level) const noexcept {
+    return std::ranges::subrange{set_boundaries_[level - 1],
+                                 set_boundaries_[level]};
+  }
+
+  inline auto operator[](pareto::frontier_level level) const noexcept {
     return at(level);
   }
 
 private:
   std::size_t max_individuals_;
   std::vector<individual_t*> individuals_;
-  set_boundaries_t set_boundaries_;
+  std::vector<set_boundery> set_boundaries_;
 };
 
 template<multiobjective_population Population>

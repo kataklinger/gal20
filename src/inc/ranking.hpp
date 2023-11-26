@@ -134,7 +134,7 @@ namespace rank {
     template<typename Population>
     inline auto generate_binary_pareto(Population& population,
                                        pareto_reduced_t /*unused*/) {
-      population_pareto_t<Population> output{population.size()};
+      population_pareto_t<Population> output{population.current_size()};
       populate_binary_pareto(population, output, binary_rank::nondominated);
       populate_binary_pareto(population, output, binary_rank::dominated);
 
@@ -146,7 +146,7 @@ namespace rank {
                                        pareto_nondominated_t /*unused*/) {
       clean_tags<frontier_level_t>(population);
 
-      population_pareto_t<Population> output{population.size()};
+      population_pareto_t<Population> output{population.current_size()};
       populate_binary_pareto(population, output, binary_rank::nondominated);
 
       return output;
@@ -183,7 +183,7 @@ namespace rank {
                     pareto_preserved_t /*unused*/) const {
       clean_tags<bin_rank_t>(population);
 
-      population_pareto_t<Population> output{population.size()};
+      population_pareto_t<Population> output{population.current_size()};
 
       auto current = binary_rank::nondominated;
       pareto::frontier_level front_level = 1;
@@ -234,7 +234,8 @@ namespace rank {
     auto operator()(Population& population, Pareto /*unused*/) const {
       clean_tags<int_rank_t>(population);
 
-      details::wrapped_pareto<Population, Pareto> output{population.size()};
+      details::wrapped_pareto<Population, Pareto> output{
+          population.current_size()};
 
       for (auto&& frontier :
            population.indviduals() |
@@ -262,7 +263,8 @@ namespace rank {
     void operator()(Population& population, Pareto /*unused*/) const {
       clean_tags<int_rank_t>(population);
 
-      details::wrapped_pareto<Population, Pareto> output{population.size()};
+      details::wrapped_pareto<Population, Pareto> output{
+          population.current_size()};
 
       for (auto&& frontier :
            population.indviduals() |
@@ -326,7 +328,7 @@ namespace rank {
                                          pareto_reduced_t /*unused*/) {
       using individual_t = typename Solutions::value_type::individual_t;
 
-      pareto_sets<individual_t> output{population.size()};
+      pareto_sets<individual_t> output{population.current_size()};
       populate_strength_pareto(solutions, output, true);
       populate_strength_pareto(solutions, output, false);
 
@@ -341,7 +343,7 @@ namespace rank {
 
       clean_tags<frontier_level_t>(population);
 
-      pareto_sets<individual_t> output{population.size()};
+      pareto_sets<individual_t> output{population.current_size()};
       populate_strength_pareto(solutions, output, true);
 
       return output;
@@ -374,7 +376,7 @@ namespace rank {
       auto first = std::ranges::begin(sorted);
 
       auto dominated_count =
-          population.size() - std::ranges::size(first->members());
+          population.current_size() - std::ranges::size(first->members());
 
       for (auto&& solution : first->members()) {
         auto& individual = solution.individual();
