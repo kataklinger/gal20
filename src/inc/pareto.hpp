@@ -362,7 +362,7 @@ namespace pareto {
                         }) |
                         std::views::transform([](auto& item) { return &item; });
 
-        auto frontier = frontiers_.emplace_back(0, filtered);
+        auto frontier = frontiers_.emplace_back(1, filtered);
 
         completed_ = frontier.empty();
 
@@ -385,7 +385,7 @@ namespace pareto {
           return frontiers_.end();
         }
 
-        frontiers_.emplace_back(frontiers_.size(), std::move(members));
+        frontiers_.emplace_back(frontiers_.size() + 1, std::move(members));
         return --frontiers_.end();
       }
 

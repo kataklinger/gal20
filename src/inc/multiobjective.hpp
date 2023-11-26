@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "pareto.hpp"
 #include "population.hpp"
 
 #include <cassert>
@@ -59,6 +60,10 @@ using bin_rank_t = tag_adapted_value<rank_tag, binary_rank>;
 using int_rank_t = tag_adapted_value<rank_tag, std::size_t>;
 using real_rank_t = tag_adapted_value<rank_tag, double>;
 
+struct frontier_level_tag {};
+using frontier_level_t =
+    tag_adapted_value<frontier_level_tag, pareto::frontier_level>;
+
 namespace details {
 
   template<typename Population, typename... Tags>
@@ -68,7 +73,8 @@ namespace details {
 }
 
 template<typename Population, typename RankTag>
-concept ranked_population = details::mo_tagged_population<Population, RankTag>;
+concept ranked_population =
+    details::mo_tagged_population<Population, frontier_level_t, RankTag>;
 
 template<typename BaseIterator>
 class pareto_sets_iterator {

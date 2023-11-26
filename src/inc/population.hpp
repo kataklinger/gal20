@@ -305,19 +305,20 @@ template<typename Population, typename... Tags>
 concept population_tagged_with =
     is_individual_tagged_with_v<typename Population::individual_t, Tags...>;
 
-template<std::default_initializable Tag,
+template<std::default_initializable CleanedTags,
          chromosome Chromosome,
          fitness Raw,
          comparator<Raw> RawCompare,
          fitness Scaled,
          comparator<Scaled> ScaledCompare,
-         typename Tags>
+         typename AllTags>
 inline void clean_tags(
-    population<Chromosome, Raw, RawCompare, Scaled, ScaledCompare, Tags>& pop)
-  requires(details::has_tag_impl<Tags, Tag>::value)
+    population<Chromosome, Raw, RawCompare, Scaled, ScaledCompare, AllTags>&
+        pop)
+  requires(details::has_tag_impl<AllTags, CleanedTags>::value)
 {
   for (auto&& individual : pop.individuals()) {
-    get_tag<Tag>(individual) = {};
+    get_tag<CleanedTags>(individual) = {};
   }
 }
 

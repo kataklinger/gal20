@@ -2,7 +2,6 @@
 #pragma once
 
 #include "multiobjective.hpp"
-#include "pareto.hpp"
 
 namespace gal {
 namespace rank {
@@ -119,10 +118,14 @@ namespace rank {
     inline void populate_binary_pareto(Population& population,
                                        population_pareto_t<Population>& output,
                                        binary_rank which) {
+      auto front_level = output.count() + 1;
+
       for (auto&& individual : population.individuals()) {
         if (get<bin_rank_t>(individual) == which) {
           output.add_individuals(individual);
         }
+
+        get<frontier_level_t>(individual) = front_level;
       }
 
       output.next();
@@ -132,7 +135,6 @@ namespace rank {
     inline auto generate_binary_pareto(Population& population,
                                        pareto_reduced_t /*unused*/) {
       population_pareto_t<Population> output{population.size()};
-
       populate_binary_pareto(population, output, binary_rank::nondominated);
       populate_binary_pareto(population, output, binary_rank::dominated);
 
@@ -142,8 +144,9 @@ namespace rank {
     template<typename Population>
     inline auto generate_binary_pareto(Population& population,
                                        pareto_nondominated_t /*unused*/) {
-      population_pareto_t<Population> output{population.size()};
+      clean_tags<frontier_level_t>(population);
 
+      population_pareto_t<Population> output{population.size()};
       populate_binary_pareto(population, output, binary_rank::nondominated);
 
       return output;
@@ -152,6 +155,8 @@ namespace rank {
     template<typename Population>
     inline auto generate_binary_pareto(Population& population,
                                        pareto_erased_t /*unused*/) {
+      clean_tags<frontier_level_t>(population);
+
       return population_pareto_t<Population>{};
     }
 
@@ -179,19 +184,25 @@ namespace rank {
       clean_tags<bin_rank_t>(population);
 
       population_pareto_t<Population> output{population.size()};
+
       auto current = binary_rank::nondominated;
+      pareto::frontier_level front_level = 1;
 
       for (auto&& frontier :
            population.indviduals() |
                pareto::views::sort(population.raw_comparator())) {
         for (auto&& solution : frontier.members()) {
-          auto& ind = solution.individual();
-          get_tag<bin_rank_t>(ind) = current;
+          auto& individual = solution.individual();
 
-          output.add_inidividual(ind);
+          get_tag<bin_rank_t>(individual) = current;
+          get_tag<frontier_level_t>(individual) = front_level;
+
+          output.add_inidividual(individual);
         }
 
         current = binary_rank::dominated;
+        front_level = 2;
+
         output.next();
       }
 
@@ -229,10 +240,44 @@ namespace rank {
            population.indviduals() |
                pareto::views::sort(population.raw_comparator())) {
         for (auto&& solution : frontier.members()) {
-          auto& ind = solution.individual();
-          get_tag<int_rank_t>(ind) = frontier.level();
+          auto& individual = solution.individual();
 
-          output.add_individual(ind);
+          get_tag<int_rank_t>(individual) = frontier.level();
+          get_tag<frontier_level_t>(individual) = frontier.level();
+
+          output.add_individual(individual);
+        }
+
+        output.next();
+      }
+
+      return output.extract();
+    }
+  };
+
+  // accumulated pareto level (rdga)
+  class accumulated_level {
+  public:
+    template<ranked_population<int_rank_t> Population, typename Pareto>
+    void operator()(Population& population, Pareto /*unused*/) const {
+      clean_tags<int_rank_t>(population);
+
+      details::wrapped_pareto<Population, Pareto> output{population.size()};
+
+      for (auto&& frontier :
+           population.indviduals() |
+               pareto::views::sort(population.raw_comparator())) {
+        for (auto&& solution : frontier.members()) {
+          auto& individual = solution.individual();
+
+          auto level = (get_tag<int_rank_t>(individual) += 1);
+          get_tag<frontier_level_t>(individual) = frontier.level();
+
+          for (auto&& dominated : solution.dominated()) {
+            get_tag<int_rank_t>(dominated.individual()) += level;
+          }
+
+          output.add_individual(individual);
         }
 
         output.next();
@@ -260,81 +305,60 @@ namespace rank {
     inline void populate_strength_pareto(Solutions& solutions,
                                          Pareto& output,
                                          bool which) {
+      auto front_level = output.count() + 1;
+
       for (auto&& solution : solutions) {
+        auto& individual = solution.individual();
+
         if (solution.nondominated() == which) {
-          output.add_individuals(solution.individual());
+          output.add_individuals(individual);
         }
+
+        get<frontier_level_t>(individual) = front_level;
       }
 
       output.next();
     }
 
-    template<typename Solutions>
+    template<typename Solutions, typename Population>
     inline auto generate_strength_pareto(Solutions& solutions,
-                                         std::size_t size,
+                                         Population& population,
                                          pareto_reduced_t /*unused*/) {
       using individual_t = typename Solutions::value_type::individual_t;
-      pareto_sets<individual_t> output{size};
 
+      pareto_sets<individual_t> output{population.size()};
       populate_strength_pareto(solutions, output, true);
       populate_strength_pareto(solutions, output, false);
 
       return output;
     }
 
-    template<typename Solutions>
+    template<typename Solutions, typename Population>
     inline auto generate_strength_pareto(Solutions& solutions,
-                                         std::size_t size,
+                                         Population& population,
                                          pareto_nondominated_t /*unused*/) {
       using individual_t = typename Solutions::value_type::individual_t;
-      pareto_sets<individual_t> output{size};
 
+      clean_tags<frontier_level_t>(population);
+
+      pareto_sets<individual_t> output{population.size()};
       populate_strength_pareto(solutions, output, true);
 
       return output;
     }
 
-    template<typename Solutions>
+    template<typename Solutions, typename Population>
     inline auto generate_strength_pareto(Solutions& solutions,
-                                         std::size_t /*unused*/,
+                                         Population& population,
                                          pareto_erased_t /*unused*/) {
       using individual_t = typename Solutions::value_type::individual_t;
+
+      clean_tags<frontier_level_t>(population);
+
       return pareto_sets<individual_t>{};
     }
 
   } // namespace details
-
-  // accumulated pareto level (rdga)
-  class accumulated_level {
-  public:
-    template<ranked_population<int_rank_t> Population, typename Pareto>
-    void operator()(Population& population, Pareto /*unused*/) const {
-      clean_tags<int_rank_t>(population);
-
-      details::wrapped_pareto<Population, Pareto> output{population.size()};
-
-      for (auto&& frontier :
-           population.indviduals() |
-               pareto::views::sort(population.raw_comparator())) {
-        for (auto&& solution : frontier.members()) {
-          auto& ind = solution.individual();
-
-          get_tag<int_rank_t>(ind) += 1;
-
-          for (auto&& dominated : solution.dominated()) {
-            get_tag<int_rank_t>(dominated.individual()) +=
-                get_tag<int_rank_t>(ind);
-          }
-
-          output.add_individual(ind);
-        }
-
-        output.next();
-      }
-
-      return output.extract();
-    }
-  };
 
   // number of dominated, first front (spea)
   class strength {
@@ -353,9 +377,13 @@ namespace rank {
           population.size() - std::ranges::size(first->members());
 
       for (auto&& solution : first->members()) {
+        auto& individual = solution.individual();
+
         assign_nondominated_strength(solution, dominated_count);
 
-        output.add_inidividual(solution.individual());
+        get_tag<frontier_level_t>(individual) = first->level();
+
+        output.add_inidividual(individual);
       }
 
       output.next();
@@ -363,9 +391,13 @@ namespace rank {
       for (auto&& frontier : std::ranges::subrange{std::ranges::next(first),
                                                    std::ranges::end(sorted)}) {
         for (auto&& solution : frontier.members()) {
+          auto& individual = solution.individual();
+
           assign_dominated_strength(solution);
 
-          output.add_inidividual(solution.individual());
+          get_tag<frontier_level_t>(individual) = frontier.level();
+
+          output.add_inidividual(individual);
         }
 
         output.next();
@@ -390,8 +422,7 @@ namespace rank {
         }
       }
 
-      return details::generate_strength_pareto(
-          analyzed, population.size(), preserved);
+      return details::generate_strength_pareto(analyzed, population, preserved);
     }
 
   private:
@@ -426,9 +457,13 @@ namespace rank {
            population.indviduals() |
                pareto::views::sort(population.raw_comparator())) {
         for (auto&& solution : frontier.members()) {
+          auto& individual = solution.individual();
+
           assign_strength(solution);
 
-          output.add_inidividual(solution.individual());
+          get_tag<frontier_level_t>(individual) = frontier.level();
+
+          output.add_inidividual(individual);
         }
 
         output.next();
@@ -445,8 +480,7 @@ namespace rank {
         assign_strength(solution);
       }
 
-      return details::generate_strength_pareto(
-          analyzed, population.size(), preserved);
+      return details::generate_strength_pareto(analyzed, population, preserved);
     }
 
   private:
