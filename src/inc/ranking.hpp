@@ -141,11 +141,13 @@ namespace rank {
       for (auto&& frontier :
            population.indviduals() |
                pareto::views::sort(population.raw_comparator())) {
+        auto front_level = output.count() + 1;
+
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
 
           get_tag<int_rank_t>(individual) = frontier.level();
-          get_tag<frontier_level_t>(individual) = frontier.level();
+          get_tag<frontier_level_t>(individual) = front_level;
 
           output.add_individual(individual);
         }
@@ -170,14 +172,16 @@ namespace rank {
       for (auto&& frontier :
            population.indviduals() |
                pareto::views::sort(population.raw_comparator())) {
+        auto front_level = output.count() + 1;
+
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
 
-          auto level = (get_tag<int_rank_t>(individual) += 1);
-          get_tag<frontier_level_t>(individual) = frontier.level();
+          auto acc_level = (get_tag<int_rank_t>(individual) += 1);
+          get_tag<frontier_level_t>(individual) = front_level;
 
           for (auto&& dominated : solution.dominated()) {
-            get_tag<int_rank_t>(dominated.individual()) += level;
+            get_tag<int_rank_t>(dominated.individual()) += acc_level;
           }
 
           output.add_individual(individual);
