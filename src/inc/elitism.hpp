@@ -6,23 +6,23 @@
 namespace gal {
 namespace elite {
 
-  template<typename Pareto>
-  concept strict_elitist_set = std::same_as<Pareto, pareto_preserved_t> ||
-                               std::same_as<Pareto, pareto_reduced_t> ||
-                               std::same_as<Pareto, pareto_nondominated_t>;
+  template<typename Preserved>
+  concept strict_elitist_set = std::same_as<Preserved, pareto_preserved_t> ||
+                               std::same_as<Preserved, pareto_reduced_t> ||
+                               std::same_as<Preserved, pareto_nondominated_t>;
 
-  template<typename Pareto>
+  template<typename Preserved>
   concept relaxed_elitist_set =
-      strict_elitist_set<Pareto> || std::same_as<Pareto, pareto_erased_t>;
+      strict_elitist_set<Preserved> || std::same_as<Preserved, pareto_erased_t>;
 
   // only non-dominated (pesa, pesa-ii, paes)
   class strict {
   public:
-    template<typename Population, strict_elitist_set Pareto>
-      requires(!std::same_as<Pareto, pareto_erased_t>)
-    inline void operator()(Population& population,
-                           population_pareto_t<Population>& sets,
-                           Pareto /*unused*/) const noexcept {
+    template<typename Population, strict_elitist_set Preserved>
+      requires(!std::same_as<Preserved, pareto_erased_t>)
+    inline void operator()(
+        Population& population,
+        population_pareto_t<Population, Preserved>& sets) const noexcept {
       if (!sets.empty() && sets.get_count_of(1) < population.current_size()) {
         sets.trim();
 
@@ -36,10 +36,10 @@ namespace elite {
   // do not remove dominated (nsga, nsga-ii, spea, spea-ii)
   class relaxed {
   public:
-    template<typename Population, relaxed_elitist_set Pareto>
-    inline void operator()(Population& /*unused*/,
-                           population_pareto_t<Population>& /*unused*/,
-                           Pareto /*unused*/) const noexcept {
+    template<typename Population, relaxed_elitist_set Preserved>
+    inline void operator()(
+        Population& /*unused*/,
+        population_pareto_t<Population, Preserved>& /*unused*/) const noexcept {
     }
   };
 

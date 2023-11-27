@@ -28,9 +28,9 @@ namespace niche {
     }
 
   public:
-    template<niched_population Population>
+    template<niched_population Population, typename Preserved>
     auto operator()(Population& population,
-                    population_pareto_t<Population>& sets) const {
+                    population_pareto_t<Population, Preserved>& sets) const {
       clean_tags<niche_density_t>(population);
 
       niche_set niches;
@@ -60,8 +60,8 @@ namespace niche {
           }
         }
 
-        for (auto&& inidividual : set) {
-          auto& tag = get_tag<niche_density_t>(*inidividual);
+        for (auto&& individual : set) {
+          auto& tag = get_tag<niche_density_t>(*individual);
           tag += static_cast<double>(tag) / total;
         }
       }
@@ -76,10 +76,10 @@ namespace niche {
   // crowding distance (nsga-ii)
   class distance {
   public:
-    template<niched_population Population>
+    template<niched_population Population, typename Preserved>
       requires(crowding_population<Population>)
     auto operator()(Population& population,
-                    population_pareto_t<Population>& sets) {
+                    population_pareto_t<Population, Preserved>& sets) {
       clean_tags<niche_density_t>(population);
 
       auto objectives =
@@ -113,16 +113,16 @@ namespace niche {
             niches.add_front().add_niche(std::ranges::size(set)).label();
 
         auto max_distance = std::numeric_limits<double>::min();
-        for (auto&& inidividual : set) {
-          get_tag<niche_label>(*inidividual) = label;
+        for (auto&& individual : set) {
+          get_tag<niche_label>(*individual) = label;
 
           auto distance =
-              static_cast<double>(get_tag<niche_density_t>(*inidividual));
+              static_cast<double>(get_tag<niche_density_t>(*individual));
           max_distance = std::max(max_distance, distance);
         }
 
-        for (auto&& inidividual : set) {
-          auto& distance = get_tag<niche_density_t>(*inidividual);
+        for (auto&& individual : set) {
+          auto& distance = get_tag<niche_density_t>(*individual);
           distance = static_cast<double>(distance) / max_distance;
         }
       }
@@ -191,10 +191,10 @@ namespace niche {
     };
 
   public:
-    template<niched_population Population>
+    template<niched_population Population, typename Preserved>
       requires(crowding_population<Population>)
     auto operator()(Population& population,
-                    population_pareto_t<Population>& sets) const {
+                    population_pareto_t<Population, Preserved>& sets) const {
       std::size_t filled = 0, target = population.target_size();
 
       niche_set niches;
@@ -264,10 +264,10 @@ namespace niche {
   // kth nearest neighbor (spea-ii)
   class neighbor {
   public:
-    template<niched_population Population>
+    template<niched_population Population, typename Preserved>
       requires(crowding_population<Population>)
     inline auto operator()(Population& population,
-                           population_pareto_t<Population>& sets) {
+                           population_pareto_t<Population, Preserved>& sets) {
       niche_set niches;
 
       auto distances = compute_distances(population.individuals());
@@ -403,11 +403,12 @@ namespace niche {
     }
 
     template<typename Population,
+             typename Preserved,
              std::size_t Dimensions,
              typename Fitness = get_fitness_t<raw_fitness_tag, Population>>
     auto calculate_hyperbox_density(
         Population& population,
-        population_pareto_t<Population>& sets,
+        population_pareto_t<Population, Preserved>& sets,
         std::array<Fitness, Dimensions> const& granularity,
         double alpha) {
       using individual_t = typename Population::individual_t;
@@ -461,10 +462,11 @@ namespace niche {
         granularity{Granularity...};
 
   public:
-    template<niched_population Population>
+    template<niched_population Population, typename Preserved>
       requires(grid_population<Population>)
-    inline auto operator()(Population& population,
-                           population_pareto_t<Population>& sets) const {
+    inline auto
+        operator()(Population& population,
+                   population_pareto_t<Population, Preserved>& sets) const {
       return details::calculate_hyperbox_density(
           population, sets, granularity, Alpha);
     }
@@ -478,10 +480,10 @@ namespace niche {
         divisions{Divisions...};
 
   public:
-    template<niched_population Population>
+    template<niched_population Population, typename Preserved>
       requires(grid_population<Population>)
     auto operator()(Population& population,
-                    population_pareto_t<Population>& sets) const {
+                    population_pareto_t<Population, Preserved>& sets) const {
       using granularity_t =
           multiobjective_value_t<get_fitness_t<raw_fitness_tag, Population>>;
 

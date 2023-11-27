@@ -146,10 +146,29 @@ inline bool operator!=(pareto_sets_iterator<Ty> const& lhs,
   return !(lhs == rhs);
 }
 
-template<typename Individual>
+struct pareto_preserved_t {};
+inline constexpr pareto_preserved_t pareto_preserved_tag{};
+
+struct pareto_reduced_t {};
+inline constexpr pareto_reduced_t pareto_reduced_tag{};
+
+struct pareto_nondominated_t {};
+inline constexpr pareto_nondominated_t pareto_nondominated_tag{};
+
+struct pareto_erased_t {};
+inline constexpr pareto_erased_t pareto_erased_tag{};
+
+template<typename Preserved>
+concept pareto_preservance = std::same_as<Preserved, pareto_preserved_t> ||
+                             std::same_as<Preserved, pareto_reduced_t> ||
+                             std::same_as<Preserved, pareto_nondominated_t> ||
+                             std::same_as<Preserved, pareto_erased_t>;
+
+template<typename Individual, pareto_preservance Preserved>
 class pareto_sets {
 public:
   using individual_t = Individual;
+  using preserved_t = Preserved;
 
 private:
   using individuals_t = std::vector<individual_t*>;
@@ -175,19 +194,45 @@ public:
   }
 
   inline void trim() noexcept {
-    if (set_boundaries_.size() > 2) {
-      set_boundaries_.resize(2);
+    if (set_boundaries_.size() > 1) {
       individuals_.erase(set_boundaries_[1], individuals_.end());
+      set_boundaries_.resize(1);
     }
   }
 
-  inline void add_inidividual(individual_t& individual) {
-    assert(individuals_.size() < max_individuals_);
-    individuals_.push_back(&individual);
+  inline void add_individual(individual_t& individual) {
+    if constexpr (!std::is_same_v<preserved_t, pareto_erased_t>) {
+      if constexpr (std::is_same_v<preserved_t, pareto_nondominated_t>) {
+        if (set_boundaries_.size() > 1) {
+          return;
+        }
+      }
+
+      assert(individual.size() < max_individuals_);
+
+      individuals_.push_back(&individual);
+    }
   }
 
   inline void next() {
-    set_boundaries_.push_back(individuals_.end());
+    if constexpr (!std::is_same_v<preserved_t, pareto_erased_t>) {
+      if constexpr (std::is_same_v<preserved_t, pareto_reduced_t> ||
+                    std::is_same_v<preserved_t, pareto_nondominated_t>) {
+        if (set_boundaries_.size() > 1) {
+          return;
+        }
+      }
+
+      set_boundaries_.push_back(individuals_.end());
+    }
+  }
+
+  inline void finish() {
+    if constexpr (std::is_same_v<preserved_t, pareto_reduced_t>) {
+      if (set_boundaries_.back() != individuals_.end()) {
+        set_boundaries_.push_back(individuals_.end());
+      }
+    }
   }
 
   inline auto count() const noexcept {
@@ -217,38 +262,16 @@ private:
   std::vector<set_boundery> set_boundaries_;
 };
 
-template<multiobjective_population Population>
-using population_pareto_t = pareto_sets<typename Population::individual_t>;
+template<multiobjective_population Population, typename Preserved>
+using population_pareto_t =
+    pareto_sets<typename Population::individual_t, Preserved>;
 
-struct pareto_preserved_t {};
-inline constexpr pareto_preserved_t pareto_preserved_tag{};
-
-struct pareto_reduced_t {};
-inline constexpr pareto_reduced_t pareto_reduced_tag{};
-
-struct pareto_nondominated_t {};
-inline constexpr pareto_nondominated_t pareto_nondominated_tag{};
-
-struct pareto_erased_t {};
-inline constexpr pareto_erased_t pareto_erased_tag{};
-
-namespace details {
-
-  template<typename Operation, typename Population, typename PreserveTag>
-  concept ranking_base = std::is_invocable_r_v<
-      population_pareto_t<Population>,
-      Operation,
-      std::add_lvalue_reference_t<Population>,
-      std::add_lvalue_reference_t<std::add_const_t<PreserveTag>>>;
-
-} // namespace details
-
-template<typename Operation, typename Population>
-concept ranking =
-    details::ranking_base<Operation, Population, pareto_preserved_t> &&
-    details::ranking_base<Operation, Population, pareto_reduced_t> &&
-    details::ranking_base<Operation, Population, pareto_nondominated_t> &&
-    details::ranking_base<Operation, Population, pareto_erased_t>;
+template<typename Operation, typename Population, typename Preserved>
+concept ranking = std::is_invocable_r_v<
+    population_pareto_t<Population, Preserved>,
+    Operation,
+    std::add_lvalue_reference_t<Population>,
+    std::add_lvalue_reference_t<std::add_const_t<Preserved>>>;
 
 class niche_label {
 public:
@@ -362,12 +385,12 @@ private:
   std::vector<niche_membership> niches_;
 };
 
-template<typename Operation, typename Population>
+template<typename Operation, typename Population, typename Preserved>
 concept niching = std::is_invocable_r_v<
     niche_set,
     Operation,
     std::add_lvalue_reference_t<Population>,
-    std::add_lvalue_reference_t<population_pareto_t<Population>>>;
+    std::add_lvalue_reference_t<population_pareto_t<Population, Preserved>>>;
 
 template<typename Operation, typename Population>
 concept projection = std::invocable<Operation, niche_set const&>;
