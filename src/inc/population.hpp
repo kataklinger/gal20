@@ -310,7 +310,7 @@ template<typename Population, typename... Tags>
 concept population_tagged_with =
     is_individual_tagged_with_v<typename Population::individual_t, Tags...>;
 
-template<std::default_initializable CleanedTags,
+template<std::default_initializable... CleanedTags,
          chromosome Chromosome,
          fitness Raw,
          comparator<Raw> RawCompare,
@@ -319,11 +319,11 @@ template<std::default_initializable CleanedTags,
          typename AllTags>
 inline void clean_tags(
     population<Chromosome, Raw, RawCompare, Scaled, ScaledCompare, AllTags>&
-        pop)
-  requires(details::has_tag_impl<AllTags, CleanedTags>::value)
+        population)
+  requires(std::conjunction_v<details::has_tag_impl<AllTags, CleanedTags>...>)
 {
-  for (auto&& individual : pop.individuals()) {
-    get_tag<CleanedTags>(individual) = {};
+  for (auto&& individual : population.individuals()) {
+    ((get_tag<CleanedTags>(individual) = {}), ...);
   }
 }
 
