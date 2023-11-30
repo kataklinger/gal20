@@ -34,11 +34,17 @@ struct sort_policy_base {
   }
 
   template<typename Collection, typename Comparator>
-  inline void sort(Collection& individuals, Comparator&& compare) {
+  inline auto sort(Collection& individuals, Comparator&& compare) {
     std::ranges::sort(
         individuals, std::forward<Comparator>(compare), [](auto const& i) {
           return i.evaluation().get(FitnessTag{});
         });
+
+    return by;
+  }
+
+  inline auto sorted(sort_by current) const noexcept {
+    return curent == by;
   }
 };
 
@@ -110,7 +116,7 @@ public:
   inline auto insert(Range&& chromosomes) {
     auto insertion = individuals_.size();
 
-    sorted_ = sort_by::none;
+    as_unsorted();
 
     auto output = std::back_inserter(individuals_);
     std::ranges::move(std::move(chromosomes), output);
@@ -122,7 +128,7 @@ public:
   auto replace(Range&& replacements) {
     auto removed = ensure_removed(std::ranges::size(replacements));
 
-    sorted_ = sort_by::none;
+    as_unsorted();
 
     for (auto&& replace_pair : replacements) {
       auto parent = get_parent(replace_pair);
@@ -165,11 +171,17 @@ public:
   inline void sort(FitnessTag tag) {
     sort_policy<FitnessTag> policy{stable_scaling_};
 
-    if (sorted_ != policy.by) {
-      sorted_ = sort_by::none;
-      policy.sort(individuals_, comparator(tag));
-      sorted_ = policy.by;
+    if (!policy.sorted(sorted_)) {
+      as_unsorted();
+      sorted_ = policy.sort(individuals_, comparator(tag));
     }
+  }
+
+  template<std::predicate<individual_t const&, individual_t const&> Less>
+  inline void sort(Less&& less) {
+    as_unsorted();
+
+    std::ranges::sort(individuals, std::forward<Less>(less));
   }
 
   template<sort_fitness_tag<raw_comparator_t, scaled_comparator_t> FitnessTag>
@@ -177,7 +189,7 @@ public:
       extremes(FitnessTag tag) const noexcept {
     sort_policy<FitnessTag> policy{stable_scaling_};
 
-    if (sorted_ == policy.by) {
+    if (policy.sorted(sorted_)) {
       return {individuals_.back(), individuals_.front()};
     }
     else {
@@ -237,6 +249,10 @@ private:
     return result;
   }
 
+  inline void as_unsorted() noexcept {
+    sorted_ = sort_by::none;
+  }
+
 private:
   raw_comparator_t raw_comparator_;
   scaled_comparator_t scaled_comparator_;
@@ -244,7 +260,7 @@ private:
   std::optional<std::size_t> target_size_;
   collection_t individuals_;
 
-  sort_by sorted_{sort_by::none};
+  sort_by sorted_{};
   bool stable_scaling_;
 };
 

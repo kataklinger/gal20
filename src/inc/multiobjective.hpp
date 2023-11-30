@@ -367,6 +367,10 @@ concept crowading = std::invocable<
     cluster_set const&>;
 
 template<typename Operation, typename Population, typename Preserved>
+concept pruning = std::
+    invocable<Operation, std::add_lvalue_reference_t<Population>, cluster_set&>;
+
+template<typename Operation, typename Population, typename Preserved>
 concept projection = std::invocable<
     Operation,
     std::add_lvalue_reference_t<population_pareto_t<Population, Preserved>>,

@@ -12,6 +12,7 @@ List of task to implement or improve
  - [ ] initializator to produce tags
  - [ ] verify duplicates parents for parent replacement
  - [ ] roulette wheele selection when minimizing fintess
+ - [ ] selection of hypercells rather than individuals
  - [ ] replacement with forbidden regions
  - [x] insert-only replacement
  - [x] elitism parameter for random replacement
@@ -31,6 +32,6 @@ List of task to implement or improve
  - [x] fitness that can be used for defining uniform random distribution
 
 # Pareto
- - [ ] skip comparing dominant solution from the previous gen. between themselves
- - [ ] propagate the number of solutions that are required to be ranked by later operations
- - [ ] preserver pareto front to which the solution belongs
+ - [x] skip comparing dominant solution from the previous gen. between themselves
+ - [x] propagate the number of solutions that are required to be ranked by later operations
+ - [x] preserve pareto front to which the solution belongs
