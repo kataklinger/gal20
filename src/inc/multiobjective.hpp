@@ -273,126 +273,103 @@ concept ranking = std::is_invocable_r_v<
     std::add_lvalue_reference_t<Population>,
     std::add_lvalue_reference_t<std::add_const_t<Preserved>>>;
 
-class niche_label {
+class cluster_label {
+private:
+  inline constexpr explicit cluster_label(std::size_t raw,
+                                          int /*unused*/) noexcept
+      : raw_{raw} {
+  }
+
 public:
-  constexpr niche_label() = default;
-
-  inline constexpr niche_label(std::size_t front, std::size_t group) noexcept
-      : front_{front}
-      , group_{group} {
+  inline static constexpr auto unique() noexcept {
+    return cluster_label{1, 0};
   }
 
-  inline constexpr explicit niche_label(std::size_t front) noexcept
-      : front_{front}
-      , group_{0} {
+  inline static constexpr auto unassigned() noexcept {
+    return cluster_label{0, 0};
   }
 
-  inline auto front() const noexcept {
-    return front_ - 1;
-  }
+  cluster_label() = default;
 
-  inline auto group() const noexcept {
-    return group_ - 1;
+  inline constexpr explicit cluster_label(std::size_t index) noexcept
+      : raw_{(index << 1) | 1} {
   }
 
   inline auto is_proper() const noexcept {
-    return front_ != 0 && group_ != 0;
-  }
-
-  inline auto is_unassigned() const noexcept {
-    return front_ == 0 && group_ == 0;
+    return (raw_ & 1) == 1;
   }
 
   inline auto is_unique() const noexcept {
-    return front_ != 0 && group_ == 0;
+    return (raw_ & 1) == 0 && raw_ > 0;
+  }
+
+  inline auto is_unassigned() const noexcept {
+    return raw_ == 0;
+  }
+
+  inline auto index() const noexcept {
+    assert(is_proper());
+
+    return raw_ >> 1;
   }
 
 private:
-  std::size_t front_{};
-  std::size_t group_{};
+  std::size_t raw_{};
 };
-
-struct niche_tag {};
-
-using niche_density_t = tag_adapted_value<niche_tag, double>;
 
 template<typename Population>
-concept niched_population =
-    details::mo_tagged_population<Population, niche_density_t, niche_label>;
+concept clustered_population =
+    details::mo_tagged_population<Population, cluster_label>;
 
-class niche_membership {
+class cluster_set {
 public:
-  inline niche_membership(niche_label label, std::size_t member_count) noexcept
-      : label_{label}
-      , member_count_{member_count} {
+  inline auto add_cluster(std::size_t member_count) {
+    cluster_sizes_.emplace_back(member_count);
+    return cluster_label{cluster_sizes_.size() - 1};
   }
 
-  inline void add_member() noexcept {
-    ++member_count_;
+  inline auto add_cluster() {
+    return add_cluster(0);
   }
 
-  inline auto const& label() const noexcept {
-    return label_;
+  inline void add_member(std::size_t cluster_index) noexcept {
+    ++cluster_sizes_[cluster_index];
   }
 
-  inline auto member_count() const noexcept {
-    return member_count_;
+  inline auto operator[](std::size_t cluster_index) const noexcept {
+    return cluster_sizes_[cluster_index];
   }
 
 private:
-  niche_label label_;
-  std::size_t member_count_{};
-};
-
-class niche_set {
-public:
-  inline auto& add_front() noexcept {
-    ++fronts_count_;
-    return *this;
-  }
-
-  inline auto& add_niche(std::size_t member_count) {
-    assert(fronts_count_ > 0);
-
-    return niches_.emplace_back(niche_label{fronts_count_, niches_.size() + 1},
-                                member_count);
-  }
-
-  inline auto& operator[](niche_label const& label) noexcept {
-    return niches_[label.group() - 1];
-  }
-
-  inline auto const& operator[](niche_label const& label) const noexcept {
-    return niches_[label.group() - 1];
-  }
-
-  inline auto unique_label() const noexcept {
-    assert(fronts_count_ > 0);
-
-    return niche_label{fronts_count_, 0};
-  }
-
-  inline auto fronts_count() const noexcept {
-    return fronts_count_;
-  }
-
-  inline auto niches_count() const noexcept {
-    return niches_.size();
-  }
-
-private:
-  std::size_t fronts_count_{};
-  std::vector<niche_membership> niches_;
+  std::vector<std::size_t> cluster_sizes_;
 };
 
 template<typename Operation, typename Population, typename Preserved>
-concept niching = std::is_invocable_r_v<
-    niche_set,
+concept clustering = std::is_invocable_r_v<
+    cluster_set,
     Operation,
     std::add_lvalue_reference_t<Population>,
     std::add_lvalue_reference_t<population_pareto_t<Population, Preserved>>>;
 
-template<typename Operation, typename Population>
-concept projection = std::invocable<Operation, niche_set const&>;
+struct crowd_tag {};
+
+using crowd_density_t = tag_adapted_value<crowd_tag, double>;
+
+template<typename Population>
+concept crowded_population =
+    details::mo_tagged_population<Population, crowd_density_t>;
+
+template<typename Operation, typename Population, typename Preserved>
+concept crowading = std::invocable<
+    Operation,
+    std::add_lvalue_reference_t<Population>,
+    std::add_lvalue_reference_t<population_pareto_t<Population, Preserved>>,
+    cluster_set const&>;
+
+template<typename Operation, typename Population, typename Preserved>
+concept projection = std::invocable<
+    Operation,
+    std::add_lvalue_reference_t<population_pareto_t<Population, Preserved>>,
+    cluster_set const&>;
 
 } // namespace gal

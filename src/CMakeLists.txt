@@ -19,17 +19,18 @@ target_include_directories(
 
 list(APPEND HEADER_LIST
   chromosome.hpp
+  clustering.hpp
   configuration.hpp
   context.hpp
   coupling.hpp
   criteria.hpp
   crossover.hpp
+  crowding.hpp
   elitism.hpp
   fitness.hpp
   individual.hpp
   multiobjective.hpp
   mutation.hpp
-  niching.hpp
   observing.hpp
   operation.hpp
   pareto.hpp

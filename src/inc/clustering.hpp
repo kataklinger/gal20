@@ -2,151 +2,36 @@
 #pragma once
 
 #include "multiobjective.hpp"
-#include "operation.hpp"
 
-#include <cmath>
 #include <unordered_map>
 
 namespace gal {
-namespace niche {
-
-  // fitness sharing (nsga)
-  template<chromosome Chromosome,
-           proximation<Chromosome> Proximation,
-           double Cutoff,
-           double Alpha = 2.>
-  class share {
-  public:
-    using proximation_t = Proximation;
-
-    inline constexpr double cutoff = Cutoff;
-    inline constexpr double alpha = Alpha;
-
-  public:
-    inline explicit share(proximation_t proximity)
-        : proximity_{proximity} {
-    }
-
-  public:
-    template<niched_population Population, typename Preserved>
-    auto operator()(Population& population,
-                    population_pareto_t<Population, Preserved>& sets) const {
-      clean_tags<niche_density_t>(population);
-
-      niche_set niches;
-
-      for (auto&& set : sets) {
-        double total = 0.;
-
-        auto& label =
-            niches.add_front().add_niche(std::ranges::size(set)).label();
-
-        for (auto&& left : set) {
-          get_tag<niche_label>(*left) = label;
-
-          for (auto&& right :
-               std::ranges::subrange{std::ranges::next(std::ranges::begin(set)),
-                                     std::ranges::end(set)}) {
-            auto proximity = static_cast<double>(
-                proximity_(left->chromosome(), right->chromosome()));
-
-            auto niching = proximity < cutoff
-                               ? 1. - std::pow(proximity / cutoff, alpha)
-                               : 0.;
-
-            get_tag<niche_density_t>(*left) += niching;
-            get_tag<niche_density_t>(*right) += niching;
-            total += niching
-          }
-        }
-
-        for (auto&& individual : set) {
-          auto& tag = get_tag<niche_density_t>(*individual);
-          tag += static_cast<double>(tag) / total;
-        }
-      }
-
-      return niches;
-    }
-
-  private:
-    proximation_t proximity_;
-  };
-
-  // crowding distance (nsga-ii)
-  class distance {
-  public:
-    template<niched_population Population, typename Preserved>
-      requires(crowding_population<Population>)
-    auto operator()(Population& population,
-                    population_pareto_t<Population, Preserved>& sets) {
-      clean_tags<niche_density_t>(population);
-
-      auto objectives =
-          std::ranges::size(population.individuals().evaluation().raw());
-
-      niche_set niches;
-
-      for (auto&& set : sets) {
-        for (std::size_t objective = 0; objective < objectives; ++objective) {
-          std::ranges::sort(set, [objective](auto const& lhs, auto const& rhs) {
-            return lhs->evaluation().raw()[objective] <
-                   rhs->evaluation().raw()[objective];
-          });
-
-          auto first = std::ranges::begin(set);
-          auto last = --std::ranges::end(set);
-
-          get_tag<niche_density_t>(**first) = get_tag<niche_density_t>(**last) =
-              std::numeric_limits<double>::infinity();
-
-          while (++first != last) {
-            auto distance = static_cast<double>(
-                (*(first + 1))->evaluation().raw()[objective] -
-                (*(first - 1))->evaluation().raw()[objective]);
-
-            get_tag<niche_density_t>(**first) += distance;
-          }
-        }
-
-        auto& label =
-            niches.add_front().add_niche(std::ranges::size(set)).label();
-
-        auto max_distance = std::numeric_limits<double>::min();
-        for (auto&& individual : set) {
-          get_tag<niche_label>(*individual) = label;
-
-          auto distance =
-              static_cast<double>(get_tag<niche_density_t>(*individual));
-          max_distance = std::max(max_distance, distance);
-        }
-
-        for (auto&& individual : set) {
-          auto& distance = get_tag<niche_density_t>(*individual);
-          distance = static_cast<double>(distance) / max_distance;
-        }
-      }
-
-      return niches;
-    }
-  };
+namespace cluster {
 
   namespace details {
 
     template<typename Range>
-    inline void assign_density_data(Range&& range,
-                                    niche_label const& label,
-                                    double density) noexcept {
+    inline void assign_cluster_labels(Range&& range,
+                                      cluster_label const& label) noexcept {
       for (auto&& member : range) {
-        get_tag<niche_label>(member) = label;
-        get_tag<niche_density_t>(member) = density;
+        get_tag<cluster_label>(member) = label;
       }
     }
 
   } // namespace details
 
+  class none {
+  public:
+    template<multiobjective_population Population, typename Preserved>
+    inline auto
+        operator()(Population& population,
+                   population_pareto_t<Population, Preserved>& sets) const {
+      return cluster_set{};
+    }
+  };
+
   // average linkage (spea)
-  class cluster {
+  class linkage {
   private:
     template<typename Individual>
     class rep {
@@ -176,13 +61,13 @@ namespace niche {
         return total_distance / (members_.size() * other.members_.size());
       }
 
-      inline void assign(niche_set& niches) noexcept {
+      inline void assign(cluster_set& clusters) noexcept {
         if (members_.size() == 1) {
-          details::assign_density_data(members_, niches.unique_label(), 1.);
+          details::assign_density_data(members_, cluster_label::unique());
         }
         else {
-          auto& label = niches.add_niche(members_.size()).label();
-          details::assign_density_data(members_, label, 1. / members_.size());
+          auto label = clusters.add_cluster(members_.size());
+          details::assign_density_data(members_, label);
         }
       }
 
@@ -191,17 +76,15 @@ namespace niche {
     };
 
   public:
-    template<niched_population Population, typename Preserved>
-      requires(crowding_population<Population>)
+    template<clustered_population Population, typename Preserved>
+      requires(spatial_population<Population>)
     auto operator()(Population& population,
                     population_pareto_t<Population, Preserved>& sets) const {
       std::size_t filled = 0, target = population.target_size();
 
-      niche_set niches;
+      cluster_set result;
 
       for (auto&& set : sets) {
-        niches.add_front();
-
         if (auto n = std::ranges::size(set); filled < target) {
           if (auto remain = std::max(target - filled, n); remain < n) {
             auto clusters = generate_clusters(set);
@@ -210,21 +93,21 @@ namespace niche {
             }
 
             for (auto&& c : clusters) {
-              c.assign(niches);
+              c.assign(result);
             }
           }
           else {
-            details::assign_density_data(set, niches.unique_label(), 1.);
+            details::assign_density_data(set, cluster_label::unique());
           }
 
           filled += n;
         }
         else {
-          details::assign_density_data(set, {}, 1.);
+          details::assign_density_data(set, cluster_label::unassigned());
         }
       }
 
-      return niches;
+      return result;
     }
 
   private:
@@ -258,75 +141,6 @@ namespace niche {
 
       merge_left->merge(*merge_right);
       clusters.erase(merge_right);
-    }
-  };
-
-  // kth nearest neighbor (spea-ii)
-  class neighbor {
-  public:
-    template<niched_population Population, typename Preserved>
-      requires(crowding_population<Population>)
-    inline auto operator()(Population& population,
-                           population_pareto_t<Population, Preserved>& sets) {
-      niche_set niches;
-
-      auto distances = compute_distances(population.individuals());
-      assign_density(distances, population.individuals());
-
-      for (auto&& set : sets) {
-        auto& label =
-            niches.add_front().add_niche(std::ranges::size(set)).label();
-
-        for (auto&& individual : set) {
-          get_tag<niche_label>(*individual) = label;
-        }
-      }
-
-      return niches;
-    }
-
-  private:
-    template<typename Individuals>
-    std::vector<double> compute_distances(Individuals& individuals) {
-      auto count = individuals.size();
-      std::vector<double> distances(count * count);
-
-      std::size_t i = 0, h = 0, v = 0;
-      for (auto first = individuals.begin(), last = individuals.end();
-           first != last;
-           ++first) {
-
-        h = v = i * count + i;
-        distances[h] = distances[v] = 0;
-
-        for (auto other = first + 1; other != last; ++other) {
-          h += 1;
-          v += count;
-
-          distances[h] = distances[v] = euclidean_distance(
-              first->evaluation().raw(), other->evaluation().raw());
-        }
-
-        ++i;
-      }
-    }
-
-    template<typename Individuals>
-    void assign_density(std::vector<double>& distances,
-                        Individuals& individuals) noexcept {
-      auto count = individuals.size();
-
-      auto kth = static_cast<std::size_t>(std::sqrt(count)) + 1;
-      auto first = distances.begin(), last = distances.begin() + count;
-      for (std::size_t i = 0; i < count; ++i) {
-
-        auto d =
-            *std::ranges::nth_element(first, first + kth, last, std::less{});
-        get_tag<niche_density_t>(individuals[i]) = 1. / (d + 2.);
-
-        first = last;
-        last += count;
-      }
     }
   };
 
@@ -406,21 +220,17 @@ namespace niche {
              typename Preserved,
              std::size_t Dimensions,
              typename Fitness = get_fitness_t<raw_fitness_tag, Population>>
-    auto calculate_hyperbox_density(
-        Population& population,
-        population_pareto_t<Population, Preserved>& sets,
-        std::array<Fitness, Dimensions> const& granularity,
-        double alpha) {
+    auto mark_hyperbox(Population& population,
+                       population_pareto_t<Population, Preserved>& sets,
+                       std::array<Fitness, Dimensions> const& granularity) {
       using individual_t = typename Population::individual_t;
       using hypermap_t = std::unordered_map<
           hypercooridnates_t<multiobjective_value_t<Fitness>, Dimensions>,
           std::vector<individual_t*>>;
 
-      niche_set niches;
+      cluster_set result;
 
       for (auto&& set : sets) {
-        niches.add_front();
-
         hypermap_t hypermap{};
         for (auto&& individual : set) {
           auto coords =
@@ -431,30 +241,24 @@ namespace niche {
 
         for (auto&& [coord, individuals] : hypermap) {
           if (auto count = individuals.size(); count == 1) {
-            get_tag<niche_label>(*individuals[0]) = niches.unique_label();
-            get_tag<niche_density_t>(*individuals[0]) = 1.;
+            get_tag<cluster_label>(*individuals[0]) = cluster_label::unique();
           }
           else {
-            auto& label = niches.add_niche(count).label();
-            auto density = 1. / std::pow(count, alpha);
-
+            auto label = result.add_cluster(count);
             for (auto&& individual : individuals) {
-              get_tag<niche_label>(*individual) = label;
-              get_tag<niche_density_t>(*individual) = density;
+              get_tag<cluster_label>(*individual) = label;
             }
           }
         }
       }
 
-      return niches;
+      return result;
     }
 
   } // namespace details
 
-  // cell-sharing (pesa, pesa-ii, paes)
-  template<grid_fitness Fitness,
-           double Alpha = 2.0,
-           multiobjective_value_t<Fitness>... Granularity>
+  // hypercell (pesa, pesa-ii, paes)
+  template<grid_fitness Fitness, multiobjective_value_t<Fitness>... Granularity>
   class hypergrid {
   private:
     inline static constexpr std::array<multiobjective_value_t<Fitness>,
@@ -462,25 +266,24 @@ namespace niche {
         granularity{Granularity...};
 
   public:
-    template<niched_population Population, typename Preserved>
+    template<clustered_population Population, typename Preserved>
       requires(grid_population<Population>)
     inline auto
         operator()(Population& population,
                    population_pareto_t<Population, Preserved>& sets) const {
-      return details::calculate_hyperbox_density(
-          population, sets, granularity, Alpha);
+      return details::mark_hyperbox(population, sets, granularity);
     }
   };
 
   // adaptive cell-sharing (rdga)
-  template<double Alpha = 2.0, std::size_t... Divisions>
+  template<std::size_t... Divisions>
   class adaptive_hypergrid {
   private
     inline static constexpr std::array<std::size_t, sizeof...(Divisions)>
         divisions{Divisions...};
 
   public:
-    template<niched_population Population, typename Preserved>
+    template<clustered_population Population, typename Preserved>
       requires(grid_population<Population>)
     auto operator()(Population& population,
                     population_pareto_t<Population, Preserved>& sets) const {
@@ -516,10 +319,9 @@ namespace niche {
         *gr_first = (*max_first - *min_first) / *div_first;
       }
 
-      return details::calculate_hyperbox_density(
-          population, sets, granularity, Alpha);
+      return details::mark_hyperbox(population, sets, granularity);
     }
   };
 
-} // namespace niche
+} // namespace cluster
 } // namespace gal

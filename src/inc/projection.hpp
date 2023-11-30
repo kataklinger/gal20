@@ -19,7 +19,7 @@ namespace project {
 
   template<typename Context, typename RankTag, typename... From>
   concept projectable_context =
-      niched_population<typename Context::population_t> &&
+      crowded_population<typename Context::population_t> &&
       ranked_population<typename Context::population_t, RankTag> &&
       details::projectable_from<typename Context::population_t, From...> &&
       std::convertible_to<RankTag, double>;
@@ -29,9 +29,9 @@ namespace project {
   class scale {
   public:
     using context_t = Context;
+    using population_t = typename context_t::population_t;
 
   private:
-    using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
   public:
@@ -39,14 +39,16 @@ namespace project {
         : population_{&context.population()} {
     }
 
-    inline void operator()(niche_set const& niches) const {
-      std::vector<double> multipliers(niches.fronts_count(),
+    template<typename Preserved>
+    void operator()(population_pareto_t<population_t, Preserved>& sets,
+                    cluster_set const& /*unused*/) const {
+      std::vector<double> multipliers(sets.count(),
                                       std::numeric_limits<double>::max());
 
       for (auto&& individual : population_->individuals()) {
-        auto front = get_tag<niche_label>(individual).front();
+        auto front = get_tag<frontier_level_t>(individual).front();
         auto density =
-            static_cast<double>(get_tag<niche_density_t>(individual));
+            static_cast<double>(get_tag<crowd_density_t>(individual));
 
         if (multipliers[front] > density) {
           multipliers[front] = density;
@@ -58,7 +60,7 @@ namespace project {
       }
 
       for (auto&& individual : population_->individuals()) {
-        auto front = get_tag<niche_label>(individual).front();
+        auto front = get_tag<frontier_level_t>(individual).front();
         auto scaled = multipliers[front] *
                       static_cast<double>(get_tag<RankTag>(individual));
 
@@ -75,9 +77,9 @@ namespace project {
   class translate {
   public:
     using context_t = Context;
+    using population_t = typename context_t::population_t;
 
   private:
-    using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
   public:
@@ -85,11 +87,13 @@ namespace project {
         : population_{&context.population()} {
     }
 
-    inline void operator()(niche_set const& niches) const noexcept {
+    template<typename Preserved>
+    void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
+                    cluster_set const& /*unused*/) const noexcept {
       for (auto&& individual : population_->individuals()) {
         auto rank = static_cast<double>(get_tag<RankTag>(individual));
         auto density =
-            static_cast<double>(get_tag<niche_density_t>(individual));
+            static_cast<double>(get_tag<crowd_density_t>(individual));
 
         individual.evaluation().set_scaled(scaled_fitness_t{rank + density});
       }
@@ -104,9 +108,9 @@ namespace project {
   class merge {
   public:
     using context_t = Context;
+    using population_t = typename context_t::population_t;
 
   private:
-    using population_t = typename context_t::population_t;
     using scaled_fitness_t = typename population_t::scaled_fitness_t;
 
   public:
@@ -114,11 +118,13 @@ namespace project {
         : population_{&context.population()} {
     }
 
-    inline void operator()(niche_set const& niches) const noexcept {
+    template<typename Preserved>
+    void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
+                    cluster_set const& /*unused*/) const noexcept {
       for (auto&& individual : population_->individuals()) {
         auto rank = static_cast<double>(get_tag<RankTag>(individual));
         auto density =
-            static_cast<double>(get_tag<niche_density_t>(individual));
+            static_cast<double>(get_tag<crowd_density_t>(individual));
 
         individual.evaluation().set_scaled(scaled_fitness_t{rank, density});
       }
@@ -132,7 +138,7 @@ namespace project {
   concept truncateable_context =
       population_tagged_with<typename Context::population_t,
                              Tag,
-                             niche_density_t> &&
+                             crowd_density_t> &&
       std::convertible_to<Tag, double> &&
       details::projectable_from<typename Context::population_t, double>;
 
@@ -155,8 +161,6 @@ namespace project {
   class truncate {
   public:
     using context_t = Context;
-
-  private:
     using population_t = typename context_t::population_t;
 
   public:
@@ -165,7 +169,10 @@ namespace project {
     }
 
   public:
-    inline void operator()(niche_set const& niches) const {
+    template<typename Preserved>
+    inline void
+        operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
+                   cluster_set const& /*unused*/) const noexcept {
       details::assign_truncated<SelectedTag>(*population_);
     }
 
@@ -183,19 +190,23 @@ namespace project {
   class alternate {
   public:
     using context_t = Context;
+    using population_t = typename context_t::population_t;
 
   public:
     inline explicit alternate(context_t& context) noexcept
         : context_{&context} {
     }
 
-    inline void operator()(niche_set const& niches) const noexcept {
+    template<typename Preserved>
+    inline void
+        operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
+                   cluster_set const& /*unused*/) const noexcept {
       if (auto& stats = context_->history().current();
           stats.generation_value() % 2 == 0) {
         details::assign_truncated<RankTag>(context_->population());
       }
       else {
-        details::assign_truncated<niche_density_t>(context_->population());
+        details::assign_truncated<crowd_density_t>(context_->population());
       }
     }
 

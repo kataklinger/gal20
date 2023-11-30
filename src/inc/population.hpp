@@ -296,8 +296,8 @@ concept multiobjective_population =
     multiobjective_fitness<typename Population::raw_fitness_t>;
 
 template<typename Population>
-concept crowding_population =
-    crowding_fitness<typename Population::raw_fitness_t>;
+concept spatial_population =
+    spatial_fitness<typename Population::raw_fitness_t>;
 
 template<typename Population>
 concept grid_population = grid_fitness<typename Population::raw_fitness_t>;

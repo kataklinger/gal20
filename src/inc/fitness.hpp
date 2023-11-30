@@ -51,7 +51,7 @@ namespace details {
   };
 
   template<typename Type>
-  concept crowding_value = additive<Type> && std::convertible_to<Type, double>;
+  concept spatial_value = additive<Type> && std::convertible_to<Type, double>;
 
   template<typename Type>
   concept grid_point =
@@ -88,15 +88,15 @@ concept multiobjective_fitness =
     std::totally_ordered<multiobjective_value_t<Fitness>>;
 
 template<typename Fitness>
-concept crowding_fitness =
+concept spatial_fitness =
     multiobjective_fitness<Fitness> &&
-    details::crowding_value<multiobjective_value_t<Fitness>>;
+    details::spatial_value<multiobjective_value_t<Fitness>>;
 
 template<typename Fitness>
 concept grid_fitness = multiobjective_fitness<Fitness> &&
                        details::grid_point<multiobjective_value_t<Fitness>>;
 
-template<crowding_fitness Fitness>
+template<spatial_fitness Fitness>
 inline auto euclidean_distance(Fitness const& left,
                                Fitness const& right) noexcept {
   double result = 0.;
