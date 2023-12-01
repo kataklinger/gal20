@@ -44,7 +44,7 @@ struct sort_policy_base {
   }
 
   inline auto sorted(sort_by current) const noexcept {
-    return curent == by;
+    return current == by;
   }
 };
 

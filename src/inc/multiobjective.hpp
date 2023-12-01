@@ -336,6 +336,26 @@ public:
     ++cluster_sizes_[cluster_index];
   }
 
+  inline auto begin() noexcept {
+    return cluster_sizes_.begin();
+  }
+
+  inline auto end() noexcept {
+    return cluster_sizes_.end();
+  }
+
+  inline auto cbegin() noexcept {
+    return cluster_sizes_.cbegin();
+  }
+
+  inline auto cend() noexcept {
+    return cluster_sizes_.cend();
+  }
+
+  inline auto size() noexcept {
+    return cluster_sizes_.size();
+  }
+
   inline auto operator[](std::size_t cluster_index) const noexcept {
     return cluster_sizes_[cluster_index];
   }
@@ -365,6 +385,14 @@ concept crowading = std::invocable<
     std::add_lvalue_reference_t<Population>,
     std::add_lvalue_reference_t<population_pareto_t<Population, Preserved>>,
     cluster_set const&>;
+
+struct prune_tag {};
+
+using prune_state_t = tag_adapted_value<prune_tag, bool>;
+
+template<typename Population>
+concept prunable_population =
+    details::mo_tagged_population<Population, prune_state_t>;
 
 template<typename Operation, typename Population, typename Preserved>
 concept pruning = std::
