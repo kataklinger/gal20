@@ -8,12 +8,10 @@ namespace select {
 
   template<typename Attribute>
   concept attribute = requires {
-                        { Attribute::size } -> util::decays_to<std::size_t>;
-                        { Attribute::unique } -> util::decays_to<bool>;
-                        {
-                          Attribute::sample()
-                          } -> std::same_as<sample_t<Attribute::unique>>;
-                      };
+    { Attribute::size } -> util::decays_to<std::size_t>;
+    { Attribute::unique } -> util::decays_to<bool>;
+    { Attribute::sample() } -> std::same_as<sample_t<Attribute::unique>>;
+  };
 
   template<bool Unique, std::size_t Size>
   struct selection_attribute {
@@ -41,8 +39,7 @@ namespace select {
     using distribution_t = std::uniform_int_distribution<std::size_t>;
 
   public:
-    inline explicit random(attribute_t /*unused*/,
-                           generator_t& generator) noexcept
+    inline random(attribute_t /*unused*/, generator_t& generator) noexcept
         : generator_{&generator} {
     }
 
@@ -94,8 +91,7 @@ namespace select {
     inline static constexpr fitness_tag_t fitness_tag{};
 
   public:
-    inline explicit roulette(attribute_t /*unused*/,
-                             generator_t& generator) noexcept
+    inline roulette(attribute_t /*unused*/, generator_t& generator) noexcept
         : generator_{&generator} {
     }
 
@@ -142,8 +138,7 @@ namespace select {
   template<attribute Attribute, typename Generator>
   class roulette_raw : public roulette<raw_fitness_tag, Attribute, Generator> {
   public:
-    inline explicit roulette_raw(Attribute attrib,
-                                 Generator& generator) noexcept
+    inline roulette_raw(Attribute attrib, Generator& generator) noexcept
         : roulette<raw_fitness_tag, Attribute, Generator>{attrib, generator} {
     }
   };
@@ -152,8 +147,7 @@ namespace select {
   class roulette_scaled
       : public roulette<scaled_fitness_tag, Attribute, Generator> {
   public:
-    inline explicit roulette_scaled(Attribute attrib,
-                                    Generator& generator) noexcept
+    inline roulette_scaled(Attribute attrib, Generator& generator) noexcept
         : roulette<scaled_fitness_tag, Attribute, Generator>{attrib,
                                                              generator} {
     }
