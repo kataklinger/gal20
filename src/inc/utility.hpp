@@ -70,5 +70,5 @@ namespace util {
     }
   }
 
-} // namespace traits
+} // namespace util
 } // namespace gal

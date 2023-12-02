@@ -119,7 +119,6 @@ template<typename Range, typename Replaced, typename Replacement>
 concept replacement_range =
     std::ranges::random_access_range<Range> && requires(Range r) {
       { get_parent(*std::ranges::begin(r)) } -> util::decays_to<Replaced>;
-
       { get_child(*std::ranges::begin(r)) } -> util::decays_to<Replacement>;
     };
 
