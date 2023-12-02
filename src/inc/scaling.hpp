@@ -22,14 +22,14 @@ namespace scale {
     linear_coefficients caclulate_linear_coefficients(Fitness const& fmin,
                                                       Fitness const& favg,
                                                       Fitness const& fmax) {
-      if (fmin > (Preassure * favg - fmax) / (Preassure - 1.0)) {
+      if (fmin > (Preassure * favg - fmax) / (Preassure - 1.)) {
         auto delta = fmax - favg;
         if (approaching_zero(delta)) {
           return {1, 0};
         }
 
         auto a = favg / delta;
-        return {a * (Preassure - 1.0), a * (fmax - Preassure * favg)};
+        return {a * (Preassure - 1.), a * (fmax - Preassure * favg)};
       }
       else {
         auto delta = favg - fmin;
@@ -46,7 +46,7 @@ namespace scale {
 
   template<typename Fitness>
   concept linear_fitness = averageable_fitness<Fitness> && requires(Fitness f) {
-    { 1.0 * f } -> std::convertible_to<double>;
+    { 1. * f } -> std::convertible_to<double>;
   };
 
   namespace details {
@@ -135,7 +135,7 @@ namespace scale {
       stats::deviation_fitness<Fitness> &&
       std::convertible_to<stats::fitness_deviation_t<Fitness>, double> &&
       requires(Fitness f) {
-        { f / 1.0 } -> std::convertible_to<double>;
+        { f / 1. } -> std::convertible_to<double>;
       };
 
   template<typename Context>
@@ -176,10 +176,10 @@ namespace scale {
   private:
     inline scaled_fitness_t calculate(raw_fitness_t const& raw) const noexcept {
       if (auto dev = get_deviation(); dev > 0) {
-        return {1.0 + (raw - get_average()) / (2.0 * dev)};
+        return {1. + (raw - get_average()) / (2. * dev)};
       }
       else {
-        return {1.0};
+        return {1.};
       }
     }
 
@@ -231,8 +231,8 @@ namespace scale {
     inline void operator()(ordinal_t ordinal, individual_t& individual) const {
       auto eval = individual.evaluation();
 
-      auto value = Preassure - 2.0 * (*ordinal - 1.0) * (Preassure - 1.0) /
-                                   (population_->current_size() - 1.0);
+      auto value = Preassure - 2. * (*ordinal - 1.) * (Preassure - 1.) /
+                                   (population_->current_size() - 1.);
 
       eval.set_scaled(scaled_fitness_t{value});
     }

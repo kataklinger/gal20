@@ -60,7 +60,6 @@ namespace details {
                                   std::void_t<typename Scaling::is_stable_t>> {
     using type = typename Scaling::is_stable_t;
   };
-
 } // namespace details
 
 template<typename Scaling>

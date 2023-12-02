@@ -394,9 +394,61 @@ template<typename Population>
 concept prunable_population =
     details::mo_tagged_population<Population, prune_state_t>;
 
+namespace details {
+  template<typename Operation, typename Population, typename Preserved>
+  concept cluster_pruning_helper =
+      std::invocable<Operation,
+                     std::add_lvalue_reference_t<Population>,
+                     cluster_set&>;
+
+  template<typename Operation, typename Population, typename Preserved>
+  concept crowd_pruning_helper =
+      std::invocable<Operation, std::add_lvalue_reference_t<Population>>;
+} // namespace details
+
 template<typename Operation, typename Population, typename Preserved>
-concept pruning = std::
-    invocable<Operation, std::add_lvalue_reference_t<Population>, cluster_set&>;
+concept cluster_pruning =
+    details::cluster_pruning_helper<Operation, Population, Preserved> &&
+    !details::crowd_pruning_helper<Operation, Population, Preserved>;
+
+template<typename Operation, typename Population, typename Preserved>
+concept crowd_pruning =
+    details::crowd_pruning_helper<Operation, Population, Preserved> &&
+    !details::cluster_pruning_helper<Operation, Population, Preserved>;
+
+template<typename Operation, typename Population, typename Preserved>
+concept pruning =
+    details::cluster_pruning_helper<Operation, Population, Preserved> ||
+    details::crowd_pruning_helper<Operation, Population, Preserved>;
+
+namespace details {
+
+  template<typename Population,
+           typename Preserved,
+           pruning<Population, Preserved> Pruning>
+  struct pruning_helper;
+
+  template<typename Population,
+           typename Preserved,
+           cluster_pruning<Population, Preserved> Pruning>
+  struct pruning_helper<Population, Preserved, Pruning> {
+    inline static constexpr auto cluster_based = true;
+    inline static constexpr auto crowd_based = false;
+  };
+
+  template<typename Population,
+           typename Preserved,
+           crowd_pruning<Population, Preserved> Pruning>
+  struct pruning_helper<Population, Preserved, Pruning> {
+    inline static constexpr auto cluster_based = false;
+    inline static constexpr auto crowd_based = true;
+  };
+
+} // namespace details
+
+template<typename Population, typename Preserved, typename Pruning>
+struct pruning_traits
+    : details::pruning_helper<Population, Preserved, Pruning> {};
 
 template<typename Operation, typename Population, typename Preserved>
 concept projection = std::invocable<

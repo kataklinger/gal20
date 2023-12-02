@@ -22,8 +22,7 @@ namespace prune {
   public:
     template<crowded_population Population>
       requires(ranked_population<Population, RankTag>)
-    inline void operator()(Population& population,
-                           cluster_set const& /*unused*/) const {
+    inline void operator()(Population& population) const {
       population.sort([](auto const& lhs, auto const& rhs) {
         auto flhs = get_tag<RankTag>(lhs);
         auto frhs = get_tag<RankTag>(rhs);
