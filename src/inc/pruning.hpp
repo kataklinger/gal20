@@ -37,7 +37,16 @@ namespace prune {
     }
   };
 
-  // remove random from group (pesa, pesa-ii, paes)
+  namespace details {
+    template<typename Population>
+    inline void prune_population(Population& population) noexcept {
+      population.remove_if([](auto const& individual) {
+        return get_tag<prune_state_t>(individual);
+      });
+    }
+  } // namespace details
+
+  // remove random from cluster (pesa, pesa-ii, paes)
   template<typename Generator>
   class cluster_random {
   public:
@@ -50,42 +59,95 @@ namespace prune {
 
     template<clustered_population Population>
       requires(prunable_population<Population>)
-    void operator()(Population& population, cluster_set const& clusters) const {
+    void operator()(Population& population, cluster_set& clusters) const {
       std::vector<std::size_t> selected(clusters.size());
 
       std::size_t i = 0;
       for (auto&& cluster_size : clusters) {
         std::uniform_int_distribution<std::size_t> dist{0, cluster_size - 1};
         selected[i++] = dist(*generator_);
+
+        cluster_size = 1;
       }
 
       for (auto&& individual : population.individuals()) {
-        auto& state = get_tag<prune_state_t>(individual);
+        auto& to_prune = get_tag<prune_state_t>(individual);
         auto label = get_tag<cluster_label>(individual);
 
         if (label.is_proper()) {
-          state = (--selected[label.index()]) != 0
+          auto left = --selected[label.index()];
+          to_prune = left != 0;
         }
         else {
-          state = !label.is_unique();
+          to_prune = !label.is_unique();
         }
       }
 
-      population.remove_if([](auto const& individual) {
-        return get_tag<prune_state_t>(individual);
-      });
+      details::prune_population(population);
     }
 
   private:
     generator_t* generator_;
   };
 
-  // remove non-centroids (spea)
+  // remove non-centroids from cluster (spea)
   class cluster_edge {
   public:
-    template<clustered_population Population>
-      requires(prunable_population<Population>)
-    void operator()(Population& population, cluster_set const& clusters) const {
+    template<prunable_population Population>
+      requires(clustered_population<Population> &&
+               spatial_population<Population>)
+    void operator()(Population& population, cluster_set& clusters) const {
+      using individual_t = typename Population::individual_t;
+
+      std::vector<std::tuple<std::size_t, std::size_t>> buffer_index;
+
+      std::size_t buffer_size = 0;
+      for (auto&& cluster_size : clusters) {
+        buffer_index.emplace_back(buffer_size, 0);
+        buffer_size += cluster_size;
+        cluster_size = 1;
+      }
+
+      std::vector<std::tuple<individual_t*, double>> buffer(buffer_size);
+
+      for (auto&& individual : population.individuals()) {
+        auto label = get_tag<cluster_label>(individual);
+
+        if (label.is_proper()) {
+          auto& [first, current] = buffer_index[label.index()];
+
+          double total_distance = 0.;
+          for (; first <= current; ++first) {
+            auto& [other_individual, other_distance] = buffer[first];
+
+            auto distance =
+                euclidean_distance(individual.evaluation().raw(),
+                                   other_individual->evaluation().raw());
+
+            other_distance += distance;
+            total_distance += distance;
+          }
+
+          buffer[++current] = std::tuple{&individual, total_distance};
+
+          get_tag<prune_state_t>(individual) = true;
+
+          if (current - first == clusters[label.index()]) {
+            auto& [center, dummy] = *std::ranges::min_element(
+                buffer.begin() + first,
+                buffer.begin() + current,
+                std::less{},
+                [](auto& element) { std::get<1>(element); });
+
+            get_tag<prune_state_t>(center) = false;
+          }
+        }
+        else {
+          get_tag<prune_state_t>(individual) = !label.is_unique();
+        }
+      }
+
+      details::prune_population(population);
     }
   };
 
