@@ -192,15 +192,13 @@ namespace prune {
       for (auto&& cluster_size : clusters) {
         buffer_index.emplace_back(buffer_size, 0);
         buffer_size += cluster_size;
-        cluster_size = 1;
       }
 
       std::vector<std::tuple<individual_t*, double>> buffer(buffer_size);
 
       for (auto&& individual : population.individuals()) {
-        auto label = get_tag<cluster_label>(individual);
-
-        if (label.is_proper()) {
+        if (auto label = get_tag<cluster_label>(individual);
+            label.is_proper()) {
           auto& [first, current] = buffer_index[label.index()];
 
           double total_distance = 0.;
@@ -232,6 +230,10 @@ namespace prune {
         else {
           get_tag<prune_state_t>(individual) = !label.is_unique();
         }
+      }
+
+      for (auto&& cluster_size : clusters) {
+        cluster_size = 1;
       }
 
       details::prune_population(population);
