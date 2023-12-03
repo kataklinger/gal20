@@ -180,13 +180,13 @@ void test_ground() {
   gal::couple::reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>
       rep_p{gen};
 
-  auto cp0 = gal::couple::factorize<gal::couple::exclusive>(rep_p)(rtx);
+  auto cp0 = gal::couple::parametrize<gal::couple::exclusive>(rep_p)(rtx);
   cp0(std::vector<pop_t::iterator_t>{});
 
-  auto cp1 = gal::couple::factorize<gal::couple::overlapping>(rep_p)(rtx);
+  auto cp1 = gal::couple::parametrize<gal::couple::overlapping>(rep_p)(rtx);
   cp1(std::vector<pop_t::iterator_t>{});
 
-  auto cp2 = gal::couple::factorize<gal::couple::field>(rep_p)(rtx);
+  auto cp2 = gal::couple::parametrize<gal::couple::field>(rep_p)(rtx);
   cp2(std::vector<pop_t::iterator_t>{});
 
   gal::stats::get_fitness_best_value<gal::raw_fitness_tag> getter{};

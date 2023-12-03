@@ -407,7 +407,7 @@ namespace couple {
   };
 
   template<template<typename, typename> class Coupling, typename Params>
-  inline constexpr auto factorize(Params const& params) {
+  inline constexpr auto parametrize(Params const& params) {
     return factory<Coupling, Params>{params};
   }
 
@@ -416,7 +416,7 @@ namespace couple {
            auto Mutation,
            bool MutationImproveOnly,
            typename Generator>
-  inline constexpr auto factorize(Generator& generator)
+  inline constexpr auto parametrize(Generator& generator)
     requires(probability<Crossover> && probability<Mutation>)
   {
     using params_t =

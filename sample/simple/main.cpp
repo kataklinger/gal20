@@ -35,7 +35,7 @@ int main() {
              stats::fitness_deviation_raw>(10)
       .stop(criteria::generation_limit{100})
       .select(select::roulette_raw{select::unique<4>, rng})
-      .couple(couple::factorize<couple::exclusive, 0.8f, 0.2f, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::worst_raw{})
       .observe(observe{soo::generation_event,
                        [](auto const& /*unused*/, auto const& /*unused*/) {}})
