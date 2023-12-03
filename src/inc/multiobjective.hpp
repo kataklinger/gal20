@@ -356,7 +356,11 @@ public:
     return cluster_sizes_.size();
   }
 
-  inline auto operator[](std::size_t cluster_index) const noexcept {
+  inline auto& operator[](std::size_t cluster_index) noexcept {
+    return cluster_sizes_[cluster_index];
+  }
+
+  inline auto const& operator[](std::size_t cluster_index) const noexcept {
     return cluster_sizes_[cluster_index];
   }
 

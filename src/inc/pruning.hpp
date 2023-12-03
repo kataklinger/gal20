@@ -48,6 +48,92 @@ namespace prune {
   // remove random from cluster (pesa, pesa-ii, paes)
   template<typename Generator>
   class cluster_random {
+  private:
+    class cluster_map {
+    private:
+      struct entry {
+        inline entry() noexcept
+            : count_{std::numeric_limits<std::size_t>::max()} {
+        }
+
+        inline entry(std::size_t index, std::size_t first) noexcept
+            : index_{index}
+            , first_{first} {
+        }
+
+        inline auto prune_one() noexcept {
+          return first_ + (pruned_++);
+        }
+
+        inline auto remaining() const noexcept {
+          return count_ - pruned_;
+        }
+
+        std::size_t index_{};
+        std::size_t first_{};
+        std::size_t count_{};
+        std::size_t pruned_{};
+      };
+
+    public:
+      inline cluster_map(cluster_set& clusters) {
+        std::size_t buffer_size = 0, i = 0;
+        for (auto&& cluster_size : clusters) {
+          states.emplace_back(i++, buffer_size);
+          buffer_size += cluster_size;
+        }
+
+        buffer_.resize(buffer_size);
+      }
+
+      inline void push(std::size_t cluster_index, prune_state_t& prune_state) {
+        auto idx = entries_[cluster_index].count_++;
+        buffer_[idx] = &prune_state;
+      }
+
+      auto prepare(std::size_t prepruned, std::size_t target_size) {
+        auto prune_count = prepruned - target_size;
+        auto relevant = std::min(prune_count, entries_.size());
+
+        if (auto proj = [](auto& s) { return s.count_; }; relevant < 8) {
+          std::ranges::partial_sort(
+              entries_, entries_.begin() + relevant, std::greater{}, proj);
+        }
+        else {
+          std::ranges::sort(entries_, std::greater{}, proj);
+        }
+
+        entries_.resize(relevant);
+        entries_.emplace_back();
+
+        for (auto&& entry : entries_) {
+          auto first = buffer.begin() + entry.first_;
+          std::shuffle(first, first + entry.count_, generator_);
+        }
+
+        return std::tuple{prune_count, entries_[0].remaining()};
+      }
+
+      inline void mark(std::size_t cluster_index) noexcept {
+        *buffer_[entries_[cluster_index].prune_one()] = true;
+      }
+
+      inline auto more(std::size_t cluster_index,
+                       std::size_t densest) const noexcept {
+        return entries_[cluster_index].remaining() == densest;
+      }
+
+      inline void update_set(cluster_set& target) noexcept {
+        for (auto&& entry : entries_) {
+          target[entry.index_] -= entry.pruned_;
+        }
+      }
+
+    private:
+      std::vector<entry> entries_;
+      std::vector<prune_state_t*> buffer_;
+    };
+
   public:
     using generator_t = Generator;
 
@@ -59,29 +145,31 @@ namespace prune {
     template<clustered_population Population>
       requires(prunable_population<Population>)
     void operator()(Population& population, cluster_set& clusters) const {
-      std::vector<std::size_t> selected(clusters.size());
+      cluster_map map{clusters};
 
-      std::size_t i = 0;
-      for (auto&& cluster_size : clusters) {
-        std::uniform_int_distribution<std::size_t> dist{0, cluster_size - 1};
-        selected[i++] = dist(*generator_);
-
-        cluster_size = 1;
-      }
-
+      std::size_t unassigned = 0;
       for (auto&& individual : population.individuals()) {
-        auto& to_prune = get_tag<prune_state_t>(individual);
         auto label = get_tag<cluster_label>(individual);
-
-        if (label.is_proper()) {
-          auto left = --selected[label.index()];
-          to_prune = left != 0;
+        if (label.is_unassigned()) {
+          get_tag<prune_state_t>(individual) = true;
+          ++unassigned;
         }
-        else {
-          to_prune = !label.is_unique();
+        else if (label.is_proper()) {
+          map.push(label.index(), get_tag<prune_state_t>(individual));
         }
       }
 
+      auto reduced = population.current_size() - unassigned;
+      if (auto target = population.target_size(); reduced > target) {
+        auto [excess, densest] = map.prepare(reduced, target);
+        for (std::size_t i = 0; excess != 0 && densest != 0; --densest) {
+          do {
+            map.mark(i++);
+          } while ((--excess) != 0 && map.more(i, densest));
+        }
+      }
+
+      map.update_set(clusters);
       details::prune_population(population);
     }
 
