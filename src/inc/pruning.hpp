@@ -38,26 +38,29 @@ namespace prune {
 
   namespace details {
     template<typename Population>
-    inline void prune_population(Population& population) noexcept {
+    inline void sweep(Population& population) noexcept {
       population.remove_if([](auto const& individual) {
         return get_tag<prune_state_t>(individual);
       });
     }
   } // namespace details
 
-  // remove random from cluster (pesa, pesa-ii, paes)
-  template<typename Generator>
-  class cluster_random {
-  private:
+  namespace details {
+
     class cluster_map {
     private:
-      struct entry {
-        inline entry() noexcept
-            : count_{std::numeric_limits<std::size_t>::max()} {
-        }
+      inline static constexpr auto end_level =
+          std::numeric_limits<std::size_t>::max();
 
-        inline entry(std::size_t index, std::size_t first) noexcept
+    private:
+      struct entry {
+        entry() = default;
+
+        inline entry(std::size_t index,
+                     std::size_t level,
+                     std::size_t first) noexcept
             : index_{index}
+            , level_{level}
             , first_{first} {
         }
 
@@ -70,17 +73,20 @@ namespace prune {
         }
 
         std::size_t index_{};
+        std::size_t level_{end_level};
+
         std::size_t first_{};
+
         std::size_t count_{};
         std::size_t pruned_{};
       };
 
     public:
-      inline cluster_map(cluster_set& clusters) {
+      inline cluster_map(cluster_set const& clusters) {
         std::size_t buffer_size = 0, i = 0;
-        for (auto&& cluster_size : clusters) {
-          states.emplace_back(i++, buffer_size);
-          buffer_size += cluster_size;
+        for (auto&& cluster : clusters) {
+          entries_.emplace_back(i++, cluster.level_, buffer_size);
+          buffer_size += cluster.members_;
         }
 
         buffer_.resize(buffer_size);
@@ -91,11 +97,12 @@ namespace prune {
         buffer_[idx] = &prune_state;
       }
 
-      auto prepare(std::size_t prepruned, std::size_t target_size) {
-        auto prune_count = prepruned - target_size;
-        auto relevant = std::min(prune_count, entries_.size());
+    private:
+      auto prepare(std::size_t excess) {
+        auto proj = [](auto& s) { return std::tuple{s.level_, s.count_}; };
 
-        if (auto proj = [](auto& s) { return s.count_; }; relevant < 8) {
+        auto relevant = std::min(excess, entries_.size());
+        if (relevant < 8) {
           std::ranges::partial_sort(
               entries_, entries_.begin() + relevant, std::greater{}, proj);
         }
@@ -105,35 +112,73 @@ namespace prune {
 
         entries_.resize(relevant);
         entries_.emplace_back();
-
-        for (auto&& entry : entries_) {
-          auto first = buffer.begin() + entry.first_;
-          std::shuffle(first, first + entry.count_, generator_);
-        }
-
-        return std::tuple{prune_count, entries_[0].remaining()};
+        next_ = entries_.begin();
       }
 
-      inline void mark(std::size_t cluster_index) noexcept {
+      inline auto more_levels() const noexcept {
+        return next_->level_ != end_level;
+      }
+
+      template<typename Generator>
+      auto fetch_level(Generator& generator) noexcept {
+        auto current = next_;
+        auto level = next_->level_;
+
+        for (; next_->level_ == level && more_levels(); ++next_) {
+          auto first = buffer_.begin() + next_->first_;
+          std::shuffle(first, first + next_->count_, generator);
+        }
+
+        return std::tuple{current - entries_.begin(), current->remaining()};
+      }
+
+      inline void mark_one(std::size_t cluster_index) noexcept {
         *buffer_[entries_[cluster_index].prune_one()] = true;
       }
 
-      inline auto more(std::size_t cluster_index,
-                       std::size_t densest) const noexcept {
+      inline auto same_density(std::size_t cluster_index,
+                               std::size_t densest) const noexcept {
         return entries_[cluster_index].remaining() == densest;
       }
 
       inline void update_set(cluster_set& target) noexcept {
         for (auto&& entry : entries_) {
-          target[entry.index_] -= entry.pruned_;
+          target[entry.index_].members_ -= entry.pruned_;
+        }
+      }
+
+    public:
+      template<typename Generator>
+      void mark_all(Generator& generator,
+                    std::size_t current_size,
+                    std::size_t target_size) {
+        if (current_size > target_size) {
+          auto excess = current_size - target_size;
+          prepare(excess);
+
+          do {
+            auto [i, density] = fetch_level(generator);
+            for (; excess != 0 && density != 0; --density) {
+              do {
+                mark_one(i++);
+              } while ((--excess) != 0 && same_density(i, density));
+            }
+          } while (excess != 0 && more_levels());
         }
       }
 
     private:
       std::vector<entry> entries_;
       std::vector<prune_state_t*> buffer_;
+
+      std::vector<entry>::iterator next_;
     };
 
+  } // namespace details
+
+  // remove random from cluster (pesa, pesa-ii, paes)
+  template<typename Generator>
+  class cluster_random {
   public:
     using generator_t = Generator;
 
@@ -145,7 +190,7 @@ namespace prune {
     template<clustered_population Population>
       requires(prunable_population<Population>)
     void operator()(Population& population, cluster_set& clusters) const {
-      cluster_map map{clusters};
+      details::cluster_map map{clusters};
 
       std::size_t unassigned = 0;
       for (auto&& individual : population.individuals()) {
@@ -159,18 +204,13 @@ namespace prune {
         }
       }
 
-      auto reduced = population.current_size() - unassigned;
-      if (auto target = population.target_size(); reduced > target) {
-        auto [excess, densest] = map.prepare(reduced, target);
-        for (std::size_t i = 0; excess != 0 && densest != 0; --densest) {
-          do {
-            map.mark(i++);
-          } while ((--excess) != 0 && map.more(i, densest));
-        }
-      }
+      map.mark_all(generator_,
+                   population.current_size() - unassigned,
+                   population.target_size());
 
       map.update_set(clusters);
-      details::prune_population(population);
+
+      details::sweep(population);
     }
 
   private:
@@ -189,9 +229,9 @@ namespace prune {
       std::vector<std::tuple<std::size_t, std::size_t>> buffer_index;
 
       std::size_t buffer_size = 0;
-      for (auto&& cluster_size : clusters) {
+      for (auto&& cluster : clusters) {
         buffer_index.emplace_back(buffer_size, 0);
-        buffer_size += cluster_size;
+        buffer_size += cluster.members_;
       }
 
       std::vector<std::tuple<individual_t*, double>> buffer(buffer_size);
@@ -217,7 +257,7 @@ namespace prune {
 
           get_tag<prune_state_t>(individual) = true;
 
-          if (current - first == clusters[label.index()]) {
+          if (current - first == clusters[label.index()].members_) {
             auto& [center, dummy] = *std::ranges::min_element(
                 buffer.begin() + first,
                 buffer.begin() + current,
@@ -232,11 +272,11 @@ namespace prune {
         }
       }
 
-      for (auto&& cluster_size : clusters) {
-        cluster_size = 1;
+      for (auto&& cluster : clusters) {
+        cluster.members_ = 1;
       }
 
-      details::prune_population(population);
+      details::sweep(population);
     }
   };
 

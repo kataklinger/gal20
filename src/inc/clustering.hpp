@@ -85,6 +85,8 @@ namespace cluster {
       cluster_set result;
 
       for (auto&& set : sets) {
+        result.next_level();
+
         if (auto n = std::ranges::size(set); filled < target) {
           if (auto remain = std::max(target - filled, n); remain < n) {
             auto clusters = generate_clusters(set);
@@ -231,6 +233,8 @@ namespace cluster {
       cluster_set result;
 
       for (auto&& set : sets) {
+        result.next_level();
+
         hypermap_t hypermap{};
         for (auto&& individual : set) {
           auto coords =

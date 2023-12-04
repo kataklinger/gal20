@@ -187,11 +187,11 @@ namespace crowd {
   private:
     inline auto get_denisty(cluster_label label, cluster_set const& clusters) {
       if (label.is_proper()) {
-        auto count = static_cast<double>(sets[label.index()]);
+        auto count = static_cast<double>(clusters[label.index()].members_);
         return std::pow(count, Alpha);
       }
 
-      if (lable.is_unique()) {
+      if (label.is_unique()) {
         return 1.;
       }
 

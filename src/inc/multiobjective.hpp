@@ -323,49 +323,68 @@ concept clustered_population =
 
 class cluster_set {
 public:
-  inline auto add_cluster(std::size_t member_count) {
-    cluster_sizes_.emplace_back(member_count);
-    return cluster_label{cluster_sizes_.size() - 1};
+  struct cluster {
+    std::size_t level_;
+    std::size_t members_;
+  };
+
+public:
+  inline auto add_cluster(std::size_t members) {
+    clusters_.emplace_back(level_, members);
+    return cluster_label{clusters_.size() - 1};
   }
 
   inline auto add_cluster() {
     return add_cluster(0);
   }
 
+  inline void next_level() noexcept {
+    ++level_;
+  }
+
   inline void add_member(std::size_t cluster_index) noexcept {
-    ++cluster_sizes_[cluster_index];
+    ++clusters_[cluster_index].members_;
   }
 
   inline auto begin() noexcept {
-    return cluster_sizes_.begin();
+    return clusters_.begin();
   }
 
   inline auto end() noexcept {
-    return cluster_sizes_.end();
+    return clusters_.end();
+  }
+
+  inline auto begin() const noexcept {
+    return clusters_.begin();
+  }
+
+  inline auto end() const noexcept {
+    return clusters_.end();
   }
 
   inline auto cbegin() noexcept {
-    return cluster_sizes_.cbegin();
+    return clusters_.cbegin();
   }
 
   inline auto cend() noexcept {
-    return cluster_sizes_.cend();
+    return clusters_.cend();
   }
 
   inline auto size() noexcept {
-    return cluster_sizes_.size();
+    return clusters_.size();
   }
 
   inline auto& operator[](std::size_t cluster_index) noexcept {
-    return cluster_sizes_[cluster_index];
+    return clusters_[cluster_index];
   }
 
   inline auto const& operator[](std::size_t cluster_index) const noexcept {
-    return cluster_sizes_[cluster_index];
+    return clusters_[cluster_index];
   }
 
 private:
-  std::vector<std::size_t> cluster_sizes_;
+  std::vector<cluster> clusters_;
+  std::size_t level_{};
 };
 
 template<typename Operation, typename Population, typename Preserved>
