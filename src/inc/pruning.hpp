@@ -129,7 +129,8 @@ namespace prune {
           std::shuffle(first, first + next_->count_, generator);
         }
 
-        return std::tuple{current - entries_.begin(), current->remaining()};
+        return std::tuple{
+            current - entries_.begin(), current->remaining(), level};
       }
 
       inline void mark_one(std::size_t cluster_index) noexcept {
@@ -148,8 +149,10 @@ namespace prune {
       }
 
     public:
-      template<typename Generator>
+      template<typename Generator,
+               std::invocable<std::size_t const&, std::size_t&> LevelPrune>
       void mark_all(Generator& generator,
+                    LevelPrune level_prune,
                     std::size_t current_size,
                     std::size_t target_size) {
         if (current_size > target_size) {
@@ -157,12 +160,17 @@ namespace prune {
           prepare(excess);
 
           do {
-            auto [i, density] = fetch_level(generator);
+            auto [i, density, level] = fetch_level(generator);
             for (; excess != 0 && density != 0; --density) {
               do {
                 mark_one(i++);
               } while ((--excess) != 0 && same_density(i, density));
             }
+
+            if (excess > 0) {
+              level_prune(level, excess);
+            }
+
           } while (excess != 0 && more_levels());
         }
       }
@@ -204,7 +212,22 @@ namespace prune {
         }
       }
 
+      auto level_prune = [&individuals = population.individuals()](
+                             std::size_t level, std::size_t& excess) {
+        for (auto&& individual : individuals) {
+          if (get_tag<frontier_level_t>(individual) == level &&
+              get_tag<cluster_label>(individual).is_unique()) {
+            get_tag<prune_state_t>(individual) = true;
+
+            if (--excess == 0) {
+              break;
+            }
+          }
+        }
+      };
+
       map.mark_all(generator_,
+                   level_prune,
                    population.current_size() - unassigned,
                    population.target_size());
 
