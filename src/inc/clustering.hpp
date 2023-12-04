@@ -232,26 +232,35 @@ namespace cluster {
 
       cluster_set result;
 
+      std::size_t processed = true;
       for (auto&& set : sets) {
-        result.next_level();
+        if (processed < population.target_size()) {
+          result.next_level();
 
-        hypermap_t hypermap{};
-        for (auto&& individual : set) {
-          auto coords =
-              get_hypercoordinates(individual.evaluation().raw(), granularity);
-
-          hypermap[coords].push_back(&individual);
-        }
-
-        for (auto&& [coord, individuals] : hypermap) {
-          if (auto count = individuals.size(); count == 1) {
-            get_tag<cluster_label>(*individuals[0]) = cluster_label::unique();
+          hypermap_t hypermap{};
+          for (auto&& individual : set) {
+            auto coords = get_hypercoordinates(individual.evaluation().raw(),
+                                               granularity);
+            hypermap[coords].push_back(&individual);
           }
-          else {
-            auto label = result.add_cluster(count);
-            for (auto&& individual : individuals) {
-              get_tag<cluster_label>(*individual) = label;
+
+          processed += hypermap.size();
+
+          for (auto&& [coord, individuals] : hypermap) {
+            if (auto count = individuals.size(); count == 1) {
+              get_tag<cluster_label>(*individuals[0]) = cluster_label::unique();
             }
+            else {
+              auto label = result.add_cluster(count);
+              for (auto&& individual : individuals) {
+                get_tag<cluster_label>(*individual) = label;
+              }
+            }
+          }
+        }
+        else {
+          for (auto&& individual : set) {
+            get_tag<cluster_label>(*individual) = cluster_label::unassigned();
           }
         }
       }
