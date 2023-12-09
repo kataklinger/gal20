@@ -239,6 +239,12 @@ namespace select {
         , index_{index} {
     }
 
+    inline cluster(clustering_t clust,
+                   attribute_t attrib,
+                   generator_t& generator) noexcept
+        : cluster{clust, attrib, generator, cluster_index_t{}} {
+    }
+
     template<population_tagged_with<cluster_tag_t> Population>
     auto operator()(Population& population) const {
       std::vector<std::tuple<std::size_t, std::size_t>> clusters;
