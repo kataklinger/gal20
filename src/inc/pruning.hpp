@@ -103,11 +103,13 @@ namespace prune {
 
         auto relevant = std::min(excess, entries_.size());
         if (relevant < 8) {
-          std::ranges::partial_sort(
-              entries_, entries_.begin() + relevant, std::greater{}, proj);
+          std::ranges::partial_sort(entries_,
+                                    entries_.begin() + relevant,
+                                    std::ranges::greater{},
+                                    proj);
         }
         else {
-          std::ranges::sort(entries_, std::greater{}, proj);
+          std::ranges::sort(entries_, std::ranges::greater{}, proj);
         }
 
         entries_.resize(relevant);
@@ -284,7 +286,7 @@ namespace prune {
             auto& [center, dummy] = *std::ranges::min_element(
                 buffer.begin() + first,
                 buffer.begin() + current,
-                std::less{},
+                std::ranges::less{},
                 [](auto& element) { std::get<1>(element); });
 
             get_tag<prune_state_t>(center) = false;

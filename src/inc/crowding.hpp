@@ -159,8 +159,8 @@ namespace crowd {
       auto first = distances.begin(), last = distances.begin() + count;
       for (std::size_t i = 0; i < count; ++i) {
 
-        auto d =
-            *std::ranges::nth_element(first, first + kth, last, std::less{});
+        auto d = *std::ranges::nth_element(
+            first, first + kth, last, std::ranges::less{});
         get_tag<crowd_density_t>(individuals[i]) = 1. / (d + 2.);
 
         first = last;
