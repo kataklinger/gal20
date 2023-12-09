@@ -5,6 +5,7 @@
 #include "fitness.hpp"
 #include "utility.hpp"
 
+#include <cassert>
 #include <optional>
 #include <ranges>
 
@@ -98,13 +99,23 @@ private:
 };
 
 template<typename Tag, typename... Tys>
-inline auto& get_tag(individual<Tys...>& individual) noexcept {
-  return std::get<Tag>(individual.tags());
+inline auto& get_tag(individual<Tys...>& ind) noexcept {
+  if constexpr (std::is_same_v<Tag, typename individual<Tys...>::tags_t>) {
+    return ind.tags();
+  }
+  else {
+    return std::get<Tag>(ind.tags());
+  }
 }
 
 template<typename Tag, typename... Tys>
-inline auto const& get_tag(individual<Tys...> const& individual) noexcept {
-  return std::get<Tag>(individual.tags());
+inline auto const& get_tag(individual<Tys...> const& ind) noexcept {
+  if constexpr (std::is_same_v<Tag, typename individual<Tys...>::tags_t>) {
+    return ind.tags();
+  }
+  else {
+    return std::get<Tag>(ind.tags());
+  }
 }
 
 using ordinal_t = std::optional<std::size_t>;
@@ -136,18 +147,78 @@ namespace details {
 
 } // namespace details
 
-template<typename Population, typename... Tags>
+template<typename Individual, typename... Tags>
 struct is_individual_tagged_with
     : std::conjunction<
-          details::has_tag_impl<typename Population::individual_t::tags_t,
-                                Tags>...> {};
+          details::has_tag_impl<typename Individual::tags_t, Tags>...> {};
 
-template<typename Population, typename... Tags>
+template<typename Individual, typename... Tags>
 inline constexpr auto is_individual_tagged_with_v =
-    is_individual_tagged_with<Population, Tags...>::value;
+    is_individual_tagged_with<Individual, Tags...>::value;
 
 template<typename Individual, typename... Tags>
 concept individual_tagged_with =
     is_individual_tagged_with_v<Individual, Tags...>;
+
+class cluster_label {
+private:
+  inline constexpr explicit cluster_label(std::size_t raw,
+                                          int /*unused*/) noexcept
+      : raw_{raw} {
+  }
+
+public:
+  inline static constexpr auto unique() noexcept {
+    return cluster_label{1, 0};
+  }
+
+  inline static constexpr auto unassigned() noexcept {
+    return cluster_label{0, 0};
+  }
+
+  cluster_label() = default;
+
+  inline constexpr explicit cluster_label(std::size_t index) noexcept
+      : raw_{(index << 1) | 1} {
+  }
+
+  inline auto is_proper() const noexcept {
+    return (raw_ & 1) == 1;
+  }
+
+  inline auto is_unique() const noexcept {
+    return (raw_ & 1) == 0 && raw_ > 0;
+  }
+
+  inline auto is_unassigned() const noexcept {
+    return raw_ == 0;
+  }
+
+  inline auto index() const noexcept {
+    assert(is_proper());
+
+    return raw_ >> 1;
+  }
+
+private:
+  std::size_t raw_{};
+};
+
+template<typename Cluster>
+struct cluster_index;
+
+template<std::integral Cluster>
+struct cluster_index<Cluster> {
+  inline auto operator()(Cluster cluster) const noexcept {
+    return cluster;
+  }
+};
+
+template<>
+struct cluster_index<cluster_label> {
+  inline auto operator()(cluster_label cluster) const noexcept {
+    return cluster.is_proper() ? cluster.index() : 0;
+  }
+};
 
 } // namespace gal

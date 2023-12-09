@@ -109,6 +109,12 @@ void test_ground() {
   gal::select::roulette_scaled sl3{gal::select::unique<2>, gen};
   sl3(p);
 
+  gal::select::cluster sl4{gal::select::shared<int>,
+                           gal::select::unique<2>,
+                           gen,
+                           gal::cluster_index<int>{}};
+  sl4(p);
+
   gal::replace::random<std::mt19937, 2> ro1{gen};
   ro1(p, std::vector<parent_replacement_t>{});
 

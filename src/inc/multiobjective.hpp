@@ -4,7 +4,6 @@
 #include "pareto.hpp"
 #include "population.hpp"
 
-#include <cassert>
 
 namespace gal {
 
@@ -272,50 +271,6 @@ concept ranking = std::is_invocable_r_v<
     Operation,
     std::add_lvalue_reference_t<Population>,
     std::add_lvalue_reference_t<std::add_const_t<Preserved>>>;
-
-class cluster_label {
-private:
-  inline constexpr explicit cluster_label(std::size_t raw,
-                                          int /*unused*/) noexcept
-      : raw_{raw} {
-  }
-
-public:
-  inline static constexpr auto unique() noexcept {
-    return cluster_label{1, 0};
-  }
-
-  inline static constexpr auto unassigned() noexcept {
-    return cluster_label{0, 0};
-  }
-
-  cluster_label() = default;
-
-  inline constexpr explicit cluster_label(std::size_t index) noexcept
-      : raw_{(index << 1) | 1} {
-  }
-
-  inline auto is_proper() const noexcept {
-    return (raw_ & 1) == 1;
-  }
-
-  inline auto is_unique() const noexcept {
-    return (raw_ & 1) == 0 && raw_ > 0;
-  }
-
-  inline auto is_unassigned() const noexcept {
-    return raw_ == 0;
-  }
-
-  inline auto index() const noexcept {
-    assert(is_proper());
-
-    return raw_ >> 1;
-  }
-
-private:
-  std::size_t raw_{};
-};
 
 template<typename Population>
 concept clustered_population =
