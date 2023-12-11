@@ -104,7 +104,7 @@ namespace select {
 
       std::vector<item_t> wheel;
       for (total_t total; auto&& item : range) {
-        total = total.add(generate(item));
+        total = total.add(std::invoke(generate, item));
         wheel.push_back(total.sum());
       }
 
@@ -281,12 +281,15 @@ namespace select {
         return get_probability(std::get<1>(c));
       });
 
-      sample_many(
+      return sample_many(
           population,
           attribute_t::sample(),
-          [&wheel, &clusters, &buffer, this]() {
-            auto& [pos, count] = clusters[details::roll_wheel<cluster_dist_t>(
-                wheel, *generator_)];
+          [&wheel, &clusters, this]() {
+            auto c = details::roll_wheel<cluster_dist_t>(wheel, *generator_);
+            return std::tuple{c, std::get<1>(clusters[c])};
+          },
+          [&clusters, &buffer, this](std::size_t c) {
+            auto& [pos, count] = clusters[c];
             return buffer[item_dist_t{pos, pos + count - 1}(*generator_)];
           });
     }
