@@ -4,47 +4,7 @@
 #include "pareto.hpp"
 #include "population.hpp"
 
-
 namespace gal {
-
-template<typename Value>
-concept adapted_value = std::regular<Value> && std::totally_ordered<Value>;
-
-template<typename Tag, adapted_value Value>
-class tag_adapted_value {
-public:
-  using tag_t = Tag;
-  using value_t = Value;
-
-public:
-  inline tag_adapted_value() noexcept(
-      std::is_nothrow_default_constructible_v<value_t>) {
-  }
-
-  inline tag_adapted_value(value_t value) noexcept(
-      std::is_nothrow_copy_constructible_v<value_t>)
-      : value_{value} {
-  }
-
-  inline explicit operator value_t() const
-      noexcept(std::is_nothrow_copy_constructible_v<value_t>) {
-    return value_;
-  }
-
-  inline tag_adapted_value& operator=(value_t value) noexcept(
-      std::is_nothrow_copy_assignable_v<value_t>) {
-    value_ = value;
-    return *this;
-  }
-
-  inline value_t get() const
-      noexcept(std::is_nothrow_copy_constructible_v<value_t>) {
-    return value_;
-  }
-
-private:
-  value_t value_;
-};
 
 struct rank_tag {};
 
@@ -55,13 +15,13 @@ inline auto operator<=>(binary_rank lhs, binary_rank rhs) noexcept {
   return static_cast<type>(lhs) <=> static_cast<type>(rhs);
 }
 
-using bin_rank_t = tag_adapted_value<rank_tag, binary_rank>;
-using int_rank_t = tag_adapted_value<rank_tag, std::size_t>;
-using real_rank_t = tag_adapted_value<rank_tag, double>;
+using bin_rank_t = tag_order_adopted_value<rank_tag, binary_rank>;
+using int_rank_t = tag_order_adopted_value<rank_tag, std::size_t>;
+using real_rank_t = tag_order_adopted_value<rank_tag, double>;
 
 struct frontier_level_tag {};
 using frontier_level_t =
-    tag_adapted_value<frontier_level_tag, pareto::frontier_level>;
+    tag_order_adopted_value<frontier_level_tag, pareto::frontier_level>;
 
 namespace details {
 
@@ -351,7 +311,7 @@ concept clustering = std::is_invocable_r_v<
 
 struct crowd_tag {};
 
-using crowd_density_t = tag_adapted_value<crowd_tag, double>;
+using crowd_density_t = tag_order_adopted_value<crowd_tag, double>;
 
 template<typename Population>
 concept crowded_population =

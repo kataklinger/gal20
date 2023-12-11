@@ -160,6 +160,57 @@ template<typename Individual, typename... Tags>
 concept individual_tagged_with =
     is_individual_tagged_with_v<Individual, Tags...>;
 
+template<typename Value>
+concept adapted_value = std::semiregular<Value>;
+
+template<typename Tag, adapted_value Value>
+class tag_adapted_value {
+public:
+  using tag_t = Tag;
+  using value_t = Value;
+
+public:
+  inline tag_adapted_value() noexcept(
+      std::is_nothrow_default_constructible_v<value_t>) {
+  }
+
+  inline tag_adapted_value(value_t value) noexcept(
+      std::is_nothrow_copy_constructible_v<value_t>)
+      : value_{value} {
+  }
+
+  inline operator value_t() const
+      noexcept(std::is_nothrow_copy_constructible_v<value_t>) {
+    return value_;
+  }
+
+  inline tag_adapted_value& operator=(value_t value) noexcept(
+      std::is_nothrow_copy_assignable_v<value_t>) {
+    value_ = value;
+    return *this;
+  }
+
+  inline value_t get() const
+      noexcept(std::is_nothrow_copy_constructible_v<value_t>) {
+    return value_;
+  }
+
+private:
+  value_t value_;
+};
+
+template<typename Value>
+concept order_adapted_value =
+    adapted_value<Value> && std::regular<Value> && std::totally_ordered<Value>;
+
+template<typename Tag, order_adapted_value Value>
+class tag_order_adopted_value : public tag_adapted_value<Tag, Value> {
+public:
+  using tag_adapted_value<Tag, Value>::tag_adapted_value;
+
+  auto operator<=>(tag_order_adopted_value const&) const = default;
+};
+
 class cluster_label {
 private:
   inline constexpr explicit cluster_label(std::size_t raw,
