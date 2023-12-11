@@ -37,15 +37,13 @@ namespace prune {
   };
 
   namespace details {
+
     template<typename Population>
     inline void sweep(Population& population) noexcept {
       population.remove_if([](auto const& individual) {
         return get_tag<prune_state_t>(individual);
       });
     }
-  } // namespace details
-
-  namespace details {
 
     class cluster_map {
     private:
