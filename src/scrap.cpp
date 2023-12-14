@@ -15,8 +15,12 @@
 #include <functional>
 #include <list>
 
-using pop_t =
-    gal::population<int, double, std::greater<>, double, std::greater<>, int>;
+using pop_t = gal::population<int,
+                              double,
+                              std::greater<>,
+                              double,
+                              std::greater<>,
+                              std::tuple<int, gal::ancestry_t>>;
 
 struct parent_replacement_t
     : std::tuple<pop_t::iterator_t, pop_t::individual_t> {
@@ -112,6 +116,9 @@ void test_ground() {
   gal::select::cluster sl4{
       gal::select::shared<int>, gal::select::unique<2>, gen};
   sl4(p);
+
+  gal::select::ancestry_raw sl5{};
+  sl5(p);
 
   gal::replace::random<std::mt19937, 2> ro1{gen};
   ro1(p, std::vector<parent_replacement_t>{});

@@ -309,5 +309,50 @@ namespace select {
     cluster_index_t index_;
   };
 
+  template<typename FitnessTag>
+  class ancestry {
+  private:
+    using fitness_tag_t = FitnessTag;
+
+    inline static constexpr fitness_tag_t fitness_tag{};
+
+  public:
+    template<population_tagged_with<ancestry_t> Population>
+    auto operator()(Population& population) const {
+      std::vector<typename Population::iterator_t> result;
+
+      for (auto it = population.individuals().begin();
+           it != population.individuals().end();
+           ++it) {
+        auto& ancestry = get_tag<ancestry_t>(*it);
+        if (static_cast<std::uint8_t>(ancestry.get()) < 2 &&
+            result.size() < 2) {
+          result.push_back(it);
+        }
+
+        ancestry = ancestry_status::none;
+      }
+
+      if (result.size() > 1) {
+        auto erased = std::invoke(population.comparator(fitness_tag),
+                                  result[0]->evaluation().get(fitness_tag),
+                                  result[1]->evaluation().get(fitness_tag))
+                          ? 1
+                          : 0;
+        result.erase(result.begin() + erased);
+      }
+
+      return result;
+    }
+  };
+
+  class ancestry_raw : public ancestry<raw_fitness_tag> {
+    using ancestry<raw_fitness_tag>::ancestry;
+  };
+
+  class ancestry_scaled : public ancestry<scaled_fitness_tag> {
+    using ancestry<scaled_fitness_tag>::ancestry;
+  };
+
 } // namespace select
 } // namespace gal

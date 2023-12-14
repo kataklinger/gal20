@@ -211,6 +211,12 @@ public:
   auto operator<=>(tag_order_adopted_value const&) const = default;
 };
 
+enum class ancestry_status : std::uint8_t { parent = 0, child = 1, none = 2 };
+
+struct ancestry_tag {};
+
+using ancestry_t = tag_adapted_value<ancestry_tag, ancestry_status>;
+
 class cluster_label {
 private:
   inline constexpr explicit cluster_label(std::size_t raw,
