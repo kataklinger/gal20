@@ -324,12 +324,12 @@ namespace select {
       for (auto it = population.individuals().begin();
            it != population.individuals().end();
            ++it) {
-        auto& ancestry = get_tag<ancestry_t>(*it);
-        if (static_cast<std::uint8_t>(ancestry.get()) < 2) {
-          result.push_back(it);
-        }
 
-        ancestry = ancestry_status::none;
+        if (auto& ancestry = get_tag<ancestry_t>(*it);
+            static_cast<std::uint8_t>(ancestry.get()) < 2) {
+          result.push_back(it);
+          ancestry = ancestry_status::none;
+        }
       }
 
       if (result.size() > 1) {
