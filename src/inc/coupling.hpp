@@ -387,6 +387,49 @@ namespace couple {
     params_t params_;
   };
 
+  template<typename Context>
+  class local {
+  public:
+    using context_t = Context;
+
+    using population_t = typename context_t::population_t;
+
+  private:
+    using individual_t = typename population_t::individual_t;
+    using parent_t = individual_t*;
+    using parent_iterator_t = typename population_t::iterator_t;
+
+    using parentship_t = details::parentship<parent_iterator_t, individual_t>;
+
+  public:
+    inline explicit local(context_t& context)
+        : context_{&context} {
+    }
+
+    template<parents_range<population_t> Parents>
+    inline auto operator()(Parents&& parents) {
+      std::vector<parentship_t> results_;
+
+      for (auto&& parent : parents) {
+        auto child = parent->chromosome();
+        std::invoke(context_->mutation(), child);
+
+        individual_t offspring{std::move(child),
+                               std::invoke(context_->evaluator(), child)};
+
+        get_tag<ancestry_t>(*parent) = ancestry_status::parent;
+        get_tag<ancestry_t>(offspring) = ancestry_status::child;
+
+        results_.emplace_back(parent, std::move(offspring));
+      }
+
+      return results_;
+    }
+
+  private:
+    context_t* context_;
+  };
+
   template<template<typename, typename> class Coupling, typename Params>
   class factory {
   public:

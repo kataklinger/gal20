@@ -200,6 +200,9 @@ void test_ground() {
   auto cp2 = gal::couple::parametrize<gal::couple::field>(rep_p)(rtx);
   cp2(std::vector<pop_t::iterator_t>{});
 
+  auto cp3 = gal::couple::local{rtx};
+  cp3(std::vector<pop_t::iterator_t>{});
+
   gal::stats::get_fitness_best_value<gal::raw_fitness_tag> getter{};
 
   gal::criteria::generation_limit cr1{2};
