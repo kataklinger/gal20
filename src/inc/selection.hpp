@@ -325,8 +325,7 @@ namespace select {
            it != population.individuals().end();
            ++it) {
         auto& ancestry = get_tag<ancestry_t>(*it);
-        if (static_cast<std::uint8_t>(ancestry.get()) < 2 &&
-            result.size() < 2) {
+        if (static_cast<std::uint8_t>(ancestry.get()) < 2) {
           result.push_back(it);
         }
 
@@ -334,12 +333,12 @@ namespace select {
       }
 
       if (result.size() > 1) {
-        auto erased = std::invoke(population.comparator(fitness_tag),
-                                  result[0]->evaluation().get(fitness_tag),
-                                  result[1]->evaluation().get(fitness_tag))
-                          ? 1
-                          : 0;
-        result.erase(result.begin() + erased);
+        std::ranges::sort(
+            result, population.comparator(fitness_tag), [](auto const& ind) {
+              return ind->evaluation().get(fitness_tag);
+            });
+
+        result.erase(result.begin() + 1, result.end());
       }
 
       return result;
