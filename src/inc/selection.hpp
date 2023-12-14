@@ -310,7 +310,7 @@ namespace select {
   };
 
   template<typename FitnessTag>
-  class ancestry {
+  class local {
   private:
     using fitness_tag_t = FitnessTag;
 
@@ -345,12 +345,12 @@ namespace select {
     }
   };
 
-  class ancestry_raw : public ancestry<raw_fitness_tag> {
-    using ancestry<raw_fitness_tag>::ancestry;
+  class local_raw : public local<raw_fitness_tag> {
+    using local<raw_fitness_tag>::local;
   };
 
-  class ancestry_scaled : public ancestry<scaled_fitness_tag> {
-    using ancestry<scaled_fitness_tag>::ancestry;
+  class local_scaled : public local<scaled_fitness_tag> {
+    using local<scaled_fitness_tag>::local;
   };
 
 } // namespace select

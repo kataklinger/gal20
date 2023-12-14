@@ -117,7 +117,7 @@ void test_ground() {
       gal::select::shared<int>, gal::select::unique<2>, gen};
   sl4(p);
 
-  gal::select::ancestry_raw sl5{};
+  gal::select::local_raw sl5{};
   sl5(p);
 
   gal::replace::random<std::mt19937, 2> ro1{gen};
