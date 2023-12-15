@@ -8,24 +8,30 @@ namespace gal {
 namespace crowd {
 
   // fitness sharing (nsga)
-  template<chromosome Chromosome,
-           proximation<Chromosome> Proximation,
-           double Cutoff,
-           double Alpha = 2.>
+  template<typename Proximity, double Cutoff, double Alpha = 2.>
   class sharing {
   public:
-    using proximation_t = Proximation;
+    using proximity_t = Proximity;
 
     inline constexpr double cutoff = Cutoff;
     inline constexpr double alpha = Alpha;
 
   public:
-    inline explicit sharing(proximation_t proximity)
-        : proximity_{proximity} {
+    inline sharing(proximity_t const& prox) noexcept(
+        std::is_nothrow_copy_constructible_v<proximity_t>)
+        : proximity_{prox} {
+    }
+
+    template<typename... Args>
+      requires(std::is_constructible_v<proximity_t, Args...>)
+    inline explicit sharing(Args&&... args) noexcept(
+        std::is_nothrow_constructible_v<proximity_t, Args...>)
+        : proximity_{std::forward<Args>(args)...} {
     }
 
   public:
     template<crowded_population Population, typename Preserved>
+      requires(proximity<proximity_t, typename Population::chromosome_t>)
     void operator()(Population& population,
                     population_pareto_t<Population, Preserved>& sets,
                     cluster_set const& /*unused*/) const {
@@ -59,7 +65,7 @@ namespace crowd {
     }
 
   private:
-    proximation_t proximity_;
+    proximity_t proximity_;
   };
 
   // crowding distance (nsga-ii)

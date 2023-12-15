@@ -32,7 +32,7 @@ concept evaluator =
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>>;
 
 template<typename Operation, typename Chromosome>
-concept proximation =
+concept proximity =
     std::is_invocable_v<
         Operation,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>,
