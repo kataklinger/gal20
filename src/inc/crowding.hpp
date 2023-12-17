@@ -13,8 +13,8 @@ namespace crowd {
   public:
     using proximity_t = Proximity;
 
-    inline constexpr double cutoff = Cutoff;
-    inline constexpr double alpha = Alpha;
+    inline static constexpr double cutoff = Cutoff;
+    inline static constexpr double alpha = Alpha;
 
   public:
     inline sharing(proximity_t const& prox) noexcept(
@@ -53,7 +53,7 @@ namespace crowd {
 
             get_tag<crowd_density_t>(*left) += niching;
             get_tag<crowd_density_t>(*right) += niching;
-            total += niching
+            total += niching;
           }
         }
 
@@ -201,7 +201,7 @@ namespace crowd {
         return 1.;
       }
 
-      return 0.
+      return 0.;
     }
   };
 

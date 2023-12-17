@@ -1,10 +1,15 @@
 
+#include "clustering.hpp"
 #include "coupling.hpp"
 #include "criteria.hpp"
 #include "crossover.hpp"
+#include "crowding.hpp"
+#include "elitism.hpp"
 #include "mutation.hpp"
 #include "observing.hpp"
 #include "pareto.hpp"
+#include "projection.hpp"
+#include "pruning.hpp"
 #include "ranking.hpp"
 #include "replacement.hpp"
 #include "scaling.hpp"
@@ -289,4 +294,6 @@ void test_ground() {
   auto mm1 = gal::pareto::analyze(par_indv, comp);
 
   gal::pareto::identify_dominated(par_indv, par_indv, dom_flag{}, comp);
+
+  gal::rank::level rk{};
 }

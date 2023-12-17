@@ -63,11 +63,11 @@ namespace cluster {
 
       inline void assign(cluster_set& clusters) noexcept {
         if (members_.size() == 1) {
-          details::assign_density_data(members_, cluster_label::unique());
+          details::assign_cluster_labels(members_, cluster_label::unique());
         }
         else {
           auto label = clusters.add_cluster(members_.size());
-          details::assign_density_data(members_, label);
+          details::assign_cluster_labels(members_, label);
         }
       }
 
@@ -99,13 +99,13 @@ namespace cluster {
             }
           }
           else {
-            details::assign_density_data(set, cluster_label::unique());
+            details::assign_cluster_labels(set, cluster_label::unique());
           }
 
           filled += n;
         }
         else {
-          details::assign_density_data(set, cluster_label::unassigned());
+          details::assign_cluster_labels(set, cluster_label::unassigned());
         }
       }
 
@@ -132,8 +132,8 @@ namespace cluster {
       auto min_distance = std::numeric_limits<double>::max();
       auto merge_left = first, merge_right = first;
 
-      for (auto last = clusters.end(); first != end; ++first) {
-        for (auto other = first + 1; other != end; ++other) {
+      for (auto last = clusters.end(); first != last; ++first) {
+        for (auto other = first + 1; other != last; ++other) {
           if (auto d = first->distance(*other); d < min_distance) {
             merge_left = first;
             merge_right = other;
@@ -154,7 +154,7 @@ namespace cluster {
     };
 
     template<std::floating_point Ty>
-    struct hypercooridnate_element_impl {
+    struct hypercooridnate_element_impl<Ty> {
       using type = std::ptrdiff_t;
     };
 
@@ -291,7 +291,7 @@ namespace cluster {
   // adaptive cell-sharing (rdga)
   template<std::size_t... Divisions>
   class adaptive_hypergrid {
-  private
+  private:
     inline static constexpr std::array<std::size_t, sizeof...(Divisions)>
         divisions{Divisions...};
 
