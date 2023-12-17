@@ -24,7 +24,8 @@ int main() {
       .spawn([&rng, &dist] {
         return std::vector<double>{dist(rng), dist(rng)};
       })
-      .evaluate([](auto& c) { return std::pow(c[0] + c[1], 2.0); }, std::less{})
+      .evaluate([](auto& c) { return std::pow(c[0] + c[1], 2.0); },
+                gal::floatingpoint_three_way{})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale()

@@ -334,9 +334,9 @@ namespace select {
 
       if (result.size() > 1) {
         std::ranges::sort(
-            result, population.comparator(fitness_tag), [](auto const& ind) {
-              return ind->evaluation().get(fitness_tag);
-            });
+            result,
+            gal::fitness_better{population.comparator(fitness_tag)},
+            [](auto const& ind) { return ind->evaluation().get(fitness_tag); });
 
         result.erase(result.begin() + 1, result.end());
       }

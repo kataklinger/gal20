@@ -18,17 +18,66 @@ concept fitness =
 template<typename Operation, typename Fitness>
 concept comparator =
     fitness<Fitness> &&
-    std::is_invocable_r_v<
-        bool,
-        Operation,
-        std::add_lvalue_reference_t<std::add_const_t<Fitness>>,
-        std::add_lvalue_reference_t<std::add_const_t<Fitness>>>;
+    std::invocable<Operation,
+                   std::add_lvalue_reference_t<std::add_const_t<Fitness>>,
+                   std::add_lvalue_reference_t<std::add_const_t<Fitness>>> &&
+    std::convertible_to<
+        std::invoke_result_t<
+            Operation,
+            std::add_lvalue_reference_t<std::add_const_t<Fitness>>,
+            std::add_lvalue_reference_t<std::add_const_t<Fitness>>>,
+        std::weak_ordering>;
+
+template<typename Comparator>
+struct fitness_less {
+  Comparator cmp_;
+
+  template<typename Ty, typename Tx>
+  inline auto operator()(Ty&& left, Tx&& right) const
+      noexcept(noexcept(std::invoke(std::declval<Comparator&>(),
+                                    std::forward<Ty>(left),
+                                    std::forward<Tx>(right)))) {
+    return std::invoke(cmp_, std::forward<Ty>(left), std::forward<Tx>(right)) ==
+           std::weak_ordering::less;
+  }
+};
+
+template<typename Comparator>
+struct fitness_better {
+  Comparator cmp_;
+
+  template<typename Ty, typename Tx>
+  inline auto operator()(Ty&& left, Tx&& right) const
+      noexcept(noexcept(std::invoke(std::declval<Comparator&>(),
+                                    std::forward<Ty>(left),
+                                    std::forward<Tx>(right)))) {
+    return std::invoke(cmp_, std::forward<Ty>(left), std::forward<Tx>(right)) ==
+           std::weak_ordering::greater;
+  }
+};
+
+struct floatingpoint_three_way {
+  template<std::floating_point Ty, std::floating_point Tx>
+  inline auto operator()(Ty left, Tx right) const {
+    if (std::isnan(left)) {
+      return std::isnan(right) ? std::weak_ordering::equivalent
+                               : std::weak_ordering::greater;
+    }
+
+    if (std::isnan(right) || right < left) {
+      return std::weak_ordering::greater;
+    }
+
+    return left < right ? std::weak_ordering::less
+                        : std::weak_ordering::equivalent;
+  }
+};
 
 struct disabled_comparator {
   template<typename Fitness>
   inline constexpr auto operator()(Fitness const& /*unused*/,
                                    Fitness const& /*unused*/) const noexcept {
-    return false;
+    return std::weak_ordering::equivalent;
   }
 };
 

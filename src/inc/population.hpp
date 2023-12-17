@@ -36,9 +36,9 @@ struct sort_policy_base {
   template<typename Collection, typename Comparator>
   inline auto sort(Collection& individuals, Comparator&& compare) {
     std::ranges::sort(
-        individuals, std::forward<Comparator>(compare), [](auto const& i) {
-          return i.evaluation().get(FitnessTag{});
-        });
+        individuals,
+        gal::fitness_better{std::forward<Comparator>(compare)},
+        [](auto const& i) { return i.evaluation().get(FitnessTag{}); });
 
     return by;
   }

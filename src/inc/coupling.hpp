@@ -141,7 +141,7 @@ namespace couple {
           results_.emplace_back(parent1, std::move(child1));
           results_.emplace_back(parent2, std::move(child2));
         }
-        else if (std::invoke(context_->comparator(),
+        else if (std::invoke(gal::fitness_better{context_->comparator()},
                              child1.evaluation().raw(),
                              child2.evaluation().raw())) {
           results_.emplace_back(parent1, std::move(child1));
@@ -193,7 +193,7 @@ namespace couple {
             auto original_fitness =
                 std::invoke(context_->evaluator(), original);
 
-            if (std::invoke(context_->comparator(),
+            if (std::invoke(gal::fitness_better{context_->comparator()},
                             original_fitness,
                             mutated_fitness)) {
               return {std::move(original), std::move(original_fitness)};
@@ -363,9 +363,10 @@ namespace couple {
       }
 
       auto all = incubate.take();
-      std::ranges::sort(all, context_->comparator(), [](auto const& item) {
-        return get_child(item).evaluation().raw();
-      });
+      std::ranges::sort(
+          all,
+          gal::fitness_better{context_->comparator()},
+          [](auto const& item) { return get_child(item).evaluation().raw(); });
 
       decltype(all) results{};
       results.reserve(count);
