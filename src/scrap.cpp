@@ -22,10 +22,20 @@
 
 using pop_t = gal::population<int,
                               double,
-                              std::greater<>,
+                              gal::floatingpoint_three_way,
                               double,
-                              std::greater<>,
+                              gal::floatingpoint_three_way,
                               std::tuple<int, gal::ancestry_t>>;
+
+using mo_pop_t = gal::population<int,
+                                 std::array<int, 2>,
+                                 gal::dominate<std::less<>>,
+                                 double,
+                                 gal::floatingpoint_three_way,
+                                 std::tuple<gal::frontier_level_t,
+                                            gal::binary_rank,
+                                            gal::int_rank_t,
+                                            gal::real_rank_t>>;
 
 struct parent_replacement_t
     : std::tuple<pop_t::iterator_t, pop_t::individual_t> {
@@ -295,5 +305,7 @@ void test_ground() {
 
   gal::pareto::identify_dominated(par_indv, par_indv, dom_flag{}, comp);
 
-  gal::rank::level rk{};
+  mo_pop_t mp{{}, {}, true};
+  gal::rank::level rk0{};
+  rk0(mp, gal::pareto_preserved_tag);
 }

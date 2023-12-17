@@ -167,7 +167,7 @@ public:
         }
       }
 
-      assert(individual.size() < max_individuals_);
+      assert(individuals_.size() < max_individuals_);
 
       individuals_.push_back(&individual);
     }
@@ -195,7 +195,7 @@ public:
   }
 
   inline auto count() const noexcept {
-    set_boundaries_.size() - 1;
+    return set_boundaries_.size() - 1;
   }
 
   inline auto get_count_of(pareto::frontier_level level) {

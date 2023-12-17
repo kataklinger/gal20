@@ -139,7 +139,7 @@ namespace rank {
       population_pareto_t<Population, Pareto> output{population.current_size()};
 
       for (auto&& frontier :
-           population.indviduals() |
+           population.individuals() |
                pareto::views::sort(population.raw_comparator())) {
         auto front_level = output.count() + 1;
 

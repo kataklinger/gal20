@@ -202,18 +202,23 @@ namespace pareto {
 
   template<typename Impl>
   class frontier {
+  private:
+    using impl_t = Impl;
+    using individual_t = typename impl_t::individual_t;
+    using solution_t = solution<details::solution_impl<individual_t>>;
+
   public:
     inline explicit frontier(Impl* impl) noexcept
         : impl_{impl} {
     }
 
     inline auto level() const noexcept {
-      return impl_.level();
+      return impl_->level();
     }
 
     inline auto members() const noexcept {
       return impl_->members() |
-             std::views::transform([](Impl* item) { return frontier{item}; });
+             std::views::transform([](auto* item) { return solution_t{item}; });
     }
 
     inline auto empty() const noexcept {
