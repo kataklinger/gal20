@@ -51,20 +51,16 @@ struct comparator_traits {
 
 namespace details {
 
-  template<typename Comparator, std::partial_ordering Side>
+  template<typename Comparator, std::partial_ordering Bound>
   struct fitness_cmp_impl {
     Comparator cmp_;
 
-    template<typename Ty, typename Tx>
-      requires(std::same_as<std::remove_cvref_t<Ty>, std::remove_cvref_t<Tx>> &&
-               std::convertible_to<comparator_ordering_t<Comparator, Ty>,
+    template<typename Ty>
+      requires(std::convertible_to<comparator_ordering_t<Comparator, Ty>,
                                    std::partial_ordering>)
-    inline auto operator()(Ty&& left, Tx&& right) const
-        noexcept(noexcept(std::invoke(std::declval<Comparator&>(),
-                                      std::forward<Ty>(left),
-                                      std::forward<Tx>(right)))) {
-      return std::invoke(
-                 cmp_, std::forward<Ty>(left), std::forward<Tx>(right)) == Side;
+    inline auto operator()(Ty const& left, Ty const& right) const noexcept(
+        noexcept(std::invoke(std::declval<Comparator>(), left, right))) {
+      return std::invoke(cmp_, left, right) == Bound;
     }
   };
 
