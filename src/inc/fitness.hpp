@@ -51,43 +51,38 @@ struct comparator_traits {
 
 namespace details {
 
-  template<typename Ty, typename Tx, typename Cmp>
-  concept sortable_fitness =
-      std::same_as<std::remove_cvref_t<Ty>, std::remove_cvref_t<Tx>> &&
-      std::convertible_to<comparator_ordering_t<Cmp, Ty>,
-                          std::partial_ordering>;
+  template<typename Comparator, std::partial_ordering Side>
+  struct fitness_cmp_impl {
+    Comparator cmp_;
 
-}
+    template<typename Ty, typename Tx>
+      requires(std::same_as<std::remove_cvref_t<Ty>, std::remove_cvref_t<Tx>> &&
+               std::convertible_to<comparator_ordering_t<Comparator, Ty>,
+                                   std::partial_ordering>)
+    inline auto operator()(Ty&& left, Tx&& right) const
+        noexcept(noexcept(std::invoke(std::declval<Comparator&>(),
+                                      std::forward<Ty>(left),
+                                      std::forward<Tx>(right)))) {
+      return std::invoke(
+                 cmp_, std::forward<Ty>(left), std::forward<Tx>(right)) == Side;
+    }
+  };
 
-template<typename Comparator>
-struct fitness_worse {
-  Comparator cmp_;
-
-  template<typename Ty, typename Tx>
-    requires(details::sortable_fitness<Ty, Tx, Comparator>)
-  inline auto operator()(Ty&& left, Tx&& right) const
-      noexcept(noexcept(std::invoke(std::declval<Comparator&>(),
-                                    std::forward<Ty>(left),
-                                    std::forward<Tx>(right)))) {
-    return std::invoke(cmp_, std::forward<Ty>(left), std::forward<Tx>(right)) ==
-           std::partial_ordering::less;
-  }
-};
+} // namespace details
 
 template<typename Comparator>
-struct fitness_better {
-  Comparator cmp_;
+struct fitness_worse
+    : details::fitness_cmp_impl<Comparator, std::partial_ordering::less> {};
 
-  template<typename Ty, typename Tx>
-    requires(details::sortable_fitness<Ty, Tx, Comparator>)
-  inline auto operator()(Ty&& left, Tx&& right) const
-      noexcept(noexcept(std::invoke(std::declval<Comparator&>(),
-                                    std::forward<Ty>(left),
-                                    std::forward<Tx>(right)))) {
-    return std::invoke(cmp_, std::forward<Ty>(left), std::forward<Tx>(right)) ==
-           std::partial_ordering::greater;
-  }
-};
+template<typename Comparator>
+fitness_worse(Comparator&&) -> fitness_worse<Comparator>;
+
+template<typename Comparator>
+struct fitness_better
+    : details::fitness_cmp_impl<Comparator, std::partial_ordering::greater> {};
+
+template<typename Comparator>
+fitness_better(Comparator&&) -> fitness_better<Comparator>;
 
 struct floatingpoint_three_way {
   template<std::floating_point Ty, std::floating_point Tx>
