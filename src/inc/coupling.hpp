@@ -331,6 +331,8 @@ namespace couple {
   };
 
   template<typename Context, typename Params>
+    requires(
+        sortable_population<typename Context::population_t, raw_fitness_tag>)
   class field {
   public:
     using context_t = Context;

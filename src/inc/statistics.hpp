@@ -290,7 +290,7 @@ namespace stats {
 
   template<typename FitnessTag>
   struct extreme_fitness {
-    template<ordered_population<FitnessTag> Population>
+    template<sortable_population<FitnessTag> Population>
     class body {
     private:
       using fitness_tag_t = FitnessTag;

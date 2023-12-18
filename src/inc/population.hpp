@@ -8,12 +8,6 @@
 
 namespace gal {
 
-template<typename FitnessTag, typename Raw, typename Scaled>
-concept sort_fitness_tag = ( std::same_as<FitnessTag, raw_fitness_tag> &&
-                             !std::same_as<Raw, disabled_comparator> ) ||
-                           (std::same_as<FitnessTag, scaled_fitness_tag> &&
-                            !std::same_as<Scaled, disabled_comparator>);
-
 enum class sort_by { none, raw, scaled, both };
 
 template<typename FitnessTag>
@@ -80,6 +74,14 @@ public:
 
   using scaled_fitness_t = Scaled;
   using scaled_comparator_t = ScaledCompare;
+
+  template<typename FitnessTag>
+    requires(std::same_as<FitnessTag, raw_fitness_tag> ||
+             std::same_as<FitnessTag, scaled_fitness_tag>)
+  using fitness_ordering_t = typename std::conditional_t<
+      std::is_same_v<FitnessTag, raw_fitness_tag>,
+      comparator_traits<raw_comparator_t, raw_fitness_t>,
+      comparator_traits<scaled_comparator_t, scaled_fitness_t>>::ordering_t;
 
   using individual_t =
       individual<chromosome_t, raw_fitness_t, scaled_fitness_t, Tags>;
@@ -167,7 +169,9 @@ public:
     return trim_impl(0);
   }
 
-  template<sort_fitness_tag<raw_comparator_t, scaled_comparator_t> FitnessTag>
+  template<typename FitnessTag>
+    requires(
+        std::convertible_to<fitness_ordering_t<FitnessTag>, std::weak_ordering>)
   inline void sort(FitnessTag tag) {
     sort_policy<FitnessTag> policy{stable_scaling_};
 
@@ -184,7 +188,9 @@ public:
     std::ranges::sort(individuals, std::forward<Less>(less));
   }
 
-  template<sort_fitness_tag<raw_comparator_t, scaled_comparator_t> FitnessTag>
+  template<typename FitnessTag>
+    requires(
+        std::convertible_to<fitness_ordering_t<FitnessTag>, std::weak_ordering>)
   inline std::pair<individual_t const&, individual_t const&>
       extremes(FitnessTag tag) const noexcept {
     sort_policy<FitnessTag> policy{stable_scaling_};
@@ -302,10 +308,14 @@ template<typename FitnessType, typename Population>
 using get_fitness_comparator_t =
     typename get_fitness_comparator<FitnessType>::template type<Population>;
 
+template<typename FitnessType, typename Population>
+using population_ordering =
+    typename Population::template fitness_ordering_t<FitnessType>;
+
 template<typename Population, typename FitnessTag>
-concept ordered_population =
-    !std::same_as<get_fitness_comparator_t<FitnessTag, Population>,
-                  disabled_comparator>;
+concept sortable_population =
+    std::convertible_to<population_ordering<FitnessTag, Population>,
+                        std::weak_ordering>;
 
 template<typename Population>
 concept multiobjective_population =

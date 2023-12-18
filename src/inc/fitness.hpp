@@ -16,29 +16,61 @@ concept fitness =
     std::is_nothrow_move_assignable_v<Type>;
 
 template<typename Operation, typename Fitness>
+using comparator_ordering_t = std::invoke_result_t<
+    Operation,
+    std::add_lvalue_reference_t<std::add_const_t<Fitness>>,
+    std::add_lvalue_reference_t<std::add_const_t<Fitness>>>;
+
+template<typename Operation, typename Fitness>
 concept comparator =
     fitness<Fitness> &&
     std::invocable<Operation,
                    std::add_lvalue_reference_t<std::add_const_t<Fitness>>,
                    std::add_lvalue_reference_t<std::add_const_t<Fitness>>> &&
-    std::convertible_to<
-        std::invoke_result_t<
-            Operation,
-            std::add_lvalue_reference_t<std::add_const_t<Fitness>>,
-            std::add_lvalue_reference_t<std::add_const_t<Fitness>>>,
-        std::weak_ordering>;
+    std::convertible_to<comparator_ordering_t<Operation, Fitness>,
+                        std::partial_ordering>;
+
+struct disabled_comparator {
+  template<typename Fitness>
+  inline constexpr auto operator()(Fitness const& /*unused*/,
+                                   Fitness const& /*unused*/) const noexcept {
+    return std::partial_ordering::unordered;
+  }
+};
+
+template<typename Comparator, typename Fitness>
+struct comparator_traits {
+  using fitness_t = Fitness;
+  using comparator_t = Comparator;
+
+  using ordering_t = comparator_ordering_t<Comparator, Fitness>;
+
+  inline static constexpr auto is_enabled =
+      !std::same_as<comparator_t, disabled_comparator>;
+};
+
+namespace details {
+
+  template<typename Ty, typename Tx, typename Cmp>
+  concept sortable_fitness =
+      std::same_as<std::remove_cvref_t<Ty>, std::remove_cvref_t<Tx>> &&
+      std::convertible_to<comparator_ordering_t<Cmp, Ty>,
+                          std::partial_ordering>;
+
+}
 
 template<typename Comparator>
-struct fitness_less {
+struct fitness_worse {
   Comparator cmp_;
 
   template<typename Ty, typename Tx>
+    requires(details::sortable_fitness<Ty, Tx, Comparator>)
   inline auto operator()(Ty&& left, Tx&& right) const
       noexcept(noexcept(std::invoke(std::declval<Comparator&>(),
                                     std::forward<Ty>(left),
                                     std::forward<Tx>(right)))) {
     return std::invoke(cmp_, std::forward<Ty>(left), std::forward<Tx>(right)) ==
-           std::weak_ordering::less;
+           std::partial_ordering::less;
   }
 };
 
@@ -47,12 +79,13 @@ struct fitness_better {
   Comparator cmp_;
 
   template<typename Ty, typename Tx>
+    requires(details::sortable_fitness<Ty, Tx, Comparator>)
   inline auto operator()(Ty&& left, Tx&& right) const
       noexcept(noexcept(std::invoke(std::declval<Comparator&>(),
                                     std::forward<Ty>(left),
                                     std::forward<Tx>(right)))) {
     return std::invoke(cmp_, std::forward<Ty>(left), std::forward<Tx>(right)) ==
-           std::weak_ordering::greater;
+           std::partial_ordering::greater;
   }
 };
 
@@ -70,14 +103,6 @@ struct floatingpoint_three_way {
 
     return left < right ? std::weak_ordering::less
                         : std::weak_ordering::equivalent;
-  }
-};
-
-struct disabled_comparator {
-  template<typename Fitness>
-  inline constexpr auto operator()(Fitness const& /*unused*/,
-                                   Fitness const& /*unused*/) const noexcept {
-    return std::weak_ordering::equivalent;
   }
 };
 
@@ -271,13 +296,12 @@ public:
   }
 
   template<multiobjective_fitness Fitness>
-  inline std::weak_ordering operator()(Fitness const& left,
-                                       Fitness const& right) const {
+  inline std::partial_ordering operator()(Fitness const& left,
+                                          Fitness const& right) const {
     bool res_l{}, res_r{};
 
-    auto end = std::ranges::end(left);
-    for (auto itl = std::ranges::begin(left), itr = std::ranges::begin(right);
-         itl != end && (!res_l || !res_r);
+    auto itl = std::ranges::begin(left), end = std::ranges::end(left);
+    for (auto itr = std::ranges::begin(right); itl != end && (!res_l || !res_r);
          ++itl, ++itr) {
       res_l = res_l || compare_(*itl, *itr);
       res_r = res_r || compare_(*itr, *itl);
@@ -285,14 +309,15 @@ public:
 
     if (res_l) {
       if (!res_r) {
-        return std::weak_ordering::less;
+        return std::partial_ordering::less;
       }
     }
     else if (res_r) {
-      return std::weak_ordering::greater;
+      return std::partial_ordering::greater;
     }
 
-    return std::weak_ordering::equivalent;
+    return itl == end ? std::partial_ordering::equivalent
+                      : std::partial_ordering::unordered;
   }
 
 private:

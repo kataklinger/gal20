@@ -201,7 +201,7 @@ namespace scale {
 
   template<typename Context>
   concept ranked_context =
-      ordered_population<typename Context::population_t, raw_fitness_tag> &&
+      sortable_population<typename Context::population_t, raw_fitness_tag> &&
       details::scalable_from<Context, double>;
 
   template<ranked_context Context, auto Preassure>
@@ -243,7 +243,7 @@ namespace scale {
 
   template<typename Context, typename Base>
   concept exponential_context =
-      ordered_population<typename Context::population_t, raw_fitness_tag> &&
+      sortable_population<typename Context::population_t, raw_fitness_tag> &&
       details::scalable_from<Context, Base>;
 
   template<typename Context, auto Base>
@@ -289,7 +289,7 @@ namespace scale {
 
   template<typename Context, typename Proportion>
   concept proportional_context =
-      ordered_population<typename Context::population_t, raw_fitness_tag> &&
+      sortable_population<typename Context::population_t, raw_fitness_tag> &&
       proportional_fitness<typename Context::population_t::raw_fitness_t,
                            Proportion,
                            typename Context::population_t::scaled_fitness_t>;

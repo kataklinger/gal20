@@ -62,7 +62,7 @@ namespace select {
     using fitness_tag_t = FitnessTag;
 
   public:
-    template<ordered_population<fitness_tag_t> Population>
+    template<sortable_population<fitness_tag_t> Population>
     inline auto operator()(Population& population) const {
       population.sort(fitness_tag_t{});
 
@@ -144,7 +144,7 @@ namespace select {
 
     template<typename Population>
     inline auto operator()(Population& population) const
-      requires ordered_population<Population, FitnessTag> &&
+      requires sortable_population<Population, FitnessTag> &&
                averageable_population<Population, FitnessTag>
     {
       using fitness_t = get_fitness_t<fitness_tag_t, Population>;
@@ -318,6 +318,7 @@ namespace select {
 
   public:
     template<population_tagged_with<ancestry_t> Population>
+      requires(sortable_population<Population, FitnessTag>)
     auto operator()(Population& population) const {
       std::vector<typename Population::iterator_t> result;
 
