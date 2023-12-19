@@ -24,12 +24,12 @@ namespace prune {
       requires(ranked_population<Population, RankTag>)
     inline void operator()(Population& population) const {
       population.sort([](auto const& lhs, auto const& rhs) {
-        auto flhs = get_tag<RankTag>(lhs);
-        auto frhs = get_tag<RankTag>(rhs);
+        auto flhs = get_tag<RankTag>(lhs).get();
+        auto frhs = get_tag<RankTag>(rhs).get();
 
         return flhs < frhs ||
-               (flhs == frhs &&
-                get_tag<crowd_density_t>(lhs) < get_tag<crowd_density_t>(rhs));
+               (flhs == frhs && get_tag<crowd_density_t>(lhs).get() <
+                                    get_tag<crowd_density_t>(rhs).get());
       });
 
       population.trim();

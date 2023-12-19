@@ -47,8 +47,7 @@ namespace project {
 
       for (auto&& individual : population_->individuals()) {
         auto front = get_tag<frontier_level_t>(individual).front();
-        auto density =
-            static_cast<double>(get_tag<crowd_density_t>(individual));
+        double density{get_tag<crowd_density_t>(individual)};
 
         if (multipliers[front] > density) {
           multipliers[front] = density;
@@ -61,8 +60,7 @@ namespace project {
 
       for (auto&& individual : population_->individuals()) {
         auto front = get_tag<frontier_level_t>(individual).front();
-        auto scaled = multipliers[front] *
-                      static_cast<double>(get_tag<RankTag>(individual));
+        auto scaled = multipliers[front] * get_tag<RankTag>(individual);
 
         individual.evaluation().set_scaled(scaled_fitness_t{scaled});
       }
@@ -91,9 +89,8 @@ namespace project {
     void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
                     cluster_set const& /*unused*/) const noexcept {
       for (auto&& individual : population_->individuals()) {
-        auto rank = static_cast<double>(get_tag<RankTag>(individual));
-        auto density =
-            static_cast<double>(get_tag<crowd_density_t>(individual));
+        double rank{get_tag<RankTag>(individual)};
+        double density{get_tag<crowd_density_t>(individual)};
 
         individual.evaluation().set_scaled(scaled_fitness_t{rank + density});
       }
@@ -122,9 +119,8 @@ namespace project {
     void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
                     cluster_set const& /*unused*/) const noexcept {
       for (auto&& individual : population_->individuals()) {
-        auto rank = static_cast<double>(get_tag<RankTag>(individual));
-        auto density =
-            static_cast<double>(get_tag<crowd_density_t>(individual));
+        double rank{get_tag<RankTag>(individual)};
+        double density{get_tag<crowd_density_t>(individual)};
 
         individual.evaluation().set_scaled(scaled_fitness_t{rank, density});
       }
@@ -149,7 +145,7 @@ namespace project {
       using scaled_fitness_t = get_fitness_t<scaled_fitness_tag, Population>;
 
       for (auto&& individual : population.individuals()) {
-        auto value = static_cast<double>(get_tag<Tag>(individual));
+        double value{get_tag<Tag>(individual)};
         individual.evaluation().set_scaled(scaled_fitness_t{value});
       }
     }

@@ -105,14 +105,13 @@ namespace crowd {
 
         auto max_distance = std::numeric_limits<double>::min();
         for (auto&& individual : set) {
-          auto distance =
-              static_cast<double>(get_tag<crowd_density_t>(*individual));
+          double distance{get_tag<crowd_density_t>(*individual)};
           max_distance = std::max(max_distance, distance);
         }
 
         for (auto&& individual : set) {
           auto& distance = get_tag<crowd_density_t>(*individual);
-          distance = static_cast<double>(distance) / max_distance;
+          distance = distance / max_distance;
         }
       }
     }

@@ -138,6 +138,10 @@ public:
       pareto_sets_iterator<typename std::vector<set_boundery>::iterator>;
 
 public:
+  inline pareto_sets() {
+    set_boundaries_.push_back(individuals_.begin());
+  }
+
   inline explicit pareto_sets(std::size_t max_individuals)
       : max_individuals_{max_individuals} {
     individuals_.reserve(max_individuals);
@@ -216,7 +220,7 @@ public:
   }
 
 private:
-  std::size_t max_individuals_;
+  std::size_t max_individuals_{};
   std::vector<individual_t*> individuals_;
   std::vector<set_boundery> set_boundaries_;
 };

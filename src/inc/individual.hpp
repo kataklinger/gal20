@@ -179,7 +179,7 @@ public:
       : value_{value} {
   }
 
-  inline operator value_t() const
+  inline explicit operator value_t() const
       noexcept(std::is_nothrow_copy_constructible_v<value_t>) {
     return value_;
   }
@@ -195,8 +195,24 @@ public:
     return value_;
   }
 
-private:
-  value_t value_;
+  template<typename Rhs>
+    requires(requires(Rhs const& rhs) { std::declval<value_t&>() += rhs; })
+  inline tag_adapted_value& operator+=(Rhs const& rhs) noexcept(
+      noexcept(std::declval<value_t&>() += rhs)) {
+    value_ += rhs;
+    return *this;
+  }
+
+  template<typename Rhs>
+    requires(requires(Rhs const& rhs) { std::declval<value_t&>() -= rhs; })
+  inline tag_adapted_value& operator-=(Rhs const& rhs) noexcept(
+      noexcept(std::declval<value_t&>() -= rhs)) {
+    value_ -= rhs;
+    return *this;
+  }
+
+protected:
+  value_t value_{};
 };
 
 template<typename Value>
@@ -208,7 +224,13 @@ class tag_order_adopted_value : public tag_adapted_value<Tag, Value> {
 public:
   using tag_adapted_value<Tag, Value>::tag_adapted_value;
 
-  auto operator<=>(tag_order_adopted_value const&) const = default;
+  inline auto operator<=>(tag_order_adopted_value const& rhs) const {
+    return this->value_ <=> rhs.value_;
+  }
+
+  inline auto operator==(tag_order_adopted_value const& rhs) const {
+    return this->value_ == rhs.value_;
+  }
 };
 
 enum class ancestry_status : std::uint8_t { parent = 0, child = 1, none = 2 };

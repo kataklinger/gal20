@@ -15,11 +15,11 @@ namespace rank {
       auto front_level = output.count() + 1;
 
       for (auto&& individual : population.individuals()) {
-        if (get<bin_rank_t>(individual) == which) {
-          output.add_individuals(individual);
+        if (get_tag<bin_rank_t>(individual) == which) {
+          output.add_individual(individual);
         }
 
-        get<frontier_level_t>(individual) = front_level;
+        get_tag<frontier_level_t>(individual) = front_level;
       }
 
       output.next();
@@ -90,7 +90,7 @@ namespace rank {
       pareto::frontier_level front_level = 1;
 
       for (auto&& frontier :
-           population.indviduals() |
+           population.individuals() |
                pareto::views::sort(population.raw_comparator())) {
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
@@ -112,7 +112,7 @@ namespace rank {
     }
 
     template<ranked_population<bin_rank_t> Population, typename Pareto>
-    void operator()(Population& population, Pareto preserve) const {
+    auto operator()(Population& population, Pareto preserve) const {
       std::vector<typename Population::individual_t> ranked, nonranked;
       std::ranges::partition_copy(population.individuals(),
                                   std::back_inserter(ranked),
@@ -164,20 +164,20 @@ namespace rank {
   class accumulated_level {
   public:
     template<ranked_population<int_rank_t> Population, typename Pareto>
-    void operator()(Population& population, Pareto /*unused*/) const {
+    auto operator()(Population& population, Pareto /*unused*/) const {
       clean_tags<int_rank_t>(population);
 
       population_pareto_t<Population, Pareto> output{population.current_size()};
 
       for (auto&& frontier :
-           population.indviduals() |
+           population.individuals() |
                pareto::views::sort(population.raw_comparator())) {
         auto front_level = output.count() + 1;
 
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
 
-          auto acc_level = (get_tag<int_rank_t>(individual) += 1);
+          std::size_t acc_level{(get_tag<int_rank_t>(individual) += 1)};
           get_tag<frontier_level_t>(individual) = front_level;
 
           for (auto&& dominated : solution.dominated()) {
@@ -200,7 +200,7 @@ namespace rank {
     template<typename Population, typename RankTag>
     inline auto prepare_strength_fast(Population& population) {
       clean_tags<RankTag>(population);
-      return pareto::analyze(population.indviduals(),
+      return pareto::analyze(population.individuals(),
                              population.raw_comparator());
     }
 
@@ -284,7 +284,7 @@ namespace rank {
                     pareto_preserved_t /*unused*/) const {
       auto output = details::prepare_strength_slow(population);
 
-      auto sorted = population.indviduals() |
+      auto sorted = population.individuals() |
                     pareto::views::sort(population.raw_comparator());
 
       auto first = std::ranges::begin(sorted);
@@ -371,7 +371,7 @@ namespace rank {
       auto output = details::prepare_strength_slow(population);
 
       for (auto&& frontier :
-           population.indviduals() |
+           population.individuals() |
                pareto::views::sort(population.raw_comparator())) {
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();

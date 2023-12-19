@@ -33,7 +33,7 @@ using mo_pop_t = gal::population<int,
                                  double,
                                  gal::floatingpoint_three_way,
                                  std::tuple<gal::frontier_level_t,
-                                            gal::binary_rank,
+                                            gal::bin_rank_t,
                                             gal::int_rank_t,
                                             gal::real_rank_t>>;
 
@@ -306,6 +306,22 @@ void test_ground() {
   gal::pareto::identify_dominated(par_indv, par_indv, dom_flag{}, comp);
 
   mo_pop_t mp{{}, {}, true};
-  gal::rank::level rk0{};
+
+  gal::rank::binary rk0{};
   rk0(mp, gal::pareto_preserved_tag);
+  rk0(mp, gal::pareto_reduced_tag);
+  rk0(mp, gal::pareto_nondominated_tag);
+  rk0(mp, gal::pareto_erased_tag);
+
+  gal::rank::level rk1{};
+  rk1(mp, gal::pareto_preserved_tag);
+  rk1(mp, gal::pareto_reduced_tag);
+  rk1(mp, gal::pareto_nondominated_tag);
+  rk1(mp, gal::pareto_erased_tag);
+
+  gal::rank::accumulated_level rk2{};
+  rk2(mp, gal::pareto_preserved_tag);
+  rk2(mp, gal::pareto_reduced_tag);
+  rk2(mp, gal::pareto_nondominated_tag);
+  rk2(mp, gal::pareto_erased_tag);
 }
