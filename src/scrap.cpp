@@ -324,4 +324,16 @@ void test_ground() {
   rk2(mp, gal::pareto_reduced_tag);
   rk2(mp, gal::pareto_nondominated_tag);
   rk2(mp, gal::pareto_erased_tag);
+
+  gal::rank::strength rk3{};
+  rk3(mp, gal::pareto_preserved_tag);
+  rk3(mp, gal::pareto_reduced_tag);
+  rk3(mp, gal::pareto_nondominated_tag);
+  rk3(mp, gal::pareto_erased_tag);
+
+  gal::rank::accumulated_strength rk4{};
+  rk4(mp, gal::pareto_preserved_tag);
+  rk4(mp, gal::pareto_reduced_tag);
+  rk4(mp, gal::pareto_nondominated_tag);
+  rk4(mp, gal::pareto_erased_tag);
 }

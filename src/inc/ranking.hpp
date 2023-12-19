@@ -197,18 +197,18 @@ namespace rank {
 
   namespace details {
 
-    template<typename Population, typename RankTag>
+    template<typename RankTag, typename Population>
     inline auto prepare_strength_fast(Population& population) {
       clean_tags<RankTag>(population);
       return pareto::analyze(population.individuals(),
                              population.raw_comparator());
     }
 
-    template<typename Population, typename RankTag>
+    template<typename RankTag, typename Population>
     inline auto prepare_strength_slow(Population& population) {
       clean_tags<RankTag>(population);
       return population_pareto_t<Population, pareto_preserved_t>{
-          population.size()};
+          population.current_size()};
     }
 
     template<typename Solutions, typename Pareto>
@@ -221,10 +221,10 @@ namespace rank {
         auto& individual = solution.individual();
 
         if (solution.nondominated() == which) {
-          output.add_individuals(individual);
+          output.add_individual(individual);
         }
 
-        get<frontier_level_t>(individual) = front_level;
+        get_tag<frontier_level_t>(individual) = front_level;
       }
 
       output.next();
@@ -234,7 +234,8 @@ namespace rank {
     inline auto generate_strength_pareto(Solutions& solutions,
                                          Population& population,
                                          pareto_reduced_t /*unused*/) {
-      using individual_t = typename Solutions::value_type::individual_t;
+      using individual_t =
+          typename std::ranges::range_value_t<Solutions>::individual_t;
 
       pareto_sets<individual_t, pareto_reduced_t> output{
           population.current_size()};
@@ -250,7 +251,8 @@ namespace rank {
     inline auto generate_strength_pareto(Solutions& solutions,
                                          Population& population,
                                          pareto_nondominated_t /*unused*/) {
-      using individual_t = typename Solutions::value_type::individual_t;
+      using individual_t =
+          typename std::ranges::range_value_t<Solutions>::individual_t;
 
       clean_tags<frontier_level_t>(population);
 
@@ -264,10 +266,11 @@ namespace rank {
     }
 
     template<typename Solutions, typename Population>
-    inline auto generate_strength_pareto(Solutions& solutions,
+    inline auto generate_strength_pareto(Solutions& /*unused*/,
                                          Population& population,
                                          pareto_erased_t /*unused*/) {
-      using individual_t = typename Solutions::value_type::individual_t;
+      using individual_t =
+          typename std::ranges::range_value_t<Solutions>::individual_t;
 
       clean_tags<frontier_level_t>(population);
 
@@ -282,7 +285,7 @@ namespace rank {
     template<ranked_population<real_rank_t> Population>
     auto operator()(Population& population,
                     pareto_preserved_t /*unused*/) const {
-      auto output = details::prepare_strength_slow(population);
+      auto output = details::prepare_strength_slow<real_rank_t>(population);
 
       auto sorted = population.individuals() |
                     pareto::views::sort(population.raw_comparator());
@@ -328,7 +331,7 @@ namespace rank {
       auto analyzed = details::prepare_strength_fast<real_rank_t>(population);
 
       auto dominated_count = std::ranges::count_if(
-          analyzed, [](auto& solution) { return !solution.nondominated(); });
+          analyzed, [](auto&& solution) { return !solution.nondominated(); });
 
       for (auto&& solution : analyzed) {
         if (solution.nondominated()) {
@@ -368,7 +371,7 @@ namespace rank {
     template<ranked_population<int_rank_t> Population>
     auto operator()(Population& population,
                     pareto_preserved_t /*unused*/) const {
-      auto output = details::prepare_strength_slow(population);
+      auto output = details::prepare_strength_slow<int_rank_t>(population);
 
       for (auto&& frontier :
            population.individuals() |

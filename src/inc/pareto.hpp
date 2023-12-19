@@ -107,6 +107,12 @@ namespace pareto {
 
   template<typename Impl>
   class solution {
+  private:
+    using impl_t = Impl;
+
+  public:
+    using individual_t = typename impl_t::individual_t;
+
   public:
     inline explicit solution(Impl* impl) noexcept
         : impl_{impl} {
