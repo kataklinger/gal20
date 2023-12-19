@@ -336,4 +336,17 @@ void test_ground() {
   rk4(mp, gal::pareto_reduced_tag);
   rk4(mp, gal::pareto_nondominated_tag);
   rk4(mp, gal::pareto_erased_tag);
+
+  gal::population_pareto_t<mo_pop_t, gal::pareto_preserved_t> pps{};
+  gal::population_pareto_t<mo_pop_t, gal::pareto_reduced_t> prs{};
+  gal::population_pareto_t<mo_pop_t, gal::pareto_nondominated_t> pns{};
+  gal::population_pareto_t<mo_pop_t, gal::pareto_erased_t> pes{};
+
+  gal::elite::strict el0{};
+  el0(mp, pps);
+  el0(mp, prs);
+  el0(mp, pns);
+
+  gal::elite::relaxed el1{};
+  el1(mp, pps);
 }

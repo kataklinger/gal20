@@ -203,7 +203,8 @@ public:
   }
 
   inline auto get_count_of(pareto::frontier_level level) {
-    return set_boundaries_[level] - set_boundaries_[level - 1];
+    return static_cast<std::size_t>(set_boundaries_[level] -
+                                    set_boundaries_[level - 1]);
   }
 
   inline auto empty() const noexcept {
