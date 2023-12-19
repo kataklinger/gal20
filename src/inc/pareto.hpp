@@ -258,10 +258,10 @@ namespace pareto {
                                 fst.individual().evaluation().raw(),
                                 snd.individual().evaluation().raw());
 
-      if (result == std::weak_ordering::greater) {
+      if (result == std::partial_ordering::greater) {
         fst.add_dominated(snd);
       }
-      else if (result == std::weak_ordering::less) {
+      else if (result == std::partial_ordering::less) {
         snd.add_dominated(fst);
       }
     }
@@ -619,10 +619,10 @@ namespace pareto {
         auto result = std::invoke(
             compare, in.evaluation().raw(), outer.evaluation().raw());
 
-        if (result == std::weak_ordering::greater) {
+        if (result == std::partial_ordering::greater) {
           track.set(in);
         }
-        else if (result == std::weak_ordering::less) {
+        else if (result == std::partial_ordering::less) {
           track.set(outer);
           break;
         }
