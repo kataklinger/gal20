@@ -44,12 +44,11 @@ namespace crowd {
           for (auto&& right :
                std::ranges::subrange{std::ranges::next(std::ranges::begin(set)),
                                      std::ranges::end(set)}) {
-            auto proximity = static_cast<double>(
+            auto dist = static_cast<double>(
                 proximity_(left->chromosome(), right->chromosome()));
 
-            auto niching = proximity < cutoff
-                               ? 1. - std::pow(proximity / cutoff, alpha)
-                               : 0.;
+            auto niching =
+                dist < cutoff ? 1. - std::pow(dist / cutoff, alpha) : 0.;
 
             get_tag<crowd_density_t>(*left) += niching;
             get_tag<crowd_density_t>(*right) += niching;
@@ -76,10 +75,12 @@ namespace crowd {
     void operator()(Population& population,
                     population_pareto_t<Population, Preserved>& sets,
                     cluster_set const& /*unused*/) const {
+      assert(population.current_size() > 0);
+
       clean_tags<crowd_density_t>(population);
 
       auto objectives =
-          std::ranges::size(population.individuals().evaluation().raw());
+          std::ranges::size(population.individuals()[0].evaluation().raw());
 
       for (auto&& set : sets) {
         for (std::size_t objective = 0; objective < objectives; ++objective) {
@@ -111,7 +112,7 @@ namespace crowd {
 
         for (auto&& individual : set) {
           auto& distance = get_tag<crowd_density_t>(*individual);
-          distance = distance / max_distance;
+          distance = distance.get() / max_distance;
         }
       }
     }
@@ -122,16 +123,17 @@ namespace crowd {
   public:
     template<crowded_population Population, typename Preserved>
       requires(spatial_population<Population>)
-    inline void operator()(Population& population,
-                           population_pareto_t<Population, Preserved>& sets,
-                           cluster_set const& /*unused*/) const {
+    inline void
+        operator()(Population& population,
+                   population_pareto_t<Population, Preserved>& /*unused*/,
+                   cluster_set const& /*unused*/) const {
       auto distances = compute_distances(population.individuals());
       assign_density(distances, population.individuals());
     }
 
   private:
     template<typename Individuals>
-    std::vector<double> compute_distances(Individuals& individuals) {
+    std::vector<double> compute_distances(Individuals& individuals) const {
       auto count = individuals.size();
       std::vector<double> distances(count * count);
 
@@ -153,11 +155,13 @@ namespace crowd {
 
         ++i;
       }
+
+      return distances;
     }
 
     template<typename Individuals>
     void assign_density(std::vector<double>& distances,
-                        Individuals& individuals) noexcept {
+                        Individuals& individuals) const noexcept {
       auto count = individuals.size();
 
       auto kth = static_cast<std::size_t>(std::sqrt(count)) + 1;
@@ -180,9 +184,10 @@ namespace crowd {
   public:
     template<crowded_population Population, typename Preserved>
       requires(spatial_population<Population>)
-    inline void operator()(Population& population,
-                           population_pareto_t<Population, Preserved>& sets,
-                           cluster_set const& clusters) const {
+    inline void
+        operator()(Population& population,
+                   population_pareto_t<Population, Preserved>& /*unused*/,
+                   cluster_set const& clusters) const {
       for (auto&& individual : population.individuals()) {
         get_tag<crowd_density_t>(individual) =
             get_denisty(get_tag<cluster_label>(individual), clusters);
@@ -190,7 +195,8 @@ namespace crowd {
     }
 
   private:
-    inline auto get_denisty(cluster_label label, cluster_set const& clusters) {
+    inline auto get_denisty(cluster_label label,
+                            cluster_set const& clusters) const {
       if (label.is_proper()) {
         auto count = static_cast<double>(clusters[label.index()].members_);
         return std::pow(count, Alpha);

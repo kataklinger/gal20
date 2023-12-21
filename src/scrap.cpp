@@ -382,4 +382,17 @@ void test_ground() {
 
   gal::prune::cluster_edge pr3{};
   pr2(mp, cls);
+
+  auto proximity = [](int, int) { return 0.; };
+  gal::crowd::sharing<decltype(proximity), 2.> cw0{};
+  cw0(mp, pps, cls);
+
+  gal::crowd::distance cw1{};
+  cw1(mp, pps, cls);
+
+  gal::crowd::neighbor cw2{};
+  cw2(mp, pps, cls);
+
+  gal::crowd::cluster cw3{};
+  cw3(mp, pps, cls);
 }
