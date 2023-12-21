@@ -137,6 +137,9 @@ public:
   using iterator_t =
       pareto_sets_iterator<typename std::vector<set_boundery>::iterator>;
 
+  using const_iterator_t =
+      pareto_sets_iterator<typename std::vector<set_boundery>::const_iterator>;
+
 public:
   inline pareto_sets() {
     set_boundaries_.push_back(individuals_.begin());
@@ -148,12 +151,28 @@ public:
     set_boundaries_.push_back(individuals_.begin());
   }
 
-  inline auto begin() const {
+  inline auto begin() {
     return iterator_t{set_boundaries_.begin()};
   }
 
-  inline auto end() const noexcept {
+  inline auto begin() const {
+    return const_iterator_t{set_boundaries_.begin()};
+  }
+
+  inline auto cbegin() const {
+    return const_iterator_t{set_boundaries_.begin()};
+  }
+
+  inline auto end() noexcept {
     return iterator_t{set_boundaries_.end()};
+  }
+
+  inline auto end() const noexcept {
+    return const_iterator_t{set_boundaries_.end()};
+  }
+
+  inline auto cend() const noexcept {
+    return const_iterator_t{set_boundaries_.end()};
   }
 
   inline void trim() noexcept {
