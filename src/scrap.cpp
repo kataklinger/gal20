@@ -27,15 +27,18 @@ using pop_t = gal::population<int,
                               gal::floatingpoint_three_way,
                               std::tuple<int, gal::ancestry_t>>;
 
+using mo_fit_t = std::array<int, 2>;
+
 using mo_pop_t = gal::population<int,
-                                 std::array<int, 2>,
+                                 mo_fit_t,
                                  gal::dominate<std::less<>>,
                                  double,
                                  gal::floatingpoint_three_way,
                                  std::tuple<gal::frontier_level_t,
                                             gal::bin_rank_t,
                                             gal::int_rank_t,
-                                            gal::real_rank_t>>;
+                                            gal::real_rank_t,
+                                            gal::cluster_label>>;
 
 struct parent_replacement_t
     : std::tuple<pop_t::iterator_t, pop_t::individual_t> {
@@ -349,4 +352,16 @@ void test_ground() {
 
   gal::elite::relaxed el1{};
   el1(mp, pps);
+
+  gal::cluster::none cl0{};
+  cl0(mp, pps);
+
+  gal::cluster::linkage cl1{};
+  cl1(mp, pps);
+
+  gal::cluster::hypergrid<mo_fit_t, 2, 2> cl2{};
+  cl2(mp, pps);
+
+  gal::cluster::adaptive_hypergrid<2, 2> cl3{};
+  cl3(mp, pps);
 }

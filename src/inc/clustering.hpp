@@ -14,7 +14,7 @@ namespace cluster {
     inline void assign_cluster_labels(Range&& range,
                                       cluster_label const& label) noexcept {
       for (auto&& member : range) {
-        get_tag<cluster_label>(member) = label;
+        get_tag<cluster_label>(*member) = label;
       }
     }
 
@@ -23,9 +23,9 @@ namespace cluster {
   class none {
   public:
     template<multiobjective_population Population, typename Preserved>
-    inline auto
-        operator()(Population& population,
-                   population_pareto_t<Population, Preserved>& sets) const {
+    inline auto operator()(
+        Population& /*unused*/,
+        population_pareto_t<Population, Preserved>& /*unused*/) const {
       return cluster_set{};
     }
   };
@@ -80,16 +80,20 @@ namespace cluster {
       requires(spatial_population<Population>)
     auto operator()(Population& population,
                     population_pareto_t<Population, Preserved>& sets) const {
-      std::size_t filled = 0, target = population.target_size();
+      using individual_t = typename Population::individual_t;
+
+      assert(population.target_size().has_value());
 
       cluster_set result;
+
+      std::size_t filled = 0, target = *population.target_size();
 
       for (auto&& set : sets) {
         result.next_level();
 
         if (auto n = std::ranges::size(set); filled < target) {
           if (auto remain = std::max(target - filled, n); remain < n) {
-            auto clusters = generate_clusters(set);
+            auto clusters = generate_clusters<individual_t>(set);
             while (clusters.size() > remain) {
               merge_closest(clusters);
             }
@@ -113,9 +117,9 @@ namespace cluster {
     }
 
   private:
-    template<typename Set>
+    template<typename Individual, typename Set>
     static auto generate_clusters(Set& set) {
-      std::vector<rep> culsters;
+      std::vector<rep<Individual>> culsters;
       culsters.reserve(std::ranges::size(set));
 
       for (auto&& individual : set) {
@@ -162,24 +166,29 @@ namespace cluster {
     using hypercooridnate_element_t =
         typename hypercooridnate_element_impl<Ty>::type;
 
-    template<typename Ty, std::size_t>
-    struct hypercooridnates_map_element {
-      using type = Ty;
+    template<typename Ty, std::size_t N>
+    using hypercooridnates_t = std::array<hypercooridnate_element_t<Ty>, N>;
+
+    template<std::size_t I, typename Ty, std::size_t N>
+    inline auto calculate_coord_hash(std::uint64_t value,
+                                     std::array<Ty, N> const& coords) noexcept {
+      constexpr std::uint64_t prime{0x100000001b3};
+      if constexpr (I < N) {
+        return calculate_coord_hash<I + 1>(
+            value * prime ^ std::hash<Ty>{}(coords[I]), coords);
+      }
+      else {
+        return value;
+      }
+    }
+
+    class hypercooridnates_hash {
+    public:
+      template<typename Ty, std::size_t N>
+      std::uint64_t operator()(std::array<Ty, N> const& coords) const noexcept {
+        return calculate_coord_hash<0>(0xcbf29ce484222325, coords);
+      }
     };
-
-    template<typename Ty, typename Idxs>
-    struct hypercooridnates_impl;
-
-    template<typename Ty, std ::size_t... Idxs>
-    struct hypercooridnates_impl<Ty, std::index_sequence<Idxs...>> {
-      using type =
-          std::tuple<typename hypercooridnates_map_element<Ty, Idxs>::type...>;
-    };
-
-    template<typename BaseType, std::size_t Dimensions>
-    using hypercooridnates_t = typename hypercooridnates_impl<
-        hypercooridnate_element_t<BaseType>,
-        std::make_index_sequence<Dimensions>>::type;
 
     template<typename Value>
     inline Value cacluate_hypercoordinate(Value value, Value size) noexcept {
@@ -221,14 +230,17 @@ namespace cluster {
     template<typename Population,
              typename Preserved,
              std::size_t Dimensions,
-             typename Fitness = get_fitness_t<raw_fitness_tag, Population>>
-    auto mark_hyperbox(Population& population,
-                       population_pareto_t<Population, Preserved>& sets,
-                       std::array<Fitness, Dimensions> const& granularity) {
+             typename FitnessValue = multiobjective_value_t<
+                 get_fitness_t<raw_fitness_tag, Population>>>
+    auto
+        mark_hyperbox(Population& population,
+                      population_pareto_t<Population, Preserved>& sets,
+                      std::array<FitnessValue, Dimensions> const& granularity) {
       using individual_t = typename Population::individual_t;
-      using hypermap_t = std::unordered_map<
-          hypercooridnates_t<multiobjective_value_t<Fitness>, Dimensions>,
-          std::vector<individual_t*>>;
+      using hypermap_t =
+          std::unordered_map<hypercooridnates_t<FitnessValue, Dimensions>,
+                             std::vector<individual_t*>,
+                             hypercooridnates_hash>;
 
       cluster_set result;
 
@@ -239,9 +251,9 @@ namespace cluster {
 
           hypermap_t hypermap{};
           for (auto&& individual : set) {
-            auto coords = get_hypercoordinates(individual.evaluation().raw(),
+            auto coords = get_hypercoordinates(individual->evaluation().raw(),
                                                granularity);
-            hypermap[coords].push_back(&individual);
+            hypermap[coords].push_back(individual);
           }
 
           processed += hypermap.size();
@@ -329,7 +341,8 @@ namespace cluster {
       auto min_first = minimums.begin(), max_first = maximums.begin();
       for (auto last = minimums.end(); min_first != last;
            ++gr_first, ++div_first, ++min_first, ++max_first) {
-        *gr_first = (*max_first - *min_first) / *div_first;
+        *gr_first =
+            static_cast<granularity_t>((*max_first - *min_first) / *div_first);
       }
 
       return details::mark_hyperbox(population, sets, granularity);
