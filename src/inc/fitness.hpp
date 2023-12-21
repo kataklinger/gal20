@@ -121,7 +121,7 @@ namespace details {
   template<typename Type>
   concept grid_point =
       additive<Type> && divisable<Type> && std::constructible_from<Type, int> &&
-      std::assignable_from<Type, int>;
+      std::assignable_from<std::add_lvalue_reference_t<Type>, int>;
 
 } // namespace details
 
@@ -137,19 +137,26 @@ template<typename Fitness>
 concept real_fitness =
     averageable_fitness<Fitness> && std::floating_point<Fitness>;
 
-template<fitness Fitness>
+namespace details {
+
+  template<typename Fitness>
+  concept multiobjective_fitness_impl =
+      fitness<Fitness> && std::ranges::sized_range<Fitness> &&
+      std::ranges::random_access_range<Fitness>;
+
+}
+
+template<details::multiobjective_fitness_impl Fitness>
 struct multiobjective_value {
-  using type = std::remove_reference_t<decltype(*std::ranges::begin(
-      std::declval<std::add_lvalue_reference_t<Fitness>>()))>;
+  using type = std::ranges::range_value_t<Fitness>;
 };
 
-template<fitness Fitness>
+template<details::multiobjective_fitness_impl Fitness>
 using multiobjective_value_t = typename multiobjective_value<Fitness>::type;
 
 template<typename Fitness>
 concept multiobjective_fitness =
-    std::ranges::sized_range<Fitness> &&
-    std::ranges::random_access_range<Fitness> &&
+    details::multiobjective_fitness_impl<Fitness> &&
     std::totally_ordered<multiobjective_value_t<Fitness>>;
 
 template<typename Fitness>
