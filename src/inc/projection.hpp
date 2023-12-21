@@ -22,7 +22,8 @@ namespace project {
       crowded_population<typename Context::population_t> &&
       ranked_population<typename Context::population_t, RankTag> &&
       details::projectable_from<typename Context::population_t, From...> &&
-      std::convertible_to<RankTag, double>;
+      std::convertible_to<typename tag_adopted_traits<RankTag>::value_t,
+                          double>;
 
   // x = f(rank) / (1 - density) (nsga)
   template<typename RankTag, projectable_context<RankTag, double> Context>
@@ -46,7 +47,7 @@ namespace project {
                                       std::numeric_limits<double>::max());
 
       for (auto&& individual : population_->individuals()) {
-        auto front = get_tag<frontier_level_t>(individual).front();
+        auto front = get_tag<frontier_level_t>(individual).get();
         double density{get_tag<crowd_density_t>(individual)};
 
         if (multipliers[front] > density) {
@@ -59,8 +60,8 @@ namespace project {
       }
 
       for (auto&& individual : population_->individuals()) {
-        auto front = get_tag<frontier_level_t>(individual).front();
-        auto scaled = multipliers[front] * get_tag<RankTag>(individual);
+        auto front = get_tag<frontier_level_t>(individual).get();
+        auto scaled = multipliers[front] * get_tag<RankTag>(individual).get();
 
         individual.evaluation().set_scaled(scaled_fitness_t{scaled});
       }
@@ -89,8 +90,8 @@ namespace project {
     void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
                     cluster_set const& /*unused*/) const noexcept {
       for (auto&& individual : population_->individuals()) {
-        double rank{get_tag<RankTag>(individual)};
-        double density{get_tag<crowd_density_t>(individual)};
+        auto rank = get_tag<RankTag>(individual).get();
+        auto density = get_tag<crowd_density_t>(individual).get();
 
         individual.evaluation().set_scaled(scaled_fitness_t{rank + density});
       }
@@ -101,7 +102,10 @@ namespace project {
   };
 
   // x = <rank, density> (nsga-ii, spea)
-  template<typename RankTag, projectable_context<RankTag, double> Context>
+  template<typename RankTag,
+           projectable_context<RankTag,
+                               typename tag_adopted_traits<RankTag>::value_t,
+                               double> Context>
   class merge {
   public:
     using context_t = Context;
@@ -119,8 +123,8 @@ namespace project {
     void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
                     cluster_set const& /*unused*/) const noexcept {
       for (auto&& individual : population_->individuals()) {
-        double rank{get_tag<RankTag>(individual)};
-        double density{get_tag<crowd_density_t>(individual)};
+        auto rank = get_tag<RankTag>(individual).get();
+        auto density = get_tag<crowd_density_t>(individual).get();
 
         individual.evaluation().set_scaled(scaled_fitness_t{rank, density});
       }
@@ -135,7 +139,7 @@ namespace project {
       population_tagged_with<typename Context::population_t,
                              Tag,
                              crowd_density_t> &&
-      std::convertible_to<Tag, double> &&
+      std::convertible_to<typename tag_adopted_traits<Tag>::value_t, double> &&
       details::projectable_from<typename Context::population_t, double>;
 
   namespace details {
@@ -145,7 +149,7 @@ namespace project {
       using scaled_fitness_t = get_fitness_t<scaled_fitness_tag, Population>;
 
       for (auto&& individual : population.individuals()) {
-        double value{get_tag<Tag>(individual)};
+        auto value = static_cast<double>(get_tag<Tag>(individual).get());
         individual.evaluation().set_scaled(scaled_fitness_t{value});
       }
     }

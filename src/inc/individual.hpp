@@ -233,6 +233,17 @@ public:
   }
 };
 
+template<typename Tag>
+struct tag_adopted_traits;
+
+template<typename Tag, typename Value, template<typename...> class Adopted>
+  requires(
+      std::derived_from<Adopted<Tag, Value>, tag_adapted_value<Tag, Value>>)
+struct tag_adopted_traits<Adopted<Tag, Value>> {
+  using tag_t = typename tag_adapted_value<Tag, Value>::tag_t;
+  using value_t = typename tag_adapted_value<Tag, Value>::value_t;
+};
+
 enum class ancestry_status : std::uint8_t { parent = 0, child = 1, none = 2 };
 
 struct ancestry_tag {};

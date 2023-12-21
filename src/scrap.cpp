@@ -42,6 +42,19 @@ using mo_pop_t = gal::population<int,
                                             gal::crowd_density_t,
                                             gal::prune_state_t>>;
 
+using mo_m_pop_t = gal::population<int,
+                                   mo_fit_t,
+                                   gal::dominate<std::less<>>,
+                                   std::tuple<std::size_t, double>,
+                                   std::compare_three_way,
+                                   std::tuple<gal::frontier_level_t,
+                                              gal::bin_rank_t,
+                                              gal::int_rank_t,
+                                              gal::real_rank_t,
+                                              gal::cluster_label,
+                                              gal::crowd_density_t,
+                                              gal::prune_state_t>>;
+
 struct parent_replacement_t
     : std::tuple<pop_t::iterator_t, pop_t::individual_t> {
   using tuple::tuple;
@@ -395,4 +408,31 @@ void test_ground() {
 
   gal::crowd::cluster cw3{};
   cw3(mp, pps, cls);
+
+  using mo_ctx_t = gal::population_context<mo_pop_t, stat_t>;
+  mo_ctx_t mo_ctx{mp, hist};
+
+  gal::project::scale<gal::int_rank_t, mo_ctx_t> pj0{mo_ctx};
+  pj0(pps, cls);
+
+  gal::project::translate<gal::int_rank_t, mo_ctx_t> pj1{mo_ctx};
+  pj1(pps, cls);
+
+  mo_m_pop_t mmp{{}, {}, true};
+  gal::population_pareto_t<mo_m_pop_t, gal::pareto_preserved_t> mpps{};
+
+  using mo_m_ctx_t = gal::population_context<mo_m_pop_t, stat_t>;
+  mo_m_ctx_t mo_m_ctx{mmp, hist};
+
+  gal::project::merge<gal::int_rank_t, mo_m_ctx_t> pj2{mo_m_ctx};
+  pj2(mpps, cls);
+
+  gal::project::truncate<gal::int_rank_t, mo_ctx_t> pj3{mo_ctx};
+  pj3(pps, cls);
+
+  gal::project::truncate<gal::crowd_density_t, mo_ctx_t> pj4{mo_ctx};
+  pj4(pps, cls);
+
+  gal::project::alternate<gal::int_rank_t, mo_ctx_t> pj5{mo_ctx};
+  pj5(pps, cls);
 }
