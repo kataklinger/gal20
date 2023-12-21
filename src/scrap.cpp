@@ -38,7 +38,9 @@ using mo_pop_t = gal::population<int,
                                             gal::bin_rank_t,
                                             gal::int_rank_t,
                                             gal::real_rank_t,
-                                            gal::cluster_label>>;
+                                            gal::cluster_label,
+                                            gal::crowd_density_t,
+                                            gal::prune_state_t>>;
 
 struct parent_replacement_t
     : std::tuple<pop_t::iterator_t, pop_t::individual_t> {
@@ -364,4 +366,20 @@ void test_ground() {
 
   gal::cluster::adaptive_hypergrid<2, 2> cl3{};
   cl3(mp, pps);
+
+  gal::cluster_set cls{};
+
+  gal::prune::none pr0{};
+  pr0(mp, cls);
+
+  gal::prune::global_worst<gal::int_rank_t> pr1{};
+  pr1(mp);
+
+  std::mt19937 rng{};
+
+  gal::prune::cluster_random<std::mt19937> pr2{rng};
+  pr2(mp, cls);
+
+  gal::prune::cluster_edge pr3{};
+  pr2(mp, cls);
 }

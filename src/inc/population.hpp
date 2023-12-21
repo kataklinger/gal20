@@ -185,7 +185,7 @@ public:
   inline void sort(Less&& less) {
     as_unsorted();
 
-    std::ranges::sort(individuals, std::forward<Less>(less));
+    std::ranges::sort(individuals_, std::forward<Less>(less));
   }
 
   template<typename FitnessTag>

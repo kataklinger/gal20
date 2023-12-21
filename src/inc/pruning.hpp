@@ -41,7 +41,7 @@ namespace prune {
     template<typename Population>
     inline void sweep(Population& population) noexcept {
       population.remove_if([](auto const& individual) {
-        return get_tag<prune_state_t>(individual);
+        return get_tag<prune_state_t>(individual).get();
       });
     }
 
@@ -95,6 +95,12 @@ namespace prune {
         buffer_[idx] = &prune_state;
       }
 
+      inline void update_set(cluster_set& target) noexcept {
+        for (auto&& entry : entries_) {
+          target[entry.index_].members_ -= entry.pruned_;
+        }
+      }
+
     private:
       auto prepare(std::size_t excess) {
         auto proj = [](auto& s) { return std::tuple{s.level_, s.count_}; };
@@ -142,12 +148,6 @@ namespace prune {
         return entries_[cluster_index].remaining() == densest;
       }
 
-      inline void update_set(cluster_set& target) noexcept {
-        for (auto&& entry : entries_) {
-          target[entry.index_].members_ -= entry.pruned_;
-        }
-      }
-
     public:
       template<typename Generator,
                std::invocable<std::size_t const&, std::size_t&> LevelPrune>
@@ -192,12 +192,14 @@ namespace prune {
 
   public:
     inline explicit cluster_random(generator_t& generator) noexcept
-        : generator_{generator} {
+        : generator_{&generator} {
     }
 
     template<clustered_population Population>
       requires(prunable_population<Population>)
     void operator()(Population& population, cluster_set& clusters) const {
+      assert(population.target_size().has_value());
+
       details::cluster_map map{clusters};
 
       std::size_t unassigned = 0;
@@ -226,10 +228,10 @@ namespace prune {
         }
       };
 
-      map.mark_all(generator_,
+      map.mark_all(*generator_,
                    level_prune,
                    population.current_size() - unassigned,
-                   population.target_size());
+                   *population.target_size());
 
       map.update_set(clusters);
 
