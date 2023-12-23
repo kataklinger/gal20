@@ -67,8 +67,7 @@ namespace soo {
 
   template<typename Config>
   concept algo_config =
-      scaling_config<Config> && basic_algo_config<Config> &&
-      requires(Config c) {
+      scaling_config<Config> && basic_algo_config<Config> && requires {
         requires util::boolean_flag<typename Config::is_global_scaling_t>;
         requires util::boolean_flag<typename Config::is_stable_scaling_t>;
       };

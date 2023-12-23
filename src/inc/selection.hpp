@@ -89,7 +89,7 @@ namespace select {
         std::invoke_result_t<Generator, pgenerator_input_t<Range>>;
 
     template<typename Generator, typename Range>
-    concept pgenerator = requires(Generator g) {
+    concept pgenerator = requires {
       requires std::invocable<Generator, pgenerator_input_t<Range>>;
 
       typename fitness_traits<
