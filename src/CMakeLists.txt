@@ -18,6 +18,7 @@ target_include_directories(
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/inc>)
 
 list(APPEND HEADER_LIST
+  algorithm.hpp
   chromosome.hpp
   clustering.hpp
   configuration.hpp
@@ -29,6 +30,7 @@ list(APPEND HEADER_LIST
   elitism.hpp
   fitness.hpp
   individual.hpp
+  moo.hpp
   multiobjective.hpp
   mutation.hpp
   observing.hpp

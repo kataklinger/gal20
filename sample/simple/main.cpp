@@ -38,7 +38,7 @@ int main() {
       .select(select::roulette_raw{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::worst_raw{})
-      .observe(observe{soo::generation_event,
+      .observe(observe{generation_event,
                        [](auto const& /*unused*/, auto const& /*unused*/) {}})
       .build<soo::algo>()
       .run(stop);

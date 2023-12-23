@@ -1,30 +1,11 @@
 #pragma once
 
-#include "configuration.hpp"
+#include "algorithm.hpp"
 
 #include <functional>
 #include <stop_token>
 
 namespace gal {
-
-namespace soo {
-
-  struct generation_event_t {};
-  inline constexpr generation_event_t generation_event{};
-
-} // namespace soo
-
-template<>
-struct observer_definition<soo::generation_event_t> {
-  template<typename Observer, typename Definitions>
-  inline static constexpr auto satisfies = std::is_invocable_v<
-      Observer,
-      std::add_lvalue_reference_t<
-          std::add_const_t<typename Definitions::population_t>>,
-      std::add_lvalue_reference_t<std::add_const_t<
-          stats::history<typename Definitions::statistics_t>>>>;
-};
-
 namespace soo {
 
   namespace details {
@@ -37,17 +18,22 @@ namespace soo {
 
   struct algo_config_map {
     using type = config::entry_map<
+
         config::entry<config::root_ptype,
                       config::plist<config::size_ptype,
                                     config::init_ptype,
                                     config::tags_ptype>>,
+
         config::entry<
             config::init_ptype,
             config::plist<config::evaluate_ptype, config::reproduce_ptype>>,
+
         config::entry<config::evaluate_ptype,
                       config::plist<config::scale_fitness_ptype>>,
+
         config::entry<config::scale_fitness_ptype,
                       config::plist<config::statistics_ptype>>,
+
         config::entry<config::statistics_ptype,
                       config::entry_if<details::algo_scaling_cond,
                                        config::plist<config::select_ptype,
@@ -57,9 +43,12 @@ namespace soo {
                                                      config::criterion_ptype,
                                                      config::observe_ptype>>,
                       config::plist<config::tags_ptype>>,
+
         config::entry<config::scale_ptype, config::plist<config::select_ptype>>,
+
         config::entry<config::select_ptype,
                       config::plist<config::couple_ptype>>,
+
         config::entry<config::couple_ptype,
                       config::plist<config::replace_ptype>>>;
   };
@@ -77,81 +66,12 @@ namespace soo {
       };
 
   template<typename Config>
-  concept algo_config = scaling_config<Config> && requires(Config c) {
-    requires chromosome<typename Config::chromosome_t>;
-    requires fitness<typename Config::raw_fitness_t>;
-    requires fitness<typename Config::scaled_fitness_t>;
-
-    requires std::same_as<typename Config::population_t,
-                          population<typename Config::chromosome_t,
-                                     typename Config::raw_fitness_t,
-                                     typename Config::raw_comparator_t,
-                                     typename Config::scaled_fitness_t,
-                                     typename Config::scaled_comparator_t,
-                                     typename Config::tags_t>>;
-
-    requires initializator<typename Config::initializator_t>;
-    requires crossover<typename Config::crossover_t,
-                       typename Config::chromosome_t>;
-    requires mutation<typename Config::mutation_t,
-                      typename Config::chromosome_t>;
-    requires evaluator<typename Config::evaluator_t,
-                       typename Config::chromosome_t>;
-
-    requires comparator<typename Config::raw_comparator_t,
-                        typename Config::raw_fitness_t>;
-
-    requires comparator<typename Config::scaled_comparator_t,
-                        typename Config::raw_fitness_t>;
-
-    requires util::boolean_flag<typename Config::is_global_scaling_t>;
-    requires util::boolean_flag<typename Config::is_stable_scaling_t>;
-
-    requires selection_range<typename Config::selection_result_t,
-                             typename Config::population_t::iterator_t>;
-    requires replacement_range<typename Config::copuling_result_t,
-                               typename Config::population_t::iterator_t,
-                               typename Config::population_t::individual_t>;
-
-    requires selection<typename Config::selection_t,
-                       typename Config::population_t>;
-    requires coupling<typename Config::coupling_t,
-                      typename Config::population_t,
-                      typename Config::selection_result_t>;
-    requires replacement<typename Config::replacement_t,
-                         typename Config::population_t,
-                         typename Config::copuling_result_t>;
-
-    requires criterion<typename Config::criterion_t,
-                       typename Config::population_t,
-                       typename Config::history_t>;
-
-    {
-      c.initializator()
-    } -> std::convertible_to<typename Config::initializator_t>;
-
-    { c.evaluator() } -> std::convertible_to<typename Config::evaluator_t>;
-
-    {
-      c.raw_comparator()
-    } -> std::convertible_to<typename Config::raw_comparator_t>;
-
-    {
-      c.scaled_comparator()
-    } -> std::convertible_to<typename Config::scaled_comparator_t>;
-
-    { c.selection() } -> std::convertible_to<typename Config::selection_t>;
-
-    {
-      c.coupling(std::declval<typename Config::reproduction_context_t&>())
-    } -> std::convertible_to<typename Config::coupling_t>;
-
-    { c.criterion() } -> std::convertible_to<typename Config::criterion_t>;
-
-    { c.observers() };
-    { c.population_size() } -> std::convertible_to<std::size_t>;
-    { c.statistics_depth() } -> std::convertible_to<std::size_t>;
-  };
+  concept algo_config =
+      scaling_config<Config> && basic_algo_config<Config> &&
+      requires(Config c) {
+        requires util::boolean_flag<typename Config::is_global_scaling_t>;
+        requires util::boolean_flag<typename Config::is_stable_scaling_t>;
+      };
 
   namespace details {
 
