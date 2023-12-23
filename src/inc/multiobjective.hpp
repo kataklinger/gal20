@@ -387,13 +387,13 @@ template<typename Operation, typename Population>
 concept pruning = details::cluster_pruning_helper<Operation, Population> ||
                   details::crowd_pruning_helper<Operation, Population>;
 
+struct cluster_pruning_t {};
+struct crowd_pruning_t {};
+
 namespace details {
 
   template<typename Population, pruning<Population> Pruning>
   struct pruning_helper;
-
-  struct cluster_pruning_t {};
-  struct crowd_pruning_t {};
 
   template<typename Population, cluster_pruning<Population> Pruning>
   struct pruning_helper<Population, Pruning> {
