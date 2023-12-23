@@ -2,6 +2,7 @@
 #pragma once
 
 #include "context.hpp"
+#include "multiobjective.hpp"
 #include "observing.hpp"
 #include "statistics.hpp"
 
@@ -615,6 +616,210 @@ namespace config {
     template<selection<population_t> Selection>
     inline constexpr auto select(Selection const& selection) const {
       return this->next(select_body<Selection, population_t>{selection});
+    }
+  };
+
+  template<typename Projection, typename Population>
+  class project_body {
+  public:
+    using projection_t = Projection;
+
+  public:
+    inline constexpr explicit project_body(projection_t const& projection)
+        : projection_{projection} {
+    }
+
+    inline auto const& projection() const noexcept {
+      return projection_;
+    }
+
+  private:
+    projection_t projection_;
+  };
+
+  template<typename Built>
+  struct project_ptype : public details::ptype_base<Built, project_ptype> {
+    using population_t = typename Built::population_t;
+    using pareto_preservance_t = typename Built::pareto_preservance_t;
+
+    inline constexpr explicit project_ptype(Built const* current)
+        : details::ptype_base<Built, project_ptype>{current} {
+    }
+
+    template<projection<population_t, pareto_preservance_t> Projection>
+    inline constexpr auto project(Projection const& projection) const {
+      return this->next(project_body<Projection, population_t>{projection});
+    }
+  };
+
+  template<typename Pruning, typename Population>
+  class prune_body {
+  public:
+    using pruning_t = Pruning;
+    using pruning_kind_t =
+        typename pruning_traits<Population, pruning_t>::kind_t;
+
+  public:
+    inline constexpr explicit prune_body(pruning_t const& pruning)
+        : pruning_{pruning} {
+    }
+
+    inline auto const& pruning() const noexcept {
+      return pruning_;
+    }
+
+  private:
+    pruning_t pruning_;
+  };
+
+  template<typename Built>
+  struct prune_ptype : public details::ptype_base<Built, prune_ptype> {
+    using population_t = typename Built::population_t;
+    using pareto_preservance_t = typename Built::pareto_preservance_t;
+
+    inline constexpr explicit prune_ptype(Built const* current)
+        : details::ptype_base<Built, prune_ptype>{current} {
+    }
+
+    template<pruning<population_t, pareto_preservance_t> Pruning>
+    inline constexpr auto prune(Pruning const& pruning) const {
+      return this->next(prune_body<Pruning, population_t>{pruning});
+    }
+  };
+
+  template<typename Crowding, typename Population>
+  class crowd_body {
+  public:
+    using crowding_t = Crowding;
+
+  public:
+    inline constexpr explicit crowd_body(crowding_t const& crowding)
+        : crowding_{crowding} {
+    }
+
+    inline auto const& crowding() const noexcept {
+      return crowding_;
+    }
+
+  private:
+    crowding_t crowding_;
+  };
+
+  template<typename Built>
+  struct crowd_ptype : public details::ptype_base<Built, crowd_ptype> {
+    using population_t = typename Built::population_t;
+    using pareto_preservance_t = typename Built::pareto_preservance_t;
+
+    inline constexpr explicit crowd_ptype(Built const* current)
+        : details::ptype_base<Built, crowd_ptype>{current} {
+    }
+
+    template<crowding<population_t, pareto_preservance_t> Crowding>
+    inline constexpr auto crowd(Crowding const& crowding) const {
+      return this->next(crowd_body<Crowding, population_t>{crowding});
+    }
+  };
+
+  template<typename Clustering, typename Population>
+  class cluster_body {
+  public:
+    using clustering_t = Clustering;
+
+  public:
+    inline constexpr explicit cluster_body(clustering_t const& clustering)
+        : clustering_{clustering} {
+    }
+
+    inline auto const& clustering() const noexcept {
+      return clustering_;
+    }
+
+  private:
+    clustering_t clustering_;
+  };
+
+  template<typename Built>
+  struct cluster_ptype : public details::ptype_base<Built, cluster_ptype> {
+    using population_t = typename Built::population_t;
+    using pareto_preservance_t = typename Built::pareto_preservance_t;
+
+    inline constexpr explicit cluster_ptype(Built const* current)
+        : details::ptype_base<Built, cluster_ptype>{current} {
+    }
+
+    template<clustering<population_t, pareto_preservance_t> Clustering>
+    inline constexpr auto cluster(Clustering const& clustering) const {
+      return this->next(cluster_body<Clustering, population_t>{clustering});
+    }
+  };
+
+  template<typename Elitism, typename Population>
+  class elite_body {
+  public:
+    using elitism_t = Elitism;
+
+  public:
+    inline constexpr explicit elite_body(elitism_t const& elitism)
+        : elitism_{elitism} {
+    }
+
+    inline auto const& elitism() const noexcept {
+      return elitism_;
+    }
+
+  private:
+    elitism_t elitism_;
+  };
+
+  template<typename Built>
+  struct elite_ptype : public details::ptype_base<Built, elite_ptype> {
+    using population_t = typename Built::population_t;
+    using pareto_preservance_t = typename Built::pareto_preservance_t;
+
+    inline constexpr explicit elite_ptype(Built const* current)
+        : details::ptype_base<Built, elite_ptype>{current} {
+    }
+
+    template<elitism<population_t, pareto_preservance_t> Elitism>
+    inline constexpr auto elite(Elitism const& elitism) const {
+      return this->next(elite_body<Elitism, population_t>{elitism});
+    }
+  };
+
+  template<typename Ranking, typename ParetoPreservance, typename Population>
+  class rank_body {
+  public:
+    using ranking_t = Ranking;
+    using pareto_preservance_t = ParetoPreservance;
+
+    using pareto_sets_t = population_pareto_t<Population, pareto_preservance_t>;
+
+  public:
+    inline constexpr explicit rank_body(ranking_t const& ranking)
+        : ranking_{ranking} {
+    }
+
+    inline auto const& ranking() const noexcept {
+      return ranking_;
+    }
+
+  private:
+    ranking_t ranking_;
+  };
+
+  template<typename Built>
+  struct rank_ptype : public details::ptype_base<Built, rank_ptype> {
+    using population_t = typename Built::population_t;
+
+    inline constexpr explicit rank_ptype(Built const* current)
+        : details::ptype_base<Built, rank_ptype>{current} {
+    }
+
+    template<pareto_preservance ParetoPreservance,
+             ranking<population_t, ParetoPreservance> Ranking>
+    inline constexpr auto rank(Ranking const& ranking) const {
+      return this->next(
+          rank_body<Ranking, ParetoPreservance, population_t>{ranking});
     }
   };
 
