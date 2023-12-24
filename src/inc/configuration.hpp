@@ -395,7 +395,16 @@ namespace config {
       Built const* current_;
     };
 
-    template<typename Built, typename = typename Built::is_global_scaling_t>
+    template<typename Built, typename = void>
+    struct is_global_scaling_impl : std::false_type {};
+
+    template<typename Built>
+    struct is_global_scaling_impl<
+        Built,
+        std::void_t<typename Built::is_global_scaling_t>>
+        : Built::is_global_scaling_t {};
+
+    template<typename Built, typename = is_global_scaling_impl<Built>>
     struct build_reproduction_context {
       using type = reproduction_context<typename Built::population_t,
                                         typename Built::statistics_t,
@@ -548,7 +557,8 @@ namespace config {
   class couple_body {
   public:
     using reproduction_context_t = Context;
-    using coupling_t = factory_result_t<Factory, reproduction_context_t>;
+    using coupling_t =
+        operation_factory_result_t<Factory, reproduction_context_t>;
     using copuling_result_t = std::invoke_result_t<
         coupling_t,
         std::add_lvalue_reference_t<std::add_const_t<Input>>>;
@@ -619,36 +629,39 @@ namespace config {
     }
   };
 
-  template<typename Projection, typename Population>
+  template<typename Factory, typename Context>
   class project_body {
   public:
-    using projection_t = Projection;
+    using projection_t = operation_factory_result_t<Factory, Context>;
 
   public:
-    inline constexpr explicit project_body(projection_t const& projection)
+    inline constexpr explicit project_body(Factory const& projection)
         : projection_{projection} {
     }
 
-    inline auto const& projection() const noexcept {
-      return projection_;
+    inline auto projection(Context& context) const {
+      return projection_(context);
     }
 
   private:
-    projection_t projection_;
+    Factory projection_;
   };
 
   template<typename Built>
   struct project_ptype : public details::ptype_base<Built, project_ptype> {
     using population_t = typename Built::population_t;
+    using population_context_t = typename Built::population_context_t;
     using pareto_preservance_t = typename Built::pareto_preservance_t;
 
     inline constexpr explicit project_ptype(Built const* current)
         : details::ptype_base<Built, project_ptype>{current} {
     }
 
-    template<projection<population_t, pareto_preservance_t> Projection>
-    inline constexpr auto project(Projection const& projection) const {
-      return this->next(project_body<Projection, population_t>{projection});
+    template<
+        projection_factory<population_context_t, pareto_preservance_t> Factory>
+    inline constexpr auto project(Factory const& projection) const {
+      return this->next(
+          project_body<Factory, population_context_t>{projection});
     }
   };
 
@@ -675,13 +688,12 @@ namespace config {
   template<typename Built>
   struct prune_ptype : public details::ptype_base<Built, prune_ptype> {
     using population_t = typename Built::population_t;
-    using pareto_preservance_t = typename Built::pareto_preservance_t;
 
     inline constexpr explicit prune_ptype(Built const* current)
         : details::ptype_base<Built, prune_ptype>{current} {
     }
 
-    template<pruning<population_t, pareto_preservance_t> Pruning>
+    template<pruning<population_t> Pruning>
     inline constexpr auto prune(Pruning const& pruning) const {
       return this->next(prune_body<Pruning, population_t>{pruning});
     }
@@ -823,13 +835,10 @@ namespace config {
     }
   };
 
-  template<typename Factory,
-           typename Scaling,
-           typename Context,
-           typename Population>
+  template<typename Factory, typename Context, typename Population>
   class scaling_body {
   public:
-    using scaling_t = factory_result_t<Factory, Context>;
+    using scaling_t = operation_factory_result_t<Factory, Context>;
     using is_global_scaling_t = can_scale_global<scaling_t, Population>;
     using is_stable_scaling_t = typename scaling_traits<scaling_t>::is_stable_t;
 

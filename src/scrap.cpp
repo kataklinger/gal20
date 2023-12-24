@@ -396,8 +396,7 @@ void test_ground() {
   gal::prune::cluster_edge pr3{};
   pr2(mp, cls);
 
-  auto proximity = [](int, int) { return 0.; };
-  gal::crowd::sharing<decltype(proximity), 2.> cw0{};
+  gal::crowd::sharing cw0{1.0, 2.0, [](int, int) { return 0.; }};
   cw0(mp, pps, cls);
 
   gal::crowd::distance cw1{};
@@ -412,10 +411,10 @@ void test_ground() {
   using mo_ctx_t = gal::population_context<mo_pop_t, stat_t>;
   mo_ctx_t mo_ctx{mp, hist};
 
-  gal::project::scale<gal::int_rank_t, mo_ctx_t> pj0{mo_ctx};
+  gal::project::scale<mo_ctx_t, gal::int_rank_t> pj0{mo_ctx};
   pj0(pps, cls);
 
-  gal::project::translate<gal::int_rank_t, mo_ctx_t> pj1{mo_ctx};
+  gal::project::translate<mo_ctx_t, gal::int_rank_t> pj1{mo_ctx};
   pj1(pps, cls);
 
   mo_m_pop_t mmp{{}, {}, true};
@@ -424,15 +423,15 @@ void test_ground() {
   using mo_m_ctx_t = gal::population_context<mo_m_pop_t, stat_t>;
   mo_m_ctx_t mo_m_ctx{mmp, hist};
 
-  gal::project::merge<gal::int_rank_t, mo_m_ctx_t> pj2{mo_m_ctx};
+  gal::project::merge<mo_m_ctx_t, gal::int_rank_t> pj2{mo_m_ctx};
   pj2(mpps, cls);
 
-  gal::project::truncate<gal::int_rank_t, mo_ctx_t> pj3{mo_ctx};
+  gal::project::truncate<mo_ctx_t, gal::int_rank_t> pj3{mo_ctx};
   pj3(pps, cls);
 
-  gal::project::truncate<gal::crowd_density_t, mo_ctx_t> pj4{mo_ctx};
+  gal::project::truncate<mo_ctx_t, gal::crowd_density_t> pj4{mo_ctx};
   pj4(pps, cls);
 
-  gal::project::alternate<gal::int_rank_t, mo_ctx_t> pj5{mo_ctx};
+  gal::project::alternate<mo_ctx_t, gal::int_rank_t> pj5{mo_ctx};
   pj5(pps, cls);
 }

@@ -8,25 +8,29 @@ namespace gal {
 namespace crowd {
 
   // fitness sharing (nsga)
-  template<typename Proximity, double Cutoff, double Alpha = 2.>
+  template<typename Proximity>
   class sharing {
   public:
     using proximity_t = Proximity;
 
-    inline static constexpr double cutoff = Cutoff;
-    inline static constexpr double alpha = Alpha;
-
   public:
-    inline sharing(proximity_t const& prox) noexcept(
-        std::is_nothrow_copy_constructible_v<proximity_t>)
-        : proximity_{prox} {
+    inline sharing(
+        double cutoff,
+        double alpha,
+        proximity_t const&
+            prox) noexcept(std::is_nothrow_copy_constructible_v<proximity_t>)
+        : proximity_{prox}
+        , cutoff_{cutoff}
+        , alpha_{alpha} {
     }
 
     template<typename... Args>
       requires(std::is_constructible_v<proximity_t, Args...>)
-    inline explicit sharing(Args&&... args) noexcept(
+    inline sharing(double cutoff, double alpha, Args&&... args) noexcept(
         std::is_nothrow_constructible_v<proximity_t, Args...>)
-        : proximity_{std::forward<Args>(args)...} {
+        : proximity_{std::forward<Args>(args)...}
+        , cutoff_{cutoff}
+        , alpha_{alpha} {
     }
 
   public:
@@ -48,7 +52,7 @@ namespace crowd {
                 proximity_(left->chromosome(), right->chromosome()));
 
             auto niching =
-                dist < cutoff ? 1. - std::pow(dist / cutoff, alpha) : 0.;
+                dist < cutoff_ ? 1. - std::pow(dist / cutoff_, alpha_) : 0.;
 
             get_tag<crowd_density_t>(*left) += niching;
             get_tag<crowd_density_t>(*right) += niching;
@@ -65,6 +69,8 @@ namespace crowd {
 
   private:
     proximity_t proximity_;
+    double cutoff_;
+    double alpha_;
   };
 
   // crowding distance (nsga-ii)
