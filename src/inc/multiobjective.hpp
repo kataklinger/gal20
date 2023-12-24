@@ -416,4 +416,12 @@ concept projection = std::invocable<
     std::add_lvalue_reference_t<population_pareto_t<Population, Preserved>>,
     cluster_set const&>;
 
+template<typename Factory, typename Context, typename Preserved>
+concept projection_factory =
+    std::is_invocable_v<std::add_const_t<Factory>,
+                        std::add_lvalue_reference_t<Context>> &&
+    projection<operation_factory_result_t<Factory, Context>,
+               typename Context::population_t,
+               Preserved>;
+
 } // namespace gal

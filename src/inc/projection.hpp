@@ -26,7 +26,8 @@ namespace project {
                           double>;
 
   // x = f(rank) / (1 - density) (nsga)
-  template<typename RankTag, projectable_context<RankTag, double> Context>
+  template<typename Context, typename RankTag>
+    requires(projectable_context<Context, RankTag, double>)
   class scale {
   public:
     using context_t = Context;
@@ -72,7 +73,8 @@ namespace project {
   };
 
   // x = f(rank) + g(density) (spea-ii)
-  template<typename RankTag, projectable_context<RankTag, double> Context>
+  template<typename Context, typename RankTag>
+    requires(projectable_context<Context, RankTag, double>)
   class translate {
   public:
     using context_t = Context;
@@ -102,10 +104,11 @@ namespace project {
   };
 
   // x = <rank, density> (nsga-ii, spea)
-  template<typename RankTag,
-           projectable_context<RankTag,
-                               typename tag_adopted_traits<RankTag>::value_t,
-                               double> Context>
+  template<typename Context, typename RankTag>
+    requires(projectable_context<Context,
+                                 RankTag,
+                                 typename tag_adopted_traits<RankTag>::value_t,
+                                 double>)
   class merge {
   public:
     using context_t = Context;
@@ -157,7 +160,8 @@ namespace project {
   } // namespace details
 
   // x = rank or x = density (pesa, pesa-ii, paes)
-  template<typename SelectedTag, truncateable_context<SelectedTag> Context>
+  template<typename Context, typename SelectedTag>
+    requires(truncateable_context<Context, SelectedTag>)
   class truncate {
   public:
     using context_t = Context;
@@ -186,7 +190,8 @@ namespace project {
       stats::tracked_models<typename Context::statistics_t, stats::generation>;
 
   // x0 = rank, x1 = density, ... (rdga)
-  template<typename RankTag, truncateable_context<RankTag> Context>
+  template<typename Context, typename RankTag>
+    requires(truncateable_context<Context, RankTag>)
   class alternate {
   public:
     using context_t = Context;
@@ -212,6 +217,15 @@ namespace project {
 
   private:
     context_t* context_;
+  };
+
+  template<template<typename...> class Projection, typename... Tys>
+  class factory {
+  public:
+    template<typename Context>
+    inline constexpr auto operator()(Context& context) const {
+      return Projection<Context, Tys...>{context};
+    }
   };
 
 } // namespace project
