@@ -301,8 +301,8 @@ public:
     auto itl = std::ranges::begin(left), end = std::ranges::end(left);
     for (auto itr = std::ranges::begin(right); itl != end && (!res_l || !res_r);
          ++itl, ++itr) {
-      res_l = res_l || compare_(*itl, *itr);
-      res_r = res_r || compare_(*itr, *itl);
+      res_l = res_l || std::invoke(compare_, *itl, *itr);
+      res_r = res_r || std::invoke(compare_, *itr, *itl);
     }
 
     if (res_l) {
