@@ -2,6 +2,8 @@
 
 #include "algorithm.hpp"
 
+#include <stop_token>
+
 namespace gal {
 namespace moo {
 
@@ -23,7 +25,8 @@ namespace moo {
                       config::plist<config::statistics_ptype>>,
 
         config::entry<config::statistics_ptype,
-                      config::plist<config::rank_ptype,
+                      config::plist<config::select_ptype,
+                                    config::rank_ptype,
                                     config::criterion_ptype,
                                     config::observe_ptype>,
                       config::plist<config::tags_ptype>>,
@@ -84,6 +87,9 @@ namespace moo {
                       config_.population_size(),
                       false}
         , statistics_{config.statistics_depth()} {
+    }
+
+    void run(std::stop_token token) {
     }
 
   private:
