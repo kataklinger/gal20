@@ -7,6 +7,16 @@
 namespace gal {
 namespace crowd {
 
+  // no crowding (spea)
+  class none {
+  public:
+    template<multiobjective_population Population, typename Preserved>
+    void operator()(Population& population,
+                    population_pareto_t<Population, Preserved>& sets,
+                    cluster_set const& /*unused*/) const {
+    }
+  };
+
   // fitness sharing (nsga)
   template<typename Proximity>
   class sharing {
@@ -184,7 +194,7 @@ namespace crowd {
     }
   };
 
-  // cell-sharing (pesa, pesa-ii, paes)
+  // cell-sharing (rdga, pesa, pesa-ii, paes)
   template<double Alpha = 1.>
   class cluster {
   public:
