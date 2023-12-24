@@ -353,4 +353,9 @@ inline void clean_tags(
   }
 }
 
+template<typename Factory, typename Context>
+using operation_factory_result_t =
+    std::invoke_result_t<std::add_const_t<Factory>,
+                         std::add_lvalue_reference_t<Context>>;
+
 } // namespace gal
