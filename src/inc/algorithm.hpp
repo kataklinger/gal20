@@ -43,7 +43,7 @@ concept basic_algo_config = requires(Config c) {
                       typename Config::raw_fitness_t>;
 
   requires comparator<typename Config::scaled_comparator_t,
-                      typename Config::raw_fitness_t>;
+                      typename Config::scaled_fitness_t>;
 
   requires selection_range<typename Config::selection_result_t,
                            typename Config::population_t::iterator_t>;
