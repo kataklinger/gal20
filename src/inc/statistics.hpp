@@ -156,7 +156,7 @@ namespace stats {
       model_node() = default;
 
       inline model_node(Population const& population,
-                        model_node<Population> const& previous)
+                        model_node<Population, Model> const& previous)
           : constructor_t{population,
                           previous,
                           pack_dependencies<Population, Model>(*this)} {
