@@ -5,6 +5,7 @@
 
 namespace gal {
 namespace rank {
+
   namespace details {
 
     template<typename Population, typename Preserved>

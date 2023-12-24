@@ -103,7 +103,7 @@ namespace project {
     population_t* population_;
   };
 
-  // x = <rank, density> (nsga-ii, spea)
+  // x = <rank, density> (nsga-ii)
   template<typename Context, typename RankTag>
     requires(projectable_context<Context,
                                  RankTag,
@@ -139,9 +139,7 @@ namespace project {
 
   template<typename Context, typename Tag>
   concept truncateable_context =
-      population_tagged_with<typename Context::population_t,
-                             Tag,
-                             crowd_density_t> &&
+      population_tagged_with<typename Context::population_t, Tag> &&
       std::convertible_to<typename tag_adopted_traits<Tag>::value_t, double> &&
       details::projectable_from<typename Context::population_t, double>;
 
@@ -159,7 +157,7 @@ namespace project {
 
   } // namespace details
 
-  // x = rank or x = density (pesa, pesa-ii, paes)
+  // x = rank or x = density (spea, pesa, pesa-ii, paes)
   template<typename Context, typename SelectedTag>
     requires(truncateable_context<Context, SelectedTag>)
   class truncate {
@@ -187,6 +185,7 @@ namespace project {
   template<typename Context, typename Tag>
   concept alternateable_context =
       truncateable_context<Context, Tag> &&
+      population_tagged_with<typename Context::population_t, crowd_density_t> &&
       stats::tracked_models<typename Context::statistics_t, stats::generation>;
 
   // x0 = rank, x1 = density, ... (rdga)
