@@ -346,13 +346,8 @@ namespace select {
     }
   };
 
-  class local_raw : public local<raw_fitness_tag> {
-    using local<raw_fitness_tag>::local;
-  };
-
-  class local_scaled : public local<scaled_fitness_tag> {
-    using local<scaled_fitness_tag>::local;
-  };
+  class local_raw : public local<raw_fitness_tag> {};
+  class local_scaled : public local<scaled_fitness_tag> {};
 
 } // namespace select
 } // namespace gal
