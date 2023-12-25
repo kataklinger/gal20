@@ -133,7 +133,7 @@ namespace cluster {
     static void merge_closest(Clusters& clusters) {
       auto first = clusters.begin();
 
-      auto min_distance = std::numeric_limits<double>::max();
+      constexpr auto min_distance = std::numeric_limits<double>::max();
       auto merge_left = first, merge_right = first;
 
       for (auto last = clusters.end(); first != last; ++first) {
