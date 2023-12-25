@@ -25,6 +25,22 @@ namespace project {
       std::convertible_to<typename tag_adopted_traits<RankTag>::value_t,
                           double>;
 
+  template<typename Context>
+  class none {
+  public:
+    using context_t = Context;
+    using population_t = typename context_t::population_t;
+
+  public:
+    inline explicit none(context_t& /*unused*/) noexcept {
+    }
+
+    template<typename Preserved>
+    void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
+                    cluster_set const& /*unused*/) const {
+    }
+  };
+
   // x = f(rank) / (1 - density) (nsga)
   template<typename Context, typename RankTag>
     requires(projectable_context<Context, RankTag, double>)
