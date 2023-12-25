@@ -89,7 +89,7 @@ void nsga() {
       .project(project::factory<project::scale, int_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
-      .replace(replace::insert{})
+      .replace(replace::total{})
       .observe(observe{generation_event,
                        [](auto const& /*unused*/, auto const& /*unused*/) {}})
       .build<moo::algo>()
@@ -249,6 +249,136 @@ void rdga() {
       .prune(prune::none{})
       .project(project::factory<project::alternate, int_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
+      .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
+      .replace(replace::insert{})
+      .observe(observe{generation_event,
+                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .build<moo::algo>()
+      .run(stop);
+}
+
+void pesa() {
+  using namespace gal;
+
+  std::mt19937 rng{};
+  std::stop_token stop{};
+
+  std::uniform_real_distribution<> dist{-10.0, 10.0};
+
+  config::for_map<moo::algo_config_map>()
+      .begin()
+      .limit(20)
+      .tag<frontier_level_t,
+           bin_rank_t,
+           crowd_density_t,
+           cluster_label,
+           prune_state_t>()
+      .spawn([&rng, &dist] {
+        return std::vector<double>{dist(rng), dist(rng)};
+      })
+      .evaluate(
+          [](auto& c) {
+            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
+          },
+          gal::dominate{std::less{}})
+      .reproduce(cross::symmetric_singlepoint{rng},
+                 mutate::make_simple_flip<1>(rng, dist))
+      .scale<double>(gal::floatingpoint_three_way{})
+      .track<stats::generation>(10)
+      .stop(criteria::generation_limit{100})
+      .rank<pareto_preserved_t>(gal::rank::binary{})
+      .elite(elite::strict{})
+      .cluster(cluster::hypergrid<std::array<double, 2>, 0.1, 0.1>{})
+      .crowd(crowd::cluster{})
+      .prune(prune::cluster_random{rng})
+      .project(project::factory<project::truncate, crowd_density_t>{})
+      .select(select::roulette_scaled{select::unique<4>, rng})
+      .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
+      .replace(replace::insert{})
+      .observe(observe{generation_event,
+                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .build<moo::algo>()
+      .run(stop);
+}
+
+void pesa_ii() {
+  using namespace gal;
+
+  std::mt19937 rng{};
+  std::stop_token stop{};
+
+  std::uniform_real_distribution<> dist{-10.0, 10.0};
+
+  config::for_map<moo::algo_config_map>()
+      .begin()
+      .limit(20)
+      .tag<frontier_level_t, bin_rank_t, cluster_label, prune_state_t>()
+      .spawn([&rng, &dist] {
+        return std::vector<double>{dist(rng), dist(rng)};
+      })
+      .evaluate(
+          [](auto& c) {
+            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
+          },
+          gal::dominate{std::less{}})
+      .reproduce(cross::symmetric_singlepoint{rng},
+                 mutate::make_simple_flip<1>(rng, dist))
+      .scale()
+      .track<stats::generation>(10)
+      .stop(criteria::generation_limit{100})
+      .rank<pareto_preserved_t>(gal::rank::binary{})
+      .elite(elite::strict{})
+      .cluster(cluster::adaptive_hypergrid<10, 10>{})
+      .crowd(crowd::none{})
+      .prune(prune::cluster_random{rng})
+      .project(project::factory<project::none>{})
+      .select(select::cluster{
+          gal::select::shared<cluster_label>, select::unique<4>, rng})
+      .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
+      .replace(replace::insert{})
+      .observe(observe{generation_event,
+                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .build<moo::algo>()
+      .run(stop);
+}
+
+void paes() {
+  using namespace gal;
+
+  std::mt19937 rng{};
+  std::stop_token stop{};
+
+  std::uniform_real_distribution<> dist{-10.0, 10.0};
+
+  config::for_map<moo::algo_config_map>()
+      .begin()
+      .limit(20)
+      .tag<frontier_level_t,
+           bin_rank_t,
+           crowd_density_t,
+           cluster_label,
+           prune_state_t,
+           ancestry_t>()
+      .spawn([&rng, &dist] {
+        return std::vector<double>{dist(rng), dist(rng)};
+      })
+      .evaluate(
+          [](auto& c) {
+            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
+          },
+          gal::dominate{std::less{}})
+      .reproduce(cross::symmetric_singlepoint{rng},
+                 mutate::make_simple_flip<1>(rng, dist))
+      .scale<double>(gal::floatingpoint_three_way{})
+      .track<stats::generation>(10)
+      .stop(criteria::generation_limit{100})
+      .rank<pareto_preserved_t>(gal::rank::binary{})
+      .elite(elite::strict{})
+      .cluster(cluster::adaptive_hypergrid<10, 10>{})
+      .crowd(crowd::cluster{})
+      .prune(prune::cluster_random{rng})
+      .project(project::factory<project::truncate, crowd_density_t>{})
+      .select(select::local_scaled{})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
       .observe(observe{generation_event,
