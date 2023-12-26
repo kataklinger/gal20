@@ -128,7 +128,7 @@ namespace moo {
       while (!token.stop_requested() &&
              !std::invoke(config_.criterion(), population_, statistics_)) {
         auto fronts = rank(*statistics);
-        // stats::count_range(*statistics, rank_count_tag, fronts);
+        stats::count_range(*statistics, rank_count_tag, fronts);
 
         elite(fronts, *statistics);
 

@@ -62,6 +62,8 @@ public:
   using iterator_concept = std::forward_iterator_tag;
 
 public:
+  pareto_sets_iterator() = default;
+
   inline explicit pareto_sets_iterator(base_iterator_t base) noexcept
       : base_{base} {
   }
