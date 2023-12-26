@@ -33,7 +33,7 @@ namespace elite {
     }
   };
 
-  // do not remove dominated (nsga, nsga-ii, spea, spea-ii)
+  // do not remove dominated (nsga, nsga-ii, spea, spea-ii, rdga)
   class relaxed {
   public:
     template<typename Population, relaxed_elitist_set Preserved>

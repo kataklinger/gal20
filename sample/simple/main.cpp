@@ -126,9 +126,9 @@ void nsga_ii() {
       .elite(elite::relaxed{})
       .cluster(cluster::none{})
       .crowd(crowd::distance{})
-      .prune(prune::none{})
+      .prune(prune::global_worst<int_rank_t>{})
       .project(project::factory<project::merge, int_rank_t>{})
-      .select(select::best_scaled<4>{})
+      .select(select::best_scaled<4>{}) // should be tournament select
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
       .observe(observe{generation_event,
@@ -328,7 +328,7 @@ void pesa_ii() {
       .stop(criteria::generation_limit{100})
       .rank<pareto_preserved_t>(gal::rank::binary{})
       .elite(elite::strict{})
-      .cluster(cluster::adaptive_hypergrid<10, 10>{})
+      .cluster(cluster::hypergrid<std::array<double, 2>, 0.1, 0.1>{})
       .crowd(crowd::none{})
       .prune(prune::cluster_random{rng})
       .project(project::factory<project::none>{})

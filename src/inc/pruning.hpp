@@ -8,6 +8,7 @@
 namespace gal {
 namespace prune {
 
+  // no pruning (nsga, rdga(?))
   class none {
   public:
     template<multiobjective_population Population>

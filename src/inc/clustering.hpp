@@ -20,6 +20,7 @@ namespace cluster {
 
   } // namespace details
 
+  // no clustering (nsga, nsga-ii, spea-ii)
   class none {
   public:
     template<multiobjective_population Population, typename Preserved>

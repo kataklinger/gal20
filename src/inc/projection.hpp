@@ -24,7 +24,7 @@ namespace project {
       details::projectable_from<typename Context::population_t, From...> &&
       std::convertible_to<typename tag_adopted_traits<RankTag>::value_t,
                           double>;
-
+  // n = empty (pesa-ii)
   template<typename Context>
   class none {
   public:
@@ -173,7 +173,7 @@ namespace project {
 
   } // namespace details
 
-  // x = rank or x = density (spea, pesa, pesa-ii, paes)
+  // x = rank or x = density (spea, pesa, paes)
   template<typename Context, typename SelectedTag>
     requires(truncateable_context<Context, SelectedTag>)
   class truncate {

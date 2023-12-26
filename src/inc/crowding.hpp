@@ -7,7 +7,7 @@
 namespace gal {
 namespace crowd {
 
-  // no crowding (spea)
+  // no crowding (spea, pesa-ii)
   class none {
   public:
     template<multiobjective_population Population, typename Preserved>
@@ -194,7 +194,7 @@ namespace crowd {
     }
   };
 
-  // cell-sharing (rdga, pesa, pesa-ii, paes)
+  // cell-sharing (rdga, pesa, paes)
   template<double Alpha = 1.>
   class cluster {
   public:
