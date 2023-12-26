@@ -60,7 +60,7 @@ namespace project {
     template<typename Preserved>
     void operator()(population_pareto_t<population_t, Preserved>& sets,
                     cluster_set const& /*unused*/) const {
-      std::vector<double> multipliers(sets.count(),
+      std::vector<double> multipliers(sets.size(),
                                       std::numeric_limits<double>::max());
 
       for (auto&& individual : population_->individuals()) {

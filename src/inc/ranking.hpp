@@ -13,7 +13,7 @@ namespace rank {
         Population& population,
         population_pareto_t<Population, Preserved>& output,
         binary_rank which) {
-      auto front_level = output.count() + 1;
+      auto front_level = output.size() + 1;
 
       for (auto&& individual : population.individuals()) {
         if (get_tag<bin_rank_t>(individual) == which) {
@@ -142,7 +142,7 @@ namespace rank {
       for (auto&& frontier :
            population.individuals() |
                pareto::views::sort(population.raw_comparator())) {
-        auto front_level = output.count() + 1;
+        auto front_level = output.size() + 1;
 
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
@@ -173,7 +173,7 @@ namespace rank {
       for (auto&& frontier :
            population.individuals() |
                pareto::views::sort(population.raw_comparator())) {
-        auto front_level = output.count() + 1;
+        auto front_level = output.size() + 1;
 
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
@@ -216,7 +216,7 @@ namespace rank {
     inline void populate_strength_pareto(Solutions& solutions,
                                          Pareto& output,
                                          bool which) {
-      auto front_level = output.count() + 1;
+      auto front_level = output.size() + 1;
 
       for (auto&& solution : solutions) {
         auto& individual = solution.individual();

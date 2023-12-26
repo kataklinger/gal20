@@ -217,11 +217,11 @@ public:
     }
   }
 
-  inline auto count() const noexcept {
+  inline auto size() const noexcept {
     return set_boundaries_.size() - 1;
   }
 
-  inline auto get_count_of(pareto::frontier_level level) {
+  inline auto get_size_of(pareto::frontier_level level) {
     return static_cast<std::size_t>(set_boundaries_[level] -
                                     set_boundaries_[level - 1]);
   }
