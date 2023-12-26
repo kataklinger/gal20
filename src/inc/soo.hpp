@@ -61,7 +61,7 @@ namespace soo {
                          typename Config::population_t>;
 
         {
-          c.scaling(std::declval<typename Config::population_context_t>())
+          c.scaling(std::declval<typename Config::population_context_t&>())
         } -> std::convertible_to<typename Config::scaling_t>;
       };
 
@@ -267,7 +267,6 @@ namespace soo {
                          std::forward<Offspring>(offspring));
     }
 
-  private:
     auto& init() {
       std::ranges::generate_n(
           std::back_inserter(population_.individuals()),
