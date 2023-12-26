@@ -605,7 +605,7 @@ namespace stats {
     using value_t = typename timer_t::template body<population_t>;
 
   public:
-    inline explicit enabled_timer(Statistics& statistics)
+    inline explicit enabled_timer(statistics_t& statistics)
         : value_{&statistics.get<timer_t>()} {
       value_->start_timer();
     }
@@ -636,6 +636,63 @@ namespace stats {
     }
   }
 
+  struct disabled_size_change_tracker {};
+
+  template<typename Statistics,
+           model<typename Statistics::population_t> Counter>
+  struct enabled_size_change_tracker {
+  private:
+    using statistics_t = Statistics;
+    using counter_t = Counter;
+
+    using population_t = typename statistics_t::population_t;
+    using value_t = typename counter_t::template body<population_t>;
+
+  public:
+    inline explicit enabled_size_change_tracker(population_t const& population,
+                                                statistics_t& statistics)
+        : population_{&population}
+        , start_size_{population.current_size()}
+        , value_{&statistics.get<counter_t>()} {
+    }
+
+    inline ~enabled_size_change_tracker() noexcept {
+      auto new_size = population_->current_size();
+      auto change = new_size < start_size_ ? start_size_ - new_size
+                                           : new_size - start_size_;
+      value_->set_generic_value(change);
+    }
+
+    enabled_size_change_tracker(enabled_size_change_tracker&&) = delete;
+    enabled_size_change_tracker(enabled_size_change_tracker const&) = delete;
+
+    inline enabled_size_change_tracker&
+        operator=(enabled_size_change_tracker&&) = delete;
+    enabled_size_change_tracker&
+        operator=(enabled_size_change_tracker const&) = delete;
+
+  private:
+    population_t const* population_;
+    std::size_t start_size_;
+
+    value_t* value_;
+  };
+
+  template<typename Tag, typename Population, typename Statistics>
+  inline auto track_size_change(Population const& population,
+                                Statistics& statistics,
+                                Tag /*unused*/) {
+    using counter_t = generic_counter<Tag>;
+
+    if constexpr (tracks_model_v<Statistics, counter_t>) {
+      return enabled_size_change_tracker<Statistics, counter_t>{population,
+                                                                statistics};
+    }
+    else {
+      return disabled_size_change_tracker{};
+    }
+  }
+
   template<typename Tag, typename Statistics, std::ranges::sized_range Range>
   inline void
       count_range(Statistics& statistics, Tag /*unused*/, Range const& range) {
@@ -655,6 +712,16 @@ namespace stats {
     if constexpr (tracks_model_v<Statistics, counter_t>) {
       auto& model = statistics.get<counter_t>();
       model.set_generic_value(model.get_generic_value() + increment);
+    }
+  }
+
+  template<typename Tag, typename Statistics>
+  inline void
+      set_count(Statistics& statistics, Tag /*unused*/, std::size_t count) {
+    using counter_t = generic_counter<Tag>;
+
+    if constexpr (tracks_model_v<Statistics, counter_t>) {
+      statistics.get<counter_t>().set_generic_value(count);
     }
   }
 
