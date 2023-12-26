@@ -11,8 +11,8 @@ namespace crowd {
   class none {
   public:
     template<multiobjective_population Population, typename Preserved>
-    void operator()(Population& population,
-                    population_pareto_t<Population, Preserved>& sets,
+    void operator()(Population& /*unused*/,
+                    population_pareto_t<Population, Preserved>& /*unused*/,
                     cluster_set const& /*unused*/) const {
     }
   };

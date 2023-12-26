@@ -383,7 +383,7 @@ void test_ground() {
   gal::cluster_set cls{};
 
   gal::prune::none pr0{};
-  pr0(mp, cls);
+  pr0(mp);
 
   gal::prune::global_worst<gal::int_rank_t> pr1{};
   pr1(mp);
@@ -396,17 +396,20 @@ void test_ground() {
   gal::prune::cluster_edge pr3{};
   pr2(mp, cls);
 
-  gal::crowd::sharing cw0{1.0, 2.0, [](int, int) { return 0.; }};
+  gal::crowd::none cw0{};
   cw0(mp, pps, cls);
 
-  gal::crowd::distance cw1{};
+  gal::crowd::sharing cw1{1.0, 2.0, [](int, int) { return 0.; }};
   cw1(mp, pps, cls);
 
-  gal::crowd::neighbor cw2{};
+  gal::crowd::distance cw2{};
   cw2(mp, pps, cls);
 
-  gal::crowd::cluster cw3{};
+  gal::crowd::neighbor cw3{};
   cw3(mp, pps, cls);
+
+  gal::crowd::cluster cw4{};
+  cw4(mp, pps, cls);
 
   using mo_ctx_t = gal::population_context<mo_pop_t, stat_t>;
   mo_ctx_t mo_ctx{mp, hist};

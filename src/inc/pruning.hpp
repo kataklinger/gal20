@@ -12,8 +12,7 @@ namespace prune {
   class none {
   public:
     template<multiobjective_population Population>
-    inline void operator()(Population& /*unused*/,
-                           cluster_set const& /*unused*/) const {
+    inline void operator()(Population& /*unused*/) const {
     }
   };
 
