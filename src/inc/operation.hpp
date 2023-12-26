@@ -213,4 +213,38 @@ struct replacement_count_t {};
 inline constexpr replacement_time_t replacement_time_tag{};
 inline constexpr replacement_count_t replacement_count_tag{};
 
+//***
+
+struct rank_time_t {};
+struct rank_count_t {};
+
+inline constexpr rank_time_t rank_time_tag{};
+inline constexpr rank_count_t rank_count_tag{};
+
+struct elite_time_t {};
+struct elite_count_t {};
+
+inline constexpr elite_time_t elite_time_tag{};
+inline constexpr elite_count_t elite_count_tag{};
+
+struct cluster_time_t {};
+struct cluster_count_t {};
+
+inline constexpr cluster_time_t cluster_time_tag{};
+inline constexpr cluster_count_t cluster_count_tag{};
+
+struct prune_time_t {};
+struct prune_count_t {};
+
+inline constexpr prune_time_t prune_time_tag{};
+inline constexpr prune_count_t prune_count_tag{};
+
+struct crowd_time_t {};
+
+inline constexpr crowd_time_t crowd_time_tag{};
+
+struct project_time_t {};
+
+inline constexpr project_time_t project_time_tag{};
+
 } // namespace gal
