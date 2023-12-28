@@ -11,9 +11,9 @@ List of task to implement or improve
  - [ ] disable improving-only mutation when fitness is not totally ordered
  - [ ] initializator to produce tags
  - [ ] verify duplicates parents for parent replacement
- - [ ] roulette wheele selection when minimizing fintess
+ - [ ] roulette wheele selection when minimizing fitness
  - [ ] replacement with forbidden regions
- - [ ] tournament selection (random, roulette wheel)
+ - [x] tournament selection (random, roulette wheel)
  - [x] selection of hypercells rather than individuals
  - [x] insert-only replacement
  - [x] elitism parameter for random replacement

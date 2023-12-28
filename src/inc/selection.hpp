@@ -56,6 +56,126 @@ namespace select {
     generator_t* generator_;
   };
 
+  template<std::size_t Count>
+  struct selection_rounds : std::integral_constant<std::size_t, Count> {};
+
+  template<std::size_t Count>
+  inline constexpr selection_rounds<Count> rounds{};
+
+  namespace details {
+
+    template<typename Ty>
+    struct is_rounds : std::false_type {};
+
+    template<std::size_t Count>
+    struct is_rounds<selection_rounds<Count>> : std::true_type {};
+
+    template<typename Ty>
+    inline constexpr auto is_rounds_v = is_rounds<Ty>::value;
+
+  } // namespace details
+
+  template<typename Ty>
+  concept rounds_attribute = details::is_rounds_v<Ty>;
+
+  template<typename FitnessTag,
+           attribute Attribute,
+           rounds_attribute Rounds,
+           typename Generator>
+  class tournament {
+  public:
+    using attribute_t = Attribute;
+    using fitness_tag_t = FitnessTag;
+    using rounds_t = Rounds;
+    using generator_t = Generator;
+
+  private:
+    using distribution_t = std::uniform_int_distribution<std::size_t>;
+
+    inline static constexpr fitness_tag_t fitness_tag{};
+
+  public:
+    inline tournament(fitness_tag_t /*unused*/,
+                      attribute_t /*unused*/,
+                      rounds_t /*unused*/,
+                      generator_t& generator) noexcept
+        : generator_{&generator} {
+    }
+
+    inline explicit tournament(generator_t& generator) noexcept
+        : generator_{&generator} {
+    }
+
+    template<sortable_population<fitness_tag_t> Population>
+    inline auto operator()(Population& population) const {
+      fitness_better cmp{population.comparator(fitness_tag)};
+
+      auto generate = [&population, this]() {
+        auto idx =
+            distribution_t{0, population.current_size() - 1}(*generator_);
+        return std::tuple{
+            idx, &population.individuals()[idx].evaluation().get(fitness_tag)};
+      };
+
+      return sample_many(population,
+                         attribute_t::sample(),
+                         [&population, cmp, generate, this]() {
+                           auto [best_idx, best_fitness] = generate();
+
+                           for (auto i = rounds_t::value - 1; i > 0; --i) {
+                             if (auto [idx, current] = generate();
+                                 cmp(*current, *best_fitness)) {
+                               best_idx = idx;
+                               best_fitness = current;
+                             }
+                           }
+
+                           return best_idx;
+                         });
+    }
+
+  private:
+    generator_t* generator_;
+  };
+
+  template<attribute Attribute, rounds_attribute Rounds, typename Generator>
+  class tournament_raw
+      : public tournament<raw_fitness_tag, Attribute, Rounds, Generator> {
+  private:
+    using base_t = tournament<raw_fitness_tag, Attribute, Rounds, Generator>;
+
+  public:
+    using attribute_t = Attribute;
+    using rounds_t = Rounds;
+    using generator_t = Generator;
+
+  public:
+    inline tournament_raw(attribute_t /*unused*/,
+                          rounds_t /*unused*/,
+                          generator_t& generator) noexcept
+        : base_t{generator} {
+    }
+  };
+
+  template<attribute Attribute, rounds_attribute Rounds, typename Generator>
+  class tournament_scaled
+      : public tournament<scaled_fitness_tag, Attribute, Rounds, Generator> {
+  private:
+    using base_t = tournament<scaled_fitness_tag, Attribute, Rounds, Generator>;
+
+  public:
+    using attribute_t = Attribute;
+    using rounds_t = Rounds;
+    using generator_t = Generator;
+
+  public:
+    inline tournament_scaled(attribute_t /*unused*/,
+                             rounds_t /*unused*/,
+                             generator_t& generator) noexcept
+        : base_t{generator} {
+    }
+  };
+
   template<std::size_t Size, typename FitnessTag>
   class best {
   private:

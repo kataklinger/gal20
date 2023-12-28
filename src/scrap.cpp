@@ -143,15 +143,19 @@ void test_ground() {
   gal::select::random sl2{gal::select::unique<2>, gen};
   sl2(p);
 
-  gal::select::roulette_scaled sl3{gal::select::unique<2>, gen};
+  gal::select::tournament_scaled sl3{
+      gal::select::unique<2>, gal::select::rounds<2>, gen};
   sl3(p);
 
-  gal::select::cluster sl4{
-      gal::select::shared<int>, gal::select::unique<2>, gen};
+  gal::select::roulette_scaled sl4{gal::select::unique<2>, gen};
   sl4(p);
 
-  gal::select::local_raw sl5{};
+  gal::select::cluster sl5{
+      gal::select::shared<int>, gal::select::unique<2>, gen};
   sl5(p);
+
+  gal::select::local_raw sl6{};
+  sl6(p);
 
   gal::replace::random<std::mt19937, 2> ro1{gen};
   ro1(p, std::vector<parent_replacement_t>{});

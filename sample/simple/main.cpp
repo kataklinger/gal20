@@ -128,7 +128,8 @@ void nsga_ii() {
       .crowd(crowd::distance{})
       .prune(prune::global_worst<int_rank_t>{})
       .project(project::factory<project::merge, int_rank_t>{})
-      .select(select::best_scaled<4>{}) // should be tournament select
+      .select(
+          select::tournament_scaled{select::unique<2>, select::rounds<2>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
       .observe(observe{generation_event,
