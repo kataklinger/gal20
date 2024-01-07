@@ -512,7 +512,23 @@ namespace pareto {
     return !(lhs == rhs);
   }
 
-  template<std::ranges::forward_range Range, typename Comparator>
+  template<typename Comparator, typename Range>
+  concept pareto_comparator =
+      std::invocable<Comparator,
+                     std::add_lvalue_reference_t<
+                         std::add_const_t<std::ranges::range_value_t<Range>>>,
+                     std::add_lvalue_reference_t<std::add_const_t<
+                         std::ranges::range_value_t<Range>>>> &&
+      std::convertible_to<
+          std::invoke_result_t<Comparator,
+                               std::add_lvalue_reference_t<std::add_const_t<
+                                   std::ranges::range_value_t<Range>>>,
+                               std::add_lvalue_reference_t<std::add_const_t<
+                                   std::ranges::range_value_t<Range>>>>,
+          std::partial_ordering>;
+
+  template<std::ranges::forward_range Range,
+           pareto_comparator<Range> Comparator>
     requires std::ranges::view<Range>
   class sort_view
       : public std::ranges::view_interface<sort_view<Range, Comparator>> {
@@ -543,7 +559,7 @@ namespace pareto {
     std::shared_ptr<state_t> state_;
   };
 
-  template<typename Range, typename Comparator>
+  template<typename Range, pareto_comparator<Range> Comparator>
   sort_view(Range&& range, Comparator&&)
       -> sort_view<std::views::all_t<Range>, std::remove_cvref_t<Comparator>>;
 
@@ -561,6 +577,7 @@ namespace pareto {
       }
 
       template<std::ranges::viewable_range Range>
+        requires pareto_comparator<Comparator, Range>
       inline auto operator()(Range&& range) const {
         return sort_view{std::forward<Range>(range), comparator_};
       }
@@ -570,7 +587,8 @@ namespace pareto {
     };
 
     struct sort_view_adaptor {
-      template<std::ranges::viewable_range Range, typename Comparator>
+      template<std::ranges::viewable_range Range,
+               pareto_comparator<Range> Comparator>
       inline auto operator()(Range&& range, Comparator&& compare) const {
         return sort_view{std::forward<Range>(range),
                          std::forward<Comparator>(compare)};
@@ -582,7 +600,8 @@ namespace pareto {
       }
     };
 
-    template<std::ranges::viewable_range Range, typename Comparator>
+    template<std::ranges::viewable_range Range,
+             pareto_comparator<Range> Comparator>
     inline auto operator|(Range&& range,
                           sort_view_closure<Comparator> const& closure) {
       return closure(std::forward<Range>(range));
@@ -594,7 +613,8 @@ namespace pareto {
     inline details::sort_view_adaptor sort;
   }
 
-  template<std::ranges::viewable_range Range, typename Comparator>
+  template<std::ranges::viewable_range Range,
+           pareto_comparator<Range> Comparator>
   inline auto analyze(Range&& range, Comparator&& compare) {
     return details::analyze_impl(std::forward<Range>(range),
                                  std::forward<Comparator>(compare)) |
@@ -639,7 +659,7 @@ namespace pareto {
   template<std::ranges::forward_range OldRange,
            std::ranges::forward_range NewRange,
            tracker<std::ranges::range_value_t<OldRange>> Tracker,
-           typename Comparator>
+           pareto_comparator<OldRange> Comparator>
     requires std::same_as<std::ranges::range_value_t<OldRange>,
                           std::ranges::range_value_t<NewRange>>
   void identify_dominated(OldRange&& oldRange,
