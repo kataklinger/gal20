@@ -224,8 +224,24 @@ public:
     return raw_comparator_;
   }
 
+  inline auto adopted_raw_comparator() const noexcept {
+    return [adopted = raw_comparator_](individual_t const& lhs,
+                                       individual_t const& rhs) {
+      return std::invoke(
+          adopted, lhs.evaluation().raw(), rhs.evaluation().raw());
+    };
+  }
+
   inline auto const& scaled_comparator() const noexcept {
     return scaled_comparator_;
+  }
+
+  inline auto adopted_scaled_comparator() const noexcept {
+    return [adopted = scaled_comparator_](individual_t const& lhs,
+                                          individual_t const& rhs) {
+      return std::invoke(
+          adopted, lhs.evaluation().scaled(), rhs.evaluation().scaled());
+    };
   }
 
   inline auto const& comparator(raw_fitness_tag /*unused*/) const noexcept {

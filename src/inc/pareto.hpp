@@ -261,8 +261,8 @@ namespace pareto {
       auto& [fst, snd] = pair;
 
       auto result = std::invoke(std::forward<Comparator>(compare),
-                                fst.individual().evaluation().raw(),
-                                snd.individual().evaluation().raw());
+                                fst.individual(),
+                                snd.individual());
 
       if (result == std::partial_ordering::greater) {
         fst.add_dominated(snd);
@@ -622,8 +622,7 @@ namespace pareto {
           continue;
         }
 
-        auto result = std::invoke(
-            compare, in.evaluation().raw(), outer.evaluation().raw());
+        auto result = std::invoke(compare, in, outer);
 
         if (result == std::partial_ordering::greater) {
           track.set(in);

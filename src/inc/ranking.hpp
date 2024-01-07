@@ -92,7 +92,7 @@ namespace rank {
 
       for (auto&& frontier :
            population.individuals() |
-               pareto::views::sort(population.raw_comparator())) {
+               pareto::views::sort(population.adopted_raw_comparator())) {
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
 
@@ -124,7 +124,7 @@ namespace rank {
                                   });
 
       pareto::identify_dominated(
-          ranked, nonranked, tracker{}, population.raw_comparator());
+          ranked, nonranked, tracker{}, population.adopted_raw_comparator());
 
       return details::generate_binary_pareto(population, preserve);
     }
@@ -141,7 +141,7 @@ namespace rank {
 
       for (auto&& frontier :
            population.individuals() |
-               pareto::views::sort(population.raw_comparator())) {
+               pareto::views::sort(population.adopted_raw_comparator())) {
         auto front_level = output.size() + 1;
 
         for (auto&& solution : frontier.members()) {
@@ -172,7 +172,7 @@ namespace rank {
 
       for (auto&& frontier :
            population.individuals() |
-               pareto::views::sort(population.raw_comparator())) {
+               pareto::views::sort(population.adopted_raw_comparator())) {
         auto front_level = output.size() + 1;
 
         for (auto&& solution : frontier.members()) {
@@ -202,7 +202,7 @@ namespace rank {
     inline auto prepare_strength_fast(Population& population) {
       clean_tags<RankTag>(population);
       return pareto::analyze(population.individuals(),
-                             population.raw_comparator());
+                             population.adopted_raw_comparator());
     }
 
     template<typename RankTag, typename Population>
@@ -289,7 +289,7 @@ namespace rank {
       auto output = details::prepare_strength_slow<real_rank_t>(population);
 
       auto sorted = population.individuals() |
-                    pareto::views::sort(population.raw_comparator());
+                    pareto::views::sort(population.adopted_raw_comparator());
 
       auto first = std::ranges::begin(sorted);
 
@@ -376,7 +376,7 @@ namespace rank {
 
       for (auto&& frontier :
            population.individuals() |
-               pareto::views::sort(population.raw_comparator())) {
+               pareto::views::sort(population.adopted_raw_comparator())) {
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
 

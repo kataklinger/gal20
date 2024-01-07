@@ -316,17 +316,6 @@ void test_ground() {
     }
   };
 
-  std::vector<indv_t> par_indv{};
-  gal::dominate comp{std::less{}};
-
-  auto v = par_indv | gal::pareto::views::sort(comp);
-
-  std::ranges::for_each(v, [](auto&& /*unused*/) {});
-
-  auto mm1 = gal::pareto::analyze(par_indv, comp);
-
-  gal::pareto::identify_dominated(par_indv, par_indv, dom_flag{}, comp);
-
   mo_pop_t mp{{}, {}, true};
 
   gal::rank::binary rk0{};
