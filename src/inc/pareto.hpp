@@ -59,9 +59,14 @@ namespace pareto {
       }
 
       inline auto& operator++() noexcept {
-        if (++j_ == last_) {
-          j_ = ++i_;
-          ++j_;
+        if (auto old = j_++; j_ == last_) {
+          if (++i_ == old) {
+            i_ = j_ = last_;
+          }
+          else {
+            j_ = i_;
+            ++j_;
+          }
         }
 
         return *this;
