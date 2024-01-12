@@ -269,10 +269,10 @@ namespace pareto {
                                 fst.individual(),
                                 snd.individual());
 
-      if (result == std::partial_ordering::greater) {
+      if (result == std::partial_ordering::less) {
         fst.add_dominated(snd);
       }
-      else if (result == std::partial_ordering::less) {
+      else if (result == std::partial_ordering::greater) {
         snd.add_dominated(fst);
       }
     }

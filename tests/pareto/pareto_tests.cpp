@@ -39,7 +39,7 @@ protected:
 
 TEST_F(pareto_sort_tests, pareto_front_count) {
   // arrange
-  gal::dominate cmp{std::greater{}};
+  gal::dominate cmp{std::less{}};
 
   // act
   auto sorted = individuals_ | gal::pareto::views::sort(cmp);
@@ -50,7 +50,7 @@ TEST_F(pareto_sort_tests, pareto_front_count) {
 
 TEST_F(pareto_sort_tests, pareto_front_ordering) {
   // arrange
-  gal::dominate cmp{std::greater{}};
+  gal::dominate cmp{std::less{}};
 
   // act
   auto sorted = individuals_ | gal::pareto::views::sort(cmp);
