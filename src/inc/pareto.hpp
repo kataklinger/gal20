@@ -55,7 +55,9 @@ namespace pareto {
           : i_{first}
           , j_{first}
           , last_{last} {
-        ++j_;
+        if (++j_ == last_) {
+          i_ = last_;
+        }
       }
 
       inline auto& operator++() noexcept {

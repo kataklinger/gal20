@@ -28,32 +28,29 @@ protected:
   inline static constexpr individual_t f3a{1, 1};
 
   void SetUp() override {
-    individuals_.push_back(f1a);
-    individuals_.push_back(f2a);
-    individuals_.push_back(f2b);
-    individuals_.push_back(f3a);
   }
 
-  std::vector<individual_t> individuals_;
+  std::vector<individual_t> individuals_5_{f1a, f2a, f2b, f3a};
+  std::vector<individual_t> individuals_1_{f1a};
 };
 
-TEST_F(pareto_sort_tests, pareto_front_count) {
+TEST_F(pareto_sort_tests, pareto_multi_front_count) {
   // arrange
   gal::dominate cmp{std::less{}};
 
   // act
-  auto sorted = individuals_ | gal::pareto::views::sort(cmp);
+  auto sorted = individuals_5_ | gal::pareto::views::sort(cmp);
 
   // assert
   EXPECT_EQ(std::ranges::distance(sorted), 3);
 }
 
-TEST_F(pareto_sort_tests, pareto_front_ordering) {
+TEST_F(pareto_sort_tests, pareto_multi_front_ordering) {
   // arrange
   gal::dominate cmp{std::less{}};
 
   // act
-  auto sorted = individuals_ | gal::pareto::views::sort(cmp);
+  auto sorted = individuals_5_ | gal::pareto::views::sort(cmp);
 
   // assert
   auto it = std::ranges::begin(sorted);
@@ -64,4 +61,27 @@ TEST_F(pareto_sort_tests, pareto_front_ordering) {
               ::testing::UnorderedElementsAre(f2a, f2b));
   ++it;
   EXPECT_THAT(to_vector(it->members()), ::testing::ElementsAre(f3a));
+}
+
+TEST_F(pareto_sort_tests, pareto_single_front_count) {
+  // arrange
+  gal::dominate cmp{std::less{}};
+
+  // act
+  auto sorted = individuals_1_ | gal::pareto::views::sort(cmp);
+
+  // assert
+  EXPECT_EQ(std::ranges::distance(sorted), 1);
+}
+
+TEST_F(pareto_sort_tests, pareto_single_front_ordering) {
+  // arrange
+  gal::dominate cmp{std::less{}};
+
+  // act
+  auto sorted = individuals_1_ | gal::pareto::views::sort(cmp);
+
+  // assert
+  auto it = std::ranges::begin(sorted);
+  EXPECT_THAT(to_vector(it->members()), ::testing::ElementsAre(f1a));
 }
