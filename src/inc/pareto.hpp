@@ -55,7 +55,7 @@ namespace pareto {
           : i_{first}
           , j_{first}
           , last_{last} {
-        if (++j_ == last_) {
+        if (j_ != last_ && ++j_ == last_) {
           i_ = last_;
         }
       }

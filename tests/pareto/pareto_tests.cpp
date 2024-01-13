@@ -30,8 +30,9 @@ protected:
   void SetUp() override {
   }
 
-  std::vector<individual_t> individuals_5_{f1a, f2a, f2b, f3a};
+  std::vector<individual_t> individuals_0_{0};
   std::vector<individual_t> individuals_1_{f1a};
+  std::vector<individual_t> individuals_5_{f1a, f2a, f2b, f3a};
 };
 
 TEST_F(pareto_sort_tests, pareto_multi_front_count) {
@@ -84,4 +85,18 @@ TEST_F(pareto_sort_tests, pareto_single_front_ordering) {
   // assert
   auto it = std::ranges::begin(sorted);
   EXPECT_THAT(to_vector(it->members()), ::testing::ElementsAre(f1a));
+}
+
+TEST_F(pareto_sort_tests, pareto_empty_front_count) {
+  // arrange
+  gal::dominate cmp{std::less{}};
+
+  // act
+  auto sorted = individuals_0_ | gal::pareto::views::sort(cmp);
+
+  // assert
+  EXPECT_EQ(std::ranges::distance(sorted), 1);
+
+  auto it = std::ranges::begin(sorted);
+  EXPECT_EQ(std::ranges::distance(it->members()), 0);
 }
