@@ -13,7 +13,8 @@ using individual_t = std::array<int, 2>;
 template<std::ranges::range R>
 constexpr auto to_vector(R&& r) {
   auto extracted =
-      r | std::views::transform([](auto const& s) { return s.individual(); });
+      std::forward<R>(r) |
+      std::views::transform([](auto const& s) { return s.individual(); });
 
   using elem_t = std::decay_t<std::ranges::range_value_t<decltype(extracted)>>;
   return std::vector<elem_t>{std::ranges::begin(extracted),
@@ -98,5 +99,59 @@ TEST_F(pareto_sort_tests, pareto_empty_front_count) {
   EXPECT_EQ(std::ranges::distance(sorted), 1);
 
   auto it = std::ranges::begin(sorted);
-  EXPECT_EQ(std::ranges::distance(it->members()), 0);
+  EXPECT_THAT(to_vector(it->members()), ::testing::IsEmpty());
+}
+
+TEST_F(pareto_sort_tests, pareto_multi_analyze) {
+  // arrange
+  gal::dominate cmp{std::less{}};
+
+  // act
+  auto nondominated = gal::pareto::analyze(individuals_5_, cmp);
+
+  //   assert
+  auto it = std::ranges::begin(nondominated);
+  auto indv = *it;
+  EXPECT_TRUE(indv.nondominated());
+  EXPECT_THAT(to_vector(indv.dominated()),
+              ::testing::UnorderedElementsAre(f2a, f2b, f3a));
+
+  indv = *++it;
+  EXPECT_FALSE(indv.nondominated());
+  EXPECT_THAT(to_vector(indv.dominated()),
+              ::testing::UnorderedElementsAre(f3a));
+
+  indv = *++it;
+  EXPECT_FALSE(indv.nondominated());
+  EXPECT_THAT(to_vector(indv.dominated()),
+              ::testing::UnorderedElementsAre(f3a));
+
+  indv = *++it;
+  EXPECT_FALSE(indv.nondominated());
+  EXPECT_THAT(to_vector(indv.dominated()), ::testing::IsEmpty());
+}
+
+TEST_F(pareto_sort_tests, pareto_single_analyze) {
+  // arrange
+  gal::dominate cmp{std::less{}};
+
+  // act
+  auto nondominated = gal::pareto::analyze(individuals_1_, cmp);
+
+  //   assert
+  auto it = std::ranges::begin(nondominated);
+  auto indv = *it;
+  EXPECT_TRUE(indv.nondominated());
+  EXPECT_THAT(to_vector(indv.dominated()), ::testing::IsEmpty());
+}
+
+TEST_F(pareto_sort_tests, pareto_empty_analyze) {
+  // arrange
+  gal::dominate cmp{std::less{}};
+
+  // act
+  auto nondominated = gal::pareto::analyze(individuals_0_, cmp);
+
+  //   assert
+  EXPECT_EQ(std::ranges::distance(nondominated), 0);
 }
