@@ -38,7 +38,7 @@ protected:
   std::vector<individual_t> individuals_5_{f1a, f2a, f2b, f3a};
 };
 
-TEST_F(pareto_sort_tests, pareto_multi_front_count) {
+TEST_F(pareto_sort_tests, pareto_sort_front_count_multi) {
   // arrange
   gal::dominate cmp{std::less{}};
 
@@ -49,7 +49,7 @@ TEST_F(pareto_sort_tests, pareto_multi_front_count) {
   EXPECT_EQ(std::ranges::distance(sorted), 3);
 }
 
-TEST_F(pareto_sort_tests, pareto_multi_front_ordering) {
+TEST_F(pareto_sort_tests, pareto_sort_front_ordering_multi) {
   // arrange
 
   // act
@@ -66,7 +66,7 @@ TEST_F(pareto_sort_tests, pareto_multi_front_ordering) {
   EXPECT_THAT(to_vector(it->members()), ::testing::ElementsAre(f3a));
 }
 
-TEST_F(pareto_sort_tests, pareto_single_front_count) {
+TEST_F(pareto_sort_tests, pareto_sort_front_count_single) {
   // arrange
 
   // act
@@ -76,7 +76,7 @@ TEST_F(pareto_sort_tests, pareto_single_front_count) {
   EXPECT_EQ(std::ranges::distance(sorted), 1);
 }
 
-TEST_F(pareto_sort_tests, pareto_single_front_ordering) {
+TEST_F(pareto_sort_tests, pareto_sort_front_ordering_single) {
   // arrange
 
   // act
@@ -87,7 +87,7 @@ TEST_F(pareto_sort_tests, pareto_single_front_ordering) {
   EXPECT_THAT(to_vector(it->members()), ::testing::ElementsAre(f1a));
 }
 
-TEST_F(pareto_sort_tests, pareto_empty_front_count) {
+TEST_F(pareto_sort_tests, pareto_sort_front_count_empty) {
   // arrange
 
   // act
@@ -100,7 +100,7 @@ TEST_F(pareto_sort_tests, pareto_empty_front_count) {
   EXPECT_THAT(to_vector(it->members()), ::testing::IsEmpty());
 }
 
-TEST_F(pareto_sort_tests, pareto_multi_analyze) {
+TEST_F(pareto_sort_tests, pareto_analyze_multi) {
   // arrange
 
   // act
@@ -128,7 +128,7 @@ TEST_F(pareto_sort_tests, pareto_multi_analyze) {
   EXPECT_THAT(to_vector(indv.dominated()), ::testing::IsEmpty());
 }
 
-TEST_F(pareto_sort_tests, pareto_single_analyze) {
+TEST_F(pareto_sort_tests, pareto_analyze_single) {
   // arrange
 
   // act
@@ -141,7 +141,7 @@ TEST_F(pareto_sort_tests, pareto_single_analyze) {
   EXPECT_THAT(to_vector(indv.dominated()), ::testing::IsEmpty());
 }
 
-TEST_F(pareto_sort_tests, pareto_empty_analyze) {
+TEST_F(pareto_sort_tests, pareto_analyze_empty) {
   // arrange
 
   // act

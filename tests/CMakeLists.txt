@@ -5,6 +5,7 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 add_executable(tests
   pareto/pareto_tests.cpp
+  pareto/ranking_tests.cpp
   main.cpp)
 
 target_link_libraries(tests PRIVATE
