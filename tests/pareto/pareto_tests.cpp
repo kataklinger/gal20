@@ -12,6 +12,11 @@ using individual_t = std::array<int, 2>;
 
 static gal::dominate cmp{std::less{}};
 
+static constexpr individual_t f1a{0, 0};
+static constexpr individual_t f2a{1, 0};
+static constexpr individual_t f2b{0, 1};
+static constexpr individual_t f3a{1, 1};
+
 template<std::ranges::range R>
 constexpr auto to_vector(R&& r) {
   auto extracted =
@@ -25,11 +30,6 @@ constexpr auto to_vector(R&& r) {
 
 class pareto_sort_tests : public testing::Test {
 protected:
-  inline static constexpr individual_t f1a{0, 0};
-  inline static constexpr individual_t f2a{1, 0};
-  inline static constexpr individual_t f2b{0, 1};
-  inline static constexpr individual_t f3a{1, 1};
-
   void SetUp() override {
   }
 
@@ -190,7 +190,7 @@ inline auto split_range(std::vector<individual_t>& individuals,
 
 TEST(pareto_identify_tests, add_dominant) {
   // arrange
-  std::vector<individual_t> individuals{{1, 0}, {0, 1}, {0, 0}};
+  std::vector<individual_t> individuals{f2a, f2b, f1a};
   auto [existing, added] = split_range(individuals, 2);
   tracker t{individuals};
 
@@ -203,7 +203,7 @@ TEST(pareto_identify_tests, add_dominant) {
 
 TEST(pareto_identify_tests, add_dominated) {
   // arrange
-  std::vector<individual_t> individuals{{1, 0}, {0, 1}, {1, 1}};
+  std::vector<individual_t> individuals{f2a, f2b, f3a};
   auto [existing, added] = split_range(individuals, 2);
   tracker t{individuals};
 
@@ -216,7 +216,7 @@ TEST(pareto_identify_tests, add_dominated) {
 
 TEST(pareto_identify_tests, add_dominant_dominated) {
   // arrange
-  std::vector<individual_t> individuals{{1, 0}, {0, 1}, {0, 0}, {1, 1}};
+  std::vector<individual_t> individuals{f2a, f2b, f1a, f3a};
   auto [existing, added] = split_range(individuals, 2);
   tracker t{individuals};
 
@@ -225,4 +225,17 @@ TEST(pareto_identify_tests, add_dominant_dominated) {
 
   //   assert
   EXPECT_THAT(t.flags(), ::testing::ElementsAre(true, true, false, true));
+}
+
+TEST(pareto_identify_tests, add_nondominant_nondominated) {
+  // arrange
+  std::vector<individual_t> individuals{f2a, f2b};
+  auto [existing, added] = split_range(individuals, 1);
+  tracker t{individuals};
+
+  // act
+  gal::pareto::identify_dominated(existing, added, t, cmp);
+
+  //   assert
+  EXPECT_THAT(t.flags(), ::testing::ElementsAre(false, false));
 }
