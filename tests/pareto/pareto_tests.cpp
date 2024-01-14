@@ -179,19 +179,23 @@ private:
   std::vector<bool> flags_;
 };
 
+inline auto split_range(std::vector<individual_t>& individuals,
+                        std::size_t where) noexcept {
+  return std::tuple{
+      std::ranges::subrange{std::ranges::begin(individuals),
+                            std::ranges::begin(individuals) + where},
+      std::ranges::subrange{std::ranges::begin(individuals) + where,
+                            std::ranges::end(individuals)}};
+}
+
 TEST(pareto_identify_tests, add_dominant) {
   // arrange
   std::vector<individual_t> individuals{{1, 0}, {0, 1}, {0, 0}};
+  auto [existing, added] = split_range(individuals, 2);
   tracker t{individuals};
 
   // act
-  gal::pareto::identify_dominated(
-      std::ranges::subrange{std::ranges::begin(individuals),
-                            std::ranges::begin(individuals) + 2},
-      std::ranges::subrange{std::ranges::begin(individuals) + 2,
-                            std::ranges::end(individuals)},
-      t,
-      cmp);
+  gal::pareto::identify_dominated(existing, added, t, cmp);
 
   //   assert
   EXPECT_THAT(t.flags(), ::testing::ElementsAre(true, true, false));
@@ -200,16 +204,11 @@ TEST(pareto_identify_tests, add_dominant) {
 TEST(pareto_identify_tests, add_dominated) {
   // arrange
   std::vector<individual_t> individuals{{1, 0}, {0, 1}, {1, 1}};
+  auto [existing, added] = split_range(individuals, 2);
   tracker t{individuals};
 
   // act
-  gal::pareto::identify_dominated(
-      std::ranges::subrange{std::ranges::begin(individuals),
-                            std::ranges::begin(individuals) + 2},
-      std::ranges::subrange{std::ranges::begin(individuals) + 2,
-                            std::ranges::end(individuals)},
-      t,
-      cmp);
+  gal::pareto::identify_dominated(existing, added, t, cmp);
 
   //   assert
   EXPECT_THAT(t.flags(), ::testing::ElementsAre(false, false, true));
@@ -218,16 +217,11 @@ TEST(pareto_identify_tests, add_dominated) {
 TEST(pareto_identify_tests, add_dominant_dominated) {
   // arrange
   std::vector<individual_t> individuals{{1, 0}, {0, 1}, {0, 0}, {1, 1}};
+  auto [existing, added] = split_range(individuals, 2);
   tracker t{individuals};
 
   // act
-  gal::pareto::identify_dominated(
-      std::ranges::subrange{std::ranges::begin(individuals),
-                            std::ranges::begin(individuals) + 2},
-      std::ranges::subrange{std::ranges::begin(individuals) + 2,
-                            std::ranges::end(individuals)},
-      t,
-      cmp);
+  gal::pareto::identify_dominated(existing, added, t, cmp);
 
   //   assert
   EXPECT_THAT(t.flags(), ::testing::ElementsAre(true, true, false, true));
