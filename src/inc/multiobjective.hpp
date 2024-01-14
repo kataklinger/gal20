@@ -133,7 +133,7 @@ public:
 
 private:
   using individuals_t = std::vector<individual_t*>;
-  using set_boundery = typename std::vector<individual_t*>::iterator;
+  using set_boundery = typename individuals_t::iterator;
 
 public:
   using iterator_t =
@@ -144,16 +144,14 @@ public:
 
 public:
   template<typename = void>
-  inline pareto_sets()
     requires(std::same_as<preserved_t, pareto_erased_t>)
-  {
+  inline pareto_sets() {
     set_boundaries_.push_back(individuals_.begin());
   }
 
   inline explicit pareto_sets(std::size_t max_individuals)
       : max_individuals_{max_individuals} {
     individuals_.reserve(max_individuals);
-    set_boundaries_.push_back(individuals_.begin());
   }
 
   inline auto begin() {
@@ -195,9 +193,10 @@ public:
         }
       }
 
-      assert(individuals_.size() < max_individuals_);
+      assert(current_ < max_individuals_);
 
       individuals_.push_back(&individual);
+      ++current_;
     }
   }
 
@@ -210,15 +209,14 @@ public:
         }
       }
 
-      set_boundaries_.push_back(individuals_.end());
+      set_boundaries_.push_back(individuals_.begin() + previous_);
+      previous_ = current_;
     }
   }
 
   inline void finish() {
-    if constexpr (std::is_same_v<preserved_t, pareto_reduced_t>) {
-      if (set_boundaries_.back() != individuals_.end()) {
-        set_boundaries_.push_back(individuals_.end());
-      }
+    if constexpr (!std::is_same_v<preserved_t, pareto_erased_t>) {
+      set_boundaries_.push_back(individuals_.begin() + previous_);
     }
   }
 
@@ -246,7 +244,10 @@ public:
 
 private:
   std::size_t max_individuals_{};
-  std::vector<individual_t*> individuals_;
+  std::size_t previous_{0};
+  std::size_t current_{0};
+
+  individuals_t individuals_;
   std::vector<set_boundery> set_boundaries_;
 };
 

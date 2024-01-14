@@ -348,10 +348,10 @@ void test_ground() {
   rk4(mp, gal::pareto_nondominated_tag);
   rk4(mp, gal::pareto_erased_tag);
 
-  gal::population_pareto_t<mo_pop_t, gal::pareto_preserved_t> pps{};
-  gal::population_pareto_t<mo_pop_t, gal::pareto_reduced_t> prs{};
-  gal::population_pareto_t<mo_pop_t, gal::pareto_nondominated_t> pns{};
-  gal::population_pareto_t<mo_pop_t, gal::pareto_erased_t> pes{};
+  gal::population_pareto_t<mo_pop_t, gal::pareto_preserved_t> pps{1};
+  gal::population_pareto_t<mo_pop_t, gal::pareto_reduced_t> prs{1};
+  gal::population_pareto_t<mo_pop_t, gal::pareto_nondominated_t> pns{1};
+  gal::population_pareto_t<mo_pop_t, gal::pareto_erased_t> pes{1};
 
   gal::elite::strict el0{};
   el0(mp, pps);
@@ -414,7 +414,7 @@ void test_ground() {
   pj1(pps, cls);
 
   mo_m_pop_t mmp{{}, {}, true};
-  gal::population_pareto_t<mo_m_pop_t, gal::pareto_preserved_t> mpps{};
+  gal::population_pareto_t<mo_m_pop_t, gal::pareto_preserved_t> mpps{1};
 
   using mo_m_ctx_t = gal::population_context<mo_m_pop_t, stat_t>;
   mo_m_ctx_t mo_m_ctx{mmp, hist};

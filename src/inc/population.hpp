@@ -115,13 +115,13 @@ public:
   }
 
   template<std::ranges::range Range>
-  inline auto insert(Range&& chromosomes) {
+  inline auto insert(Range&& individuals) {
     auto insertion = individuals_.size();
 
     as_unsorted();
 
     auto output = std::back_inserter(individuals_);
-    std::ranges::move(std::move(chromosomes), output);
+    std::ranges::move(std::move(individuals), output);
 
     return std::views::drop(individuals_, insertion);
   }
