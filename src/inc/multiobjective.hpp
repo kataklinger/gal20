@@ -146,7 +146,6 @@ public:
   template<typename = void>
     requires(std::same_as<preserved_t, pareto_erased_t>)
   inline pareto_sets() {
-    set_boundaries_.push_back(individuals_.begin());
   }
 
   inline explicit pareto_sets(std::size_t max_individuals)
@@ -215,22 +214,17 @@ public:
   }
 
   inline void finish() {
-    if constexpr (!std::is_same_v<preserved_t, pareto_erased_t>) {
-      set_boundaries_.push_back(individuals_.begin() + previous_);
-    }
+    set_boundaries_.push_back(individuals_.begin() + previous_);
+    adjustment_ = 1;
   }
 
   inline auto size() const noexcept {
-    return set_boundaries_.size() - 1;
+    return set_boundaries_.size() - adjustment_;
   }
 
   inline auto get_size_of(pareto::frontier_level level) {
     return static_cast<std::size_t>(set_boundaries_[level] -
                                     set_boundaries_[level - 1]);
-  }
-
-  inline auto empty() const noexcept {
-    return set_boundaries_.size() <= 1;
   }
 
   inline auto at(pareto::frontier_level level) const noexcept {
@@ -246,6 +240,7 @@ private:
   std::size_t max_individuals_{};
   std::size_t previous_{0};
   std::size_t current_{0};
+  std::size_t adjustment_{0};
 
   individuals_t individuals_;
   std::vector<set_boundery> set_boundaries_;

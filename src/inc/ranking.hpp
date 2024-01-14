@@ -88,11 +88,12 @@ namespace rank {
           population.current_size()};
 
       auto current = binary_rank::nondominated;
-      pareto::frontier_level front_level = 1;
 
       for (auto&& frontier :
            population.individuals() |
                pareto::views::sort(population.adopted_raw_comparator())) {
+        auto front_level = output.size() + 1;
+
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
 
@@ -103,7 +104,6 @@ namespace rank {
         }
 
         current = binary_rank::dominated;
-        front_level = 2;
 
         output.next();
       }
