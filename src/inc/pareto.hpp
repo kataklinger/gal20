@@ -645,7 +645,7 @@ namespace pareto {
                         Tracker& track,
                         Comparator& compare) {
       for (auto&& in : inner) {
-        if (!track.get(in)) {
+        if (track.get(in)) {
           continue;
         }
 
@@ -671,7 +671,7 @@ namespace pareto {
                           std::ranges::range_value_t<NewRange>>
   void identify_dominated(OldRange&& oldRange,
                           NewRange&& newRange,
-                          Tracker track,
+                          Tracker&& track,
                           Comparator compare) {
     for (auto&& out : oldRange) {
       details::identify_inner(out, newRange, track, compare);

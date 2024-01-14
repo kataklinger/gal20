@@ -10,6 +10,8 @@
 
 using individual_t = std::array<int, 2>;
 
+static gal::dominate cmp{std::less{}};
+
 template<std::ranges::range R>
 constexpr auto to_vector(R&& r) {
   auto extracted =
@@ -49,7 +51,6 @@ TEST_F(pareto_sort_tests, pareto_multi_front_count) {
 
 TEST_F(pareto_sort_tests, pareto_multi_front_ordering) {
   // arrange
-  gal::dominate cmp{std::less{}};
 
   // act
   auto sorted = individuals_5_ | gal::pareto::views::sort(cmp);
@@ -67,7 +68,6 @@ TEST_F(pareto_sort_tests, pareto_multi_front_ordering) {
 
 TEST_F(pareto_sort_tests, pareto_single_front_count) {
   // arrange
-  gal::dominate cmp{std::less{}};
 
   // act
   auto sorted = individuals_1_ | gal::pareto::views::sort(cmp);
@@ -78,7 +78,6 @@ TEST_F(pareto_sort_tests, pareto_single_front_count) {
 
 TEST_F(pareto_sort_tests, pareto_single_front_ordering) {
   // arrange
-  gal::dominate cmp{std::less{}};
 
   // act
   auto sorted = individuals_1_ | gal::pareto::views::sort(cmp);
@@ -90,7 +89,6 @@ TEST_F(pareto_sort_tests, pareto_single_front_ordering) {
 
 TEST_F(pareto_sort_tests, pareto_empty_front_count) {
   // arrange
-  gal::dominate cmp{std::less{}};
 
   // act
   auto sorted = individuals_0_ | gal::pareto::views::sort(cmp);
@@ -104,7 +102,6 @@ TEST_F(pareto_sort_tests, pareto_empty_front_count) {
 
 TEST_F(pareto_sort_tests, pareto_multi_analyze) {
   // arrange
-  gal::dominate cmp{std::less{}};
 
   // act
   auto nondominated = gal::pareto::analyze(individuals_5_, cmp);
@@ -133,7 +130,6 @@ TEST_F(pareto_sort_tests, pareto_multi_analyze) {
 
 TEST_F(pareto_sort_tests, pareto_single_analyze) {
   // arrange
-  gal::dominate cmp{std::less{}};
 
   // act
   auto nondominated = gal::pareto::analyze(individuals_1_, cmp);
@@ -147,11 +143,92 @@ TEST_F(pareto_sort_tests, pareto_single_analyze) {
 
 TEST_F(pareto_sort_tests, pareto_empty_analyze) {
   // arrange
-  gal::dominate cmp{std::less{}};
 
   // act
   auto nondominated = gal::pareto::analyze(individuals_0_, cmp);
 
   //   assert
   EXPECT_EQ(std::ranges::distance(nondominated), 0);
+}
+
+struct tracker {
+  tracker(std::vector<individual_t> const& individuals)
+      : first_{&individuals.front()}
+      , flags_(individuals.size()) {
+  }
+
+  inline bool get(individual_t const& individual) const noexcept {
+    return flags_[to_index(individual)];
+  }
+
+  inline void set(individual_t& individual) noexcept {
+    flags_[to_index(individual)] = true;
+  }
+
+  inline auto const& flags() const noexcept {
+    return flags_;
+  }
+
+private:
+  inline std::size_t to_index(individual_t const& individual) const noexcept {
+    return &individual - first_;
+  }
+
+private:
+  individual_t const* first_;
+  std::vector<bool> flags_;
+};
+
+TEST(pareto_identify_tests, add_dominant) {
+  // arrange
+  std::vector<individual_t> individuals{{1, 0}, {0, 1}, {0, 0}};
+  tracker t{individuals};
+
+  // act
+  gal::pareto::identify_dominated(
+      std::ranges::subrange{std::ranges::begin(individuals),
+                            std::ranges::begin(individuals) + 2},
+      std::ranges::subrange{std::ranges::begin(individuals) + 2,
+                            std::ranges::end(individuals)},
+      t,
+      cmp);
+
+  //   assert
+  EXPECT_THAT(t.flags(), ::testing::ElementsAre(true, true, false));
+}
+
+TEST(pareto_identify_tests, add_dominated) {
+  // arrange
+  std::vector<individual_t> individuals{{1, 0}, {0, 1}, {1, 1}};
+  tracker t{individuals};
+
+  // act
+  gal::pareto::identify_dominated(
+      std::ranges::subrange{std::ranges::begin(individuals),
+                            std::ranges::begin(individuals) + 2},
+      std::ranges::subrange{std::ranges::begin(individuals) + 2,
+                            std::ranges::end(individuals)},
+      t,
+      cmp);
+
+  //   assert
+  EXPECT_THAT(t.flags(), ::testing::ElementsAre(false, false, true));
+}
+
+TEST(pareto_identify_tests, add_dominant_dominated) {
+  // arrange
+  std::vector<individual_t> individuals{{1, 0}, {0, 1}, {0, 0}, {1, 1}};
+  tracker t{individuals};
+
+  // act
+  gal::pareto::identify_dominated(
+      std::ranges::subrange{std::ranges::begin(individuals),
+                            std::ranges::begin(individuals) + 2},
+      std::ranges::subrange{std::ranges::begin(individuals) + 2,
+                            std::ranges::end(individuals)},
+      t,
+      cmp);
+
+  //   assert
+  EXPECT_THAT(t.flags(), ::testing::ElementsAre(true, true, false, true));
 }
