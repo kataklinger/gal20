@@ -332,26 +332,28 @@ public:
   using scaled_t = Scaled;
 
 public:
-  inline evaluation() noexcept {
+  inline constexpr evaluation() noexcept {
   }
 
-  inline explicit evaluation(raw_t const& raw) noexcept(
+  inline constexpr explicit evaluation(raw_t const& raw) noexcept(
       std::is_nothrow_copy_constructible_v<raw_t>)
       : raw_{raw} {
   }
 
-  inline explicit evaluation(raw_t&& raw) noexcept
+  inline constexpr explicit evaluation(raw_t&& raw) noexcept
       : raw_{std::move(raw)} {
   }
 
-  inline explicit evaluation(raw_t const& raw, scaled_t const& scaled) noexcept(
-      std::is_nothrow_copy_constructible_v<raw_t> &&
-      std::is_nothrow_copy_constructible_v<scaled_t>)
+  inline constexpr explicit evaluation(
+      raw_t const& raw,
+      scaled_t const&
+          scaled) noexcept(std::is_nothrow_copy_constructible_v<raw_t> &&
+                           std::is_nothrow_copy_constructible_v<scaled_t>)
       : raw_{raw}
       , scaled_{scaled} {
   }
 
-  inline explicit evaluation(raw_t&& raw, scaled_t&& scaled) noexcept
+  inline constexpr explicit evaluation(raw_t&& raw, scaled_t&& scaled) noexcept
       : raw_{std::move(raw)}
       , scaled_{std::move(scaled)} {
   }
