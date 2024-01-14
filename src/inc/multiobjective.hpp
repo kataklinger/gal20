@@ -143,7 +143,10 @@ public:
       pareto_sets_iterator<typename std::vector<set_boundery>::const_iterator>;
 
 public:
-  inline pareto_sets() {
+  template<typename = void>
+  inline pareto_sets()
+    requires(std::same_as<preserved_t, pareto_erased_t>)
+  {
     set_boundaries_.push_back(individuals_.begin());
   }
 
