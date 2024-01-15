@@ -18,9 +18,8 @@ namespace rank {
       for (auto&& individual : population.individuals()) {
         if (get_tag<bin_rank_t>(individual) == which) {
           output.add_individual(individual);
+          get_tag<frontier_level_t>(individual) = front_level;
         }
-
-        get_tag<frontier_level_t>(individual) = front_level;
       }
 
       output.next();
@@ -114,17 +113,22 @@ namespace rank {
 
     template<ranked_population<bin_rank_t> Population, typename Pareto>
     auto operator()(Population& population, Pareto preserve) const {
-      std::vector<typename Population::individual_t> ranked, nonranked;
-      std::ranges::partition_copy(population.individuals(),
-                                  std::back_inserter(ranked),
-                                  std::back_inserter(nonranked),
-                                  [](auto const& ind) {
-                                    return get_tag<bin_rank_t>(ind) !=
-                                           binary_rank::undefined;
-                                  });
+      auto nonranked =
+          std::ranges::partition(population.individuals(), [](auto const& ind) {
+            return get_tag<bin_rank_t>(ind) != binary_rank::undefined;
+          });
+
+      std::ranges::subrange ranked{population.individuals().begin(),
+                                   nonranked.begin()};
 
       pareto::identify_dominated(
           ranked, nonranked, tracker{}, population.adopted_raw_comparator());
+
+      for (auto&& individual : population.individuals()) {
+        if (get_tag<bin_rank_t>(individual) == binary_rank::undefined) {
+          get_tag<bin_rank_t>(individual) = binary_rank::nondominated;
+        }
+      }
 
       return details::generate_binary_pareto(population, preserve);
     }

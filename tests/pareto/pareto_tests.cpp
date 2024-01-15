@@ -239,3 +239,16 @@ TEST(pareto_identify_tests, add_nondominant_nondominated) {
   //   assert
   EXPECT_THAT(t.flags(), ::testing::ElementsAre(false, false));
 }
+
+TEST(pareto_identify_tests, add_all_to_empty) {
+  // arrange
+  std::vector<individual_t> individuals{f2a, f2b, f1a, f3a};
+  auto [existing, added] = split_range(individuals, 0);
+  tracker t{individuals};
+
+  // act
+  gal::pareto::identify_dominated(existing, added, t, cmp);
+
+  //   assert
+  EXPECT_THAT(t.flags(), ::testing::ElementsAre(true, true, false, true));
+}

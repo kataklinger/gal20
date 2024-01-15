@@ -23,7 +23,7 @@ namespace elite {
     inline void operator()(
         Population& population,
         population_pareto_t<Population, Preserved>& sets) const noexcept {
-      if (sets.get_size_of(1) < population.current_size()) {
+      if (!sets.empty() && sets.get_size_of(1) < population.current_size()) {
         sets.trim();
 
         population.remove_if([](auto const& individual) {

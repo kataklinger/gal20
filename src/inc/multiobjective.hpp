@@ -8,7 +8,7 @@ namespace gal {
 
 struct rank_tag {};
 
-enum class binary_rank : std::uint8_t { nondominated, dominated, undefined };
+enum class binary_rank : std::uint8_t { undefined, nondominated, dominated };
 
 inline auto operator<=>(binary_rank lhs, binary_rank rhs) noexcept {
   using type = std::underlying_type_t<binary_rank>;
@@ -208,14 +208,20 @@ public:
         }
       }
 
-      set_boundaries_.push_back(individuals_.begin() + previous_);
-      previous_ = current_;
+      if (current_ != previous_) {
+        set_boundaries_.push_back(individuals_.begin() + previous_);
+        previous_ = current_;
+      }
     }
   }
 
   inline void finish() {
     set_boundaries_.push_back(individuals_.begin() + previous_);
     adjustment_ = 1;
+  }
+
+  inline auto empty() const noexcept {
+    return size() == 0;
   }
 
   inline auto size() const noexcept {

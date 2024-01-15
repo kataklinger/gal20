@@ -81,8 +81,7 @@ TEST_F(binary_ranking_tests, preserved_empty_population) {
   auto results = op(population_0_, gal::pareto_preserved_tag);
 
   // assert
-  EXPECT_EQ(results.size(), 1);
-  EXPECT_EQ(results.get_size_of(1), 0);
+  EXPECT_EQ(results.size(), 0);
 }
 
 TEST_F(binary_ranking_tests, preserved_front_sizes) {
@@ -139,5 +138,71 @@ TEST_F(binary_ranking_tests, preserved_ranking_tags) {
 
   EXPECT_EQ(get_frontier_level(population_4_, 3), 3);
   EXPECT_EQ(get_ranking<gal::bin_rank_t>(population_4_, 3),
+            gal::binary_rank::dominated);
+}
+
+// ---------------
+
+TEST_F(binary_ranking_tests, reduced_empty_population) {
+  // arrange
+  gal::rank::binary op{};
+
+  // act
+  auto results = op(population_0_, gal::pareto_reduced_tag);
+
+  // assert
+  EXPECT_EQ(results.size(), 0);
+}
+
+TEST_F(binary_ranking_tests, reduced_front_sizes) {
+  // arrange
+  gal::rank::binary op{};
+
+  // act
+  auto results = op(population_4_, gal::pareto_reduced_tag);
+
+  // assert
+  EXPECT_EQ(results.size(), 2);
+  EXPECT_EQ(results.get_size_of(1), 1);
+  EXPECT_EQ(results.get_size_of(2), 3);
+}
+
+TEST_F(binary_ranking_tests, reduced_front_content) {
+  // arrange
+  gal::rank::binary op{};
+
+  // act
+  auto results = op(population_4_, gal::pareto_reduced_tag);
+
+  // assert
+  auto it = results.begin();
+  EXPECT_THAT(to_vector(*it), ::testing::ElementsAre(f1a));
+
+  ++it;
+  EXPECT_THAT(to_vector(*it), ::testing::UnorderedElementsAre(f2a, f2b, f3a));
+}
+
+TEST_F(binary_ranking_tests, reduced_ranking_tags) {
+  // arrange
+  gal::rank::binary op{};
+
+  // act
+  op(population_4_, gal::pareto_reduced_tag);
+
+  // assert
+  EXPECT_EQ(get_frontier_level(population_4_, 0), 1);
+  EXPECT_EQ(get_ranking<gal::bin_rank_t>(population_4_, 0),
+            gal::binary_rank::nondominated);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 1), 2);
+  EXPECT_EQ(get_ranking<gal::bin_rank_t>(population_4_, 1),
+            gal::binary_rank::dominated);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 2), 2);
+  EXPECT_EQ(get_ranking<gal::bin_rank_t>(population_4_, 1),
+            gal::binary_rank::dominated);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 3), 2);
+  EXPECT_EQ(get_ranking<gal::bin_rank_t>(population_4_, 1),
             gal::binary_rank::dominated);
 }
