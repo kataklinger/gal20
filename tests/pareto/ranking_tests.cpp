@@ -534,4 +534,220 @@ TEST_F(level_ranking_tests, erased_ranking_tags) {
   EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 3), 3);
 }
 
+// -----
+
+class acc_level_ranking_tests : public level_ranking_tests {};
+
+TEST_F(acc_level_ranking_tests, preserved_empty_population) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_0_, gal::pareto_preserved_tag);
+
+  // assert
+  EXPECT_EQ(results.size(), 0);
+}
+
+TEST_F(acc_level_ranking_tests, preserved_front_sizes) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_4_, gal::pareto_preserved_tag);
+
+  // assert
+  EXPECT_EQ(results.size(), 3);
+  EXPECT_EQ(results.get_size_of(1), 1);
+  EXPECT_EQ(results.get_size_of(2), 2);
+  EXPECT_EQ(results.get_size_of(3), 1);
+}
+
+TEST_F(acc_level_ranking_tests, preserved_front_content) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_4_, gal::pareto_preserved_tag);
+
+  // assert
+  auto it = results.begin();
+  EXPECT_THAT(to_vector(*it), ::testing::ElementsAre(f1a));
+
+  ++it;
+  EXPECT_THAT(to_vector(*it), ::testing::UnorderedElementsAre(f2a, f2b));
+
+  ++it;
+  EXPECT_THAT(to_vector(*it), ::testing::ElementsAre(f3a));
+}
+
+TEST_F(acc_level_ranking_tests, preserved_ranking_tags) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  op(population_4_, gal::pareto_preserved_tag);
+
+  // assert
+  EXPECT_EQ(get_frontier_level(population_4_, 0), 1);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 0), 1);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 1), 2);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 1), 2);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 2), 2);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 2), 2);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 3), 3);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 3), 6);
+}
+
+TEST_F(acc_level_ranking_tests, reduced_empty_population) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_0_, gal::pareto_reduced_tag);
+
+  // assert
+  EXPECT_EQ(results.size(), 0);
+}
+
+TEST_F(acc_level_ranking_tests, reduced_front_sizes) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_4_, gal::pareto_reduced_tag);
+
+  // assert
+  EXPECT_EQ(results.size(), 2);
+  EXPECT_EQ(results.get_size_of(1), 1);
+  EXPECT_EQ(results.get_size_of(2), 3);
+}
+
+TEST_F(acc_level_ranking_tests, reduced_front_content) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_4_, gal::pareto_reduced_tag);
+
+  // assert
+  auto it = results.begin();
+  EXPECT_THAT(to_vector(*it), ::testing::ElementsAre(f1a));
+
+  ++it;
+  EXPECT_THAT(to_vector(*it), ::testing::UnorderedElementsAre(f2a, f2b, f3a));
+}
+
+TEST_F(acc_level_ranking_tests, reduced_ranking_tags) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  op(population_4_, gal::pareto_reduced_tag);
+
+  // assert
+  EXPECT_EQ(get_frontier_level(population_4_, 0), 1);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 0), 1);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 1), 2);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 1), 2);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 2), 2);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 2), 2);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 3), 3);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 3), 6);
+}
+
+TEST_F(acc_level_ranking_tests, nondominated_empty_population) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_0_, gal::pareto_nondominated_tag);
+
+  // assert
+  EXPECT_EQ(results.size(), 0);
+}
+
+TEST_F(acc_level_ranking_tests, nondominated_front_sizes) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_4_, gal::pareto_nondominated_tag);
+
+  // assert
+  EXPECT_EQ(results.size(), 1);
+  EXPECT_EQ(results.get_size_of(1), 1);
+}
+
+TEST_F(acc_level_ranking_tests, nondominated_front_content) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_4_, gal::pareto_nondominated_tag);
+
+  // assert
+  auto it = results.begin();
+  EXPECT_THAT(to_vector(*it), ::testing::ElementsAre(f1a));
+}
+
+TEST_F(acc_level_ranking_tests, nondominated_ranking_tags) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  op(population_4_, gal::pareto_nondominated_tag);
+
+  // assert
+  EXPECT_EQ(get_frontier_level(population_4_, 0), 1);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 0), 1);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 1), 2);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 1), 2);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 2), 2);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 2), 2);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 3), 3);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 3), 6);
+}
+
+TEST_F(acc_level_ranking_tests, erased_empty_population) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  auto results = op(population_0_, gal::pareto_erased_tag);
+
+  // assert
+  EXPECT_EQ(results.size(), 0);
+}
+
+TEST_F(acc_level_ranking_tests, erased_ranking_tags) {
+  // arrange
+  gal::rank::accumulated_level op{};
+
+  // act
+  op(population_4_, gal::pareto_erased_tag);
+
+  // assert
+  EXPECT_EQ(get_frontier_level(population_4_, 0), 1);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 0), 1);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 1), 2);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 1), 2);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 2), 2);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 2), 2);
+
+  EXPECT_EQ(get_frontier_level(population_4_, 3), 3);
+  EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 3), 6);
+}
+
 } // namespace tests::ranking
