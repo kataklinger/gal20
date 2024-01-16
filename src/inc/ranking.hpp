@@ -69,23 +69,25 @@ namespace rank {
       for (auto&& frontier :
            population.individuals() |
                pareto::views::sort(population.adopted_raw_comparator())) {
-        auto front_level = output.size() + 1;
-
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
 
           get_tag<bin_rank_t>(individual) = current;
-          get_tag<frontier_level_t>(individual) = front_level;
+          get_tag<frontier_level_t>(individual) =
+              static_cast<pareto::frontier_level>(current);
 
           output.add_individual(individual);
         }
 
-        current = binary_rank::dominated;
-
-        output.next();
+        if (std::exchange(current, binary_rank::dominated) ==
+            binary_rank::nondominated) {
+          output.next();
+        }
       }
 
+      output.next();
       output.finish();
+
       return output;
     }
 
@@ -124,13 +126,11 @@ namespace rank {
       for (auto&& frontier :
            population.individuals() |
                pareto::views::sort(population.adopted_raw_comparator())) {
-        auto front_level = output.size() + 1;
-
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
 
           get_tag<int_rank_t>(individual) = frontier.level();
-          get_tag<frontier_level_t>(individual) = front_level;
+          get_tag<frontier_level_t>(individual) = frontier.level();
 
           output.add_individual(individual);
         }
@@ -155,13 +155,11 @@ namespace rank {
       for (auto&& frontier :
            population.individuals() |
                pareto::views::sort(population.adopted_raw_comparator())) {
-        auto front_level = output.size() + 1;
-
         for (auto&& solution : frontier.members()) {
           auto& individual = solution.individual();
 
           std::size_t acc_level{(get_tag<int_rank_t>(individual) += 1)};
-          get_tag<frontier_level_t>(individual) = front_level;
+          get_tag<frontier_level_t>(individual) = frontier.level();
 
           for (auto&& dominated : solution.dominated()) {
             get_tag<int_rank_t>(dominated.individual()) += acc_level;

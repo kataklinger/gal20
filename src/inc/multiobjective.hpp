@@ -204,6 +204,7 @@ public:
       if constexpr (std::is_same_v<preserved_t, pareto_reduced_t> ||
                     std::is_same_v<preserved_t, pareto_nondominated_t>) {
         if (set_boundaries_.size() > 1) {
+          previous_ = current_;
           return;
         }
       }
