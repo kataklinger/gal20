@@ -8,6 +8,8 @@
 #include <array>
 #include <vector>
 
+namespace tests::pareto {
+
 using individual_t = std::array<int, 2>;
 
 static gal::dominate cmp{std::less{}};
@@ -252,3 +254,5 @@ TEST(pareto_identify_tests, add_all_to_empty) {
   //   assert
   EXPECT_THAT(t.flags(), ::testing::ElementsAre(true, true, false, true));
 }
+
+} // namespace tests::pareto

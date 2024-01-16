@@ -4,6 +4,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+namespace tests::ranking {
+
 using raw_cmp_t = gal::dominate<std::less<>>;
 
 using fitness_t = std::array<double, 2>;
@@ -300,3 +302,5 @@ TEST_F(binary_ranking_tests, erased_ranking_tags) {
   EXPECT_EQ(get_ranking<gal::bin_rank_t>(population_4_, 1),
             gal::binary_rank::dominated);
 }
+
+} // namespace tests::ranking
