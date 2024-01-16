@@ -13,7 +13,7 @@ namespace rank {
         Population& population,
         population_pareto_t<Population, Preserved>& output,
         binary_rank which) {
-      auto front_level = output.size() + 1;
+      auto front_level = static_cast<pareto::frontier_level>(which);
 
       for (auto&& individual : population.individuals()) {
         if (get_tag<bin_rank_t>(individual) == which) {
@@ -25,10 +25,10 @@ namespace rank {
       output.next();
     }
 
-    template<typename Population>
+    template<typename Population, typename Preserved>
     inline auto generate_binary_pareto(Population& population,
-                                       pareto_reduced_t /*unused*/) {
-      population_pareto_t<Population, pareto_reduced_t> output{
+                                       Preserved /*unused*/) {
+      population_pareto_t<Population, Preserved> output{
           population.current_size()};
 
       populate_binary_pareto(population, output, binary_rank::nondominated);
@@ -36,28 +36,6 @@ namespace rank {
 
       output.finish();
       return output;
-    }
-
-    template<typename Population>
-    inline auto generate_binary_pareto(Population& population,
-                                       pareto_nondominated_t /*unused*/) {
-      clean_tags<frontier_level_t>(population);
-
-      population_pareto_t<Population, pareto_nondominated_t> output{
-          population.current_size()};
-
-      populate_binary_pareto(population, output, binary_rank::nondominated);
-
-      output.finish();
-      return output;
-    }
-
-    template<typename Population>
-    inline auto generate_binary_pareto(Population& population,
-                                       pareto_erased_t /*unused*/) {
-      clean_tags<frontier_level_t>(population);
-
-      return population_pareto_t<Population, pareto_erased_t>{};
     }
 
   } // namespace details
