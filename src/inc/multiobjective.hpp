@@ -187,7 +187,7 @@ public:
   inline void add_individual(individual_t& individual) {
     if constexpr (!std::is_same_v<preserved_t, pareto_erased_t>) {
       if constexpr (std::is_same_v<preserved_t, pareto_nondominated_t>) {
-        if (set_boundaries_.size() > 1) {
+        if (set_boundaries_.size() > 0) {
           return;
         }
       }
