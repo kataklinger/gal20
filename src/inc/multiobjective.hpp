@@ -180,7 +180,8 @@ public:
   inline void trim() noexcept {
     if (set_boundaries_.size() > 1) {
       individuals_.erase(set_boundaries_[1], individuals_.end());
-      set_boundaries_.resize(1);
+      set_boundaries_[1] = individuals_.end();
+      set_boundaries_.resize(2);
     }
   }
 

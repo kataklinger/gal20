@@ -25,11 +25,11 @@ namespace elite {
         population_pareto_t<Population, Preserved>& sets) const noexcept {
       if (!sets.empty() && sets.get_size_of(1) < population.current_size()) {
         sets.trim();
-
-        population.remove_if([](auto const& individual) {
-          return get_tag<frontier_level_t>(individual) != 1;
-        });
       }
+
+      population.remove_if([](auto const& individual) {
+        return get_tag<frontier_level_t>(individual) != 1;
+      });
     }
   };
 
