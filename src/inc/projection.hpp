@@ -24,7 +24,7 @@ namespace project {
       details::projectable_from<typename Context::population_t, From...> &&
       std::convertible_to<typename tag_adopted_traits<RankTag>::value_t,
                           double>;
-  // n = empty (pesa-ii)
+  // x = empty (pesa-ii)
   template<typename Context>
   class none {
   public:
@@ -64,7 +64,7 @@ namespace project {
                                       std::numeric_limits<double>::max());
 
       for (auto&& individual : population_->individuals()) {
-        auto front = get_tag<frontier_level_t>(individual).get();
+        auto front = get_tag<frontier_level_t>(individual).get() - 1;
         double density{get_tag<crowd_density_t>(individual)};
 
         if (multipliers[front] > density) {
@@ -72,13 +72,15 @@ namespace project {
         }
       }
 
-      for (auto i = multipliers.size() - 1; i > 0; --i) {
-        multipliers[i - 1] /= multipliers[i];
+      for (auto correction = 1.0;
+           auto&& multiplier : multipliers | std::views::reverse) {
+        correction *= std::exchange(multiplier, multiplier / correction);
       }
 
       for (auto&& individual : population_->individuals()) {
-        auto front = get_tag<frontier_level_t>(individual).get();
-        auto scaled = multipliers[front] * get_tag<RankTag>(individual).get();
+        auto front = get_tag<frontier_level_t>(individual).get() - 1;
+        auto scaled = multipliers[front] * get_tag<RankTag>(individual).get() *
+                      get_tag<crowd_density_t>(individual).get();
 
         individual.evaluation().set_scaled(scaled_fitness_t{scaled});
       }
