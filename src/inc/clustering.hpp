@@ -52,14 +52,16 @@ namespace cluster {
       inline double distance(rep const& other) {
         double total_distance = 0.;
 
+        std::size_t count = 0;
         for (auto const& outer : members_) {
           for (auto const& inner : other.members_) {
             total_distance += euclidean_distance(outer->evaluation().raw(),
                                                  inner->evaluation().raw());
+            ++count;
           }
         }
 
-        return total_distance / (members_.size() * other.members_.size());
+        return total_distance / count;
       }
 
       inline void assign(cluster_set& clusters) noexcept {
@@ -93,7 +95,7 @@ namespace cluster {
         result.next_level();
 
         if (auto n = std::ranges::size(set); filled < target) {
-          if (auto remain = std::max(target - filled, n); remain < n) {
+          if (auto remain = std::min(target - filled, n); remain < n) {
             auto clusters = generate_clusters<individual_t>(set);
             while (clusters.size() > remain) {
               merge_closest(clusters);
@@ -134,7 +136,7 @@ namespace cluster {
     static void merge_closest(Clusters& clusters) {
       auto first = clusters.begin();
 
-      constexpr auto min_distance = std::numeric_limits<double>::max();
+      auto min_distance = std::numeric_limits<double>::max();
       auto merge_left = first, merge_right = first;
 
       for (auto last = clusters.end(); first != last; ++first) {
@@ -142,6 +144,7 @@ namespace cluster {
           if (auto d = first->distance(*other); d < min_distance) {
             merge_left = first;
             merge_right = other;
+            min_distance = d;
           }
         }
       }
