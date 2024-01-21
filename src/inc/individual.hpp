@@ -259,11 +259,11 @@ private:
 
 public:
   inline static constexpr auto unique() noexcept {
-    return cluster_label{1, 0};
+    return cluster_label{0b10, 0};
   }
 
   inline static constexpr auto unassigned() noexcept {
-    return cluster_label{0, 0};
+    return cluster_label{0b00, 0};
   }
 
   cluster_label() = default;
