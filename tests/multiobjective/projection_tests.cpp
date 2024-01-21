@@ -10,23 +10,11 @@
 namespace tests::projection {
 
 using raw_cmp_t = gal::dominate<std::less<>>;
-using scaled_cmp_t = gal::floatingpoint_three_way;
 
 using raw_fitness_t = std::array<double, 2>;
-using scaled_fitness_t = double;
 
 using tags_t =
     std::tuple<gal::frontier_level_t, gal::int_rank_t, gal::crowd_density_t>;
-
-using population_t = gal::population<int,
-                                     raw_fitness_t,
-                                     raw_cmp_t,
-                                     scaled_fitness_t,
-                                     scaled_cmp_t,
-                                     tags_t>;
-
-using statistics_t = gal::stats::statistics<population_t, gal::stats::blank>;
-using population_ctx_t = gal::population_context<population_t, statistics_t>;
 
 constexpr raw_fitness_t fa1{0, 1};
 constexpr raw_fitness_t f1b{0, 1};
@@ -49,6 +37,17 @@ constexpr auto to_vector(R&& r) {
 
 class projection_tests : public testing::Test {
 protected:
+  using population_t = gal::population<int,
+                                       raw_fitness_t,
+                                       raw_cmp_t,
+                                       double,
+                                       gal::disabled_comparator,
+                                       tags_t>;
+
+  using statistics_t =
+      gal::stats::statistics<population_t, gal::stats::generation>;
+  using population_ctx_t = gal::population_context<population_t, statistics_t>;
+
   void SetUp() override {
     using individual_t = population_t::individual_t;
     using evaluation_t = individual_t::evaluation_t;
@@ -65,7 +64,7 @@ protected:
     population_.insert(individuals);
   }
 
-  population_t population_{raw_cmp_t{}, scaled_cmp_t{}, false};
+  population_t population_{raw_cmp_t{}, gal::disabled_comparator{}, false};
   gal::stats::history<statistics_t> statistics_{1};
   population_ctx_t context_{population_, statistics_};
 };
@@ -87,7 +86,6 @@ TEST_F(projection_tests, scale_scaled_fitness_value) {
   EXPECT_NEAR(values[4], 0.00375, 0.0000001);
   EXPECT_NEAR(values[5], 0.001875, 0.0000001);
 }
-
 TEST_F(projection_tests, translate_scaled_fitness_value) {
   // arrange
   gal::project::translate<population_ctx_t, gal::int_rank_t> op{context_};
@@ -104,6 +102,138 @@ TEST_F(projection_tests, translate_scaled_fitness_value) {
   EXPECT_NEAR(values[3], 2.125, 0.000001);
   EXPECT_NEAR(values[4], 3.049999, 0.000001);
   EXPECT_NEAR(values[5], 3.024999, 0.000001);
+}
+
+TEST_F(projection_tests, truncate_ranking_scaled_fitness_value) {
+  // arrange
+  gal::project::truncate<population_ctx_t, gal::int_rank_t> op{context_};
+  gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
+
+  // act
+  op(pareto, gal::cluster_set{});
+
+  // assert
+  auto values = to_vector(population_.individuals());
+  EXPECT_NEAR(values[0], 1, 0.000001);
+  EXPECT_NEAR(values[1], 1, 0.000001);
+  EXPECT_NEAR(values[2], 2, 0.000001);
+  EXPECT_NEAR(values[3], 2, 0.000001);
+  EXPECT_NEAR(values[4], 3, 0.000001);
+  EXPECT_NEAR(values[5], 3, 0.000001);
+}
+
+TEST_F(projection_tests, truncate_density_scaled_fitness_value) {
+  // arrange
+  gal::project::truncate<population_ctx_t, gal::crowd_density_t> op{context_};
+  gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
+
+  // act
+  op(pareto, gal::cluster_set{});
+
+  // assert
+  auto values = to_vector(population_.individuals());
+  EXPECT_NEAR(values[0], 0.75, 0.0001);
+  EXPECT_NEAR(values[1], 0.5, 0.0001);
+  EXPECT_NEAR(values[2], 0.25, 0.0001);
+  EXPECT_NEAR(values[3], 0.125, 0.0001);
+  EXPECT_NEAR(values[4], 0.05, 0.0001);
+  EXPECT_NEAR(values[5], 0.025, 0.0001);
+}
+
+TEST_F(projection_tests, alternate_ranking_scaled_fitness_value) {
+  // arrange
+  gal::project::truncate<population_ctx_t, gal::int_rank_t> op{context_};
+  gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
+
+  // act
+  op(pareto, gal::cluster_set{});
+
+  // assert
+  auto values = to_vector(population_.individuals());
+  EXPECT_NEAR(values[0], 1, 0.000001);
+  EXPECT_NEAR(values[1], 1, 0.000001);
+  EXPECT_NEAR(values[2], 2, 0.000001);
+  EXPECT_NEAR(values[3], 2, 0.000001);
+  EXPECT_NEAR(values[4], 3, 0.000001);
+  EXPECT_NEAR(values[5], 3, 0.000001);
+}
+
+TEST_F(projection_tests, alternate_density_scaled_fitness_value) {
+  // arrange
+  gal::project::truncate<population_ctx_t, gal::crowd_density_t> op{context_};
+  gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
+  statistics_.next(population_);
+
+  // act
+  op(pareto, gal::cluster_set{});
+
+  // assert
+  auto values = to_vector(population_.individuals());
+  EXPECT_NEAR(values[0], 0.75, 0.0001);
+  EXPECT_NEAR(values[1], 0.5, 0.0001);
+  EXPECT_NEAR(values[2], 0.25, 0.0001);
+  EXPECT_NEAR(values[3], 0.125, 0.0001);
+  EXPECT_NEAR(values[4], 0.05, 0.0001);
+  EXPECT_NEAR(values[5], 0.025, 0.0001);
+}
+
+class merge_tests : public testing::Test {
+protected:
+  using population_t = gal::population<int,
+                                       raw_fitness_t,
+                                       raw_cmp_t,
+                                       std::tuple<std::size_t, double>,
+                                       gal::disabled_comparator,
+                                       tags_t>;
+
+  using statistics_t =
+      gal::stats::statistics<population_t, gal::stats::generation>;
+  using population_ctx_t = gal::population_context<population_t, statistics_t>;
+
+  void SetUp() override {
+    using individual_t = population_t::individual_t;
+    using evaluation_t = individual_t::evaluation_t;
+    raw_fitness_t fit{0, 0};
+
+    std::vector<individual_t> individuals{
+        {0, evaluation_t{fa1}, tags_t{1, 1, 0.75}},
+        {0, evaluation_t{f1b}, tags_t{1, 1, 0.5}},
+        {0, evaluation_t{f2a}, tags_t{2, 2, 0.25}},
+        {0, evaluation_t{f2b}, tags_t{2, 2, 0.125}},
+        {0, evaluation_t{f3a}, tags_t{3, 3, 0.05}},
+        {0, evaluation_t{f3b}, tags_t{3, 3, 0.025}}};
+
+    population_.insert(individuals);
+  }
+
+  population_t population_{raw_cmp_t{}, gal::disabled_comparator{}, false};
+  gal::stats::history<statistics_t> statistics_{1};
+  population_ctx_t context_{population_, statistics_};
+};
+
+TEST_F(merge_tests, merge_scaled_fitness_value) {
+  // arrange
+  gal::project::merge<population_ctx_t, gal::int_rank_t> op{context_};
+  gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
+
+  // act
+  op(pareto, gal::cluster_set{});
+
+  // assert
+  auto values = to_vector(population_.individuals());
+  EXPECT_EQ(std::get<0>(values[0]), 1);
+  EXPECT_EQ(std::get<0>(values[1]), 1);
+  EXPECT_EQ(std::get<0>(values[2]), 2);
+  EXPECT_EQ(std::get<0>(values[3]), 2);
+  EXPECT_EQ(std::get<0>(values[4]), 3);
+  EXPECT_EQ(std::get<0>(values[5]), 3);
+
+  EXPECT_NEAR(std::get<1>(values[0]), 0.75, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[1]), 0.5, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[2]), 0.25, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[3]), 0.125, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[4]), 0.05, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[5]), 0.025, 0.000001);
 }
 
 } // namespace tests::projection
