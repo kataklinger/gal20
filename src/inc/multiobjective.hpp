@@ -166,15 +166,15 @@ public:
   }
 
   inline auto end() noexcept {
-    return iterator_t{set_boundaries_.end()};
+    return iterator_t{set_boundaries_.end() - 1};
   }
 
   inline auto end() const noexcept {
-    return const_iterator_t{set_boundaries_.end()};
+    return const_iterator_t{set_boundaries_.end() - 1};
   }
 
   inline auto cend() const noexcept {
-    return const_iterator_t{set_boundaries_.end()};
+    return const_iterator_t{set_boundaries_.end() - 1};
   }
 
   inline void trim() noexcept {
