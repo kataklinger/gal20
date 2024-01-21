@@ -188,6 +188,18 @@ namespace stats {
 
   } // namespace details
 
+  struct blank {
+    template<typename Population>
+    class body {
+    public:
+      body() = default;
+
+      inline body(Population const& /*unused*/,
+                  body const& /*unused*/) noexcept {
+      }
+    };
+  };
+
   struct generation {
     template<typename Population>
     class body {
