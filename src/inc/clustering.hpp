@@ -51,8 +51,8 @@ namespace cluster {
 
       inline double distance(rep const& other) {
         double total_distance = 0.;
-
         std::size_t count = 0;
+
         for (auto const& outer : members_) {
           for (auto const& inner : other.members_) {
             total_distance += euclidean_distance(outer->evaluation().raw(),

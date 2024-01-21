@@ -16,7 +16,7 @@ using fitness_t = std::array<double, 2>;
 using tags_t =
     std::tuple<gal::frontier_level_t, gal::int_rank_t, gal::crowd_density_t>;
 
-constexpr fitness_t fa1{0, 1};
+constexpr fitness_t f1a{0, 1};
 constexpr fitness_t f1b{0, 1};
 constexpr fitness_t f2a{2, 1};
 constexpr fitness_t f2b{1, 2};
@@ -53,7 +53,7 @@ protected:
     using evaluation_t = individual_t::evaluation_t;
 
     std::vector<individual_t> individuals{
-        {0, evaluation_t{fa1}, tags_t{1, 1, 0.75}},
+        {0, evaluation_t{f1a}, tags_t{1, 1, 0.75}},
         {0, evaluation_t{f1b}, tags_t{1, 1, 0.5}},
         {0, evaluation_t{f2a}, tags_t{2, 2, 0.25}},
         {0, evaluation_t{f2b}, tags_t{2, 2, 0.125}},
@@ -194,7 +194,7 @@ protected:
     using evaluation_t = individual_t::evaluation_t;
 
     std::vector<individual_t> individuals{
-        {0, evaluation_t{fa1}, tags_t{1, 1, 0.75}},
+        {0, evaluation_t{f1a}, tags_t{1, 1, 0.75}},
         {0, evaluation_t{f1b}, tags_t{1, 1, 0.5}},
         {0, evaluation_t{f2a}, tags_t{2, 2, 0.25}},
         {0, evaluation_t{f2b}, tags_t{2, 2, 0.125}},

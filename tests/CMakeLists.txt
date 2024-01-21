@@ -7,6 +7,9 @@ add_executable(tests
   multiobjective/pareto_tests.cpp
   multiobjective/ranking_tests.cpp
   multiobjective/elitism_tests.cpp
+  multiobjective/clustering_tests.cpp
+  multiobjective/crowding_tests.cpp
+  multiobjective/pruning_tests.cpp
   multiobjective/projection_tests.cpp
   main.cpp)
 

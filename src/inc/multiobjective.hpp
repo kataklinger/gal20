@@ -280,6 +280,8 @@ public:
   struct cluster {
     std::size_t level_;
     std::size_t members_;
+
+    auto operator<=>(cluster const&) const = default;
   };
 
 public:
