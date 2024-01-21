@@ -30,7 +30,7 @@ constexpr auto to_vector(R&& r) {
                              std::ranges::end(extracted)};
 }
 
-class pareto_sort_tests : public testing::Test {
+class pareto_sort_tests : public ::testing::Test {
 protected:
   void SetUp() override {
   }

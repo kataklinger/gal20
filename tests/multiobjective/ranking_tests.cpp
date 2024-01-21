@@ -52,7 +52,7 @@ constexpr auto to_vector(R&& r) {
                              std::ranges::end(extracted)};
 }
 
-class binary_ranking_tests : public testing::Test {
+class binary_ranking_tests : public ::testing::Test {
 protected:
   void SetUp() override {
     using individual_t = population_t<gal::bin_rank_t>::individual_t;
@@ -299,7 +299,7 @@ TEST_F(binary_ranking_tests, erased_ranking_tags) {
             gal::binary_rank::dominated);
 }
 
-class level_ranking_tests : public testing::Test {
+class level_ranking_tests : public ::testing::Test {
 protected:
   void SetUp() override {
     using individual_t = population_t<gal::int_rank_t>::individual_t;
@@ -748,9 +748,7 @@ TEST_F(acc_level_ranking_tests, erased_ranking_tags) {
   EXPECT_EQ(get_ranking<gal::int_rank_t>(population_4_, 3), 6);
 }
 
-// -----
-
-class strength_ranking_tests : public testing::Test {
+class strength_ranking_tests : public ::testing::Test {
 protected:
   void SetUp() override {
     using individual_t = population_t<gal::real_rank_t>::individual_t;

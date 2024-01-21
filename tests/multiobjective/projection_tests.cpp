@@ -9,19 +9,19 @@
 
 namespace tests::projection {
 
-using raw_cmp_t = gal::dominate<std::less<>>;
+using cmp_t = gal::dominate<std::less<>>;
 
-using raw_fitness_t = std::array<double, 2>;
+using fitness_t = std::array<double, 2>;
 
 using tags_t =
     std::tuple<gal::frontier_level_t, gal::int_rank_t, gal::crowd_density_t>;
 
-constexpr raw_fitness_t fa1{0, 1};
-constexpr raw_fitness_t f1b{0, 1};
-constexpr raw_fitness_t f2a{2, 1};
-constexpr raw_fitness_t f2b{1, 2};
-constexpr raw_fitness_t f3a{3, 2};
-constexpr raw_fitness_t f3b{2, 3};
+constexpr fitness_t fa1{0, 1};
+constexpr fitness_t f1b{0, 1};
+constexpr fitness_t f2a{2, 1};
+constexpr fitness_t f2b{1, 2};
+constexpr fitness_t f3a{3, 2};
+constexpr fitness_t f3b{2, 3};
 
 template<std::ranges::range R>
 constexpr auto to_vector(R&& r) {
@@ -35,11 +35,11 @@ constexpr auto to_vector(R&& r) {
                              std::ranges::end(extracted)};
 }
 
-class projection_tests : public testing::Test {
+class projection_tests : public ::testing::Test {
 protected:
   using population_t = gal::population<int,
-                                       raw_fitness_t,
-                                       raw_cmp_t,
+                                       fitness_t,
+                                       cmp_t,
                                        double,
                                        gal::disabled_comparator,
                                        tags_t>;
@@ -51,7 +51,6 @@ protected:
   void SetUp() override {
     using individual_t = population_t::individual_t;
     using evaluation_t = individual_t::evaluation_t;
-    raw_fitness_t fit{0, 0};
 
     std::vector<individual_t> individuals{
         {0, evaluation_t{fa1}, tags_t{1, 1, 0.75}},
@@ -64,7 +63,7 @@ protected:
     population_.insert(individuals);
   }
 
-  population_t population_{raw_cmp_t{}, gal::disabled_comparator{}, false};
+  population_t population_{cmp_t{}, gal::disabled_comparator{}, false};
   gal::stats::history<statistics_t> statistics_{1};
   population_ctx_t context_{population_, statistics_};
 };
@@ -177,11 +176,11 @@ TEST_F(projection_tests, alternate_density_scaled_fitness_value) {
   EXPECT_NEAR(values[5], 0.025, 0.0001);
 }
 
-class merge_tests : public testing::Test {
+class merge_tests : public ::testing::Test {
 protected:
   using population_t = gal::population<int,
-                                       raw_fitness_t,
-                                       raw_cmp_t,
+                                       fitness_t,
+                                       cmp_t,
                                        std::tuple<std::size_t, double>,
                                        gal::disabled_comparator,
                                        tags_t>;
@@ -193,7 +192,6 @@ protected:
   void SetUp() override {
     using individual_t = population_t::individual_t;
     using evaluation_t = individual_t::evaluation_t;
-    raw_fitness_t fit{0, 0};
 
     std::vector<individual_t> individuals{
         {0, evaluation_t{fa1}, tags_t{1, 1, 0.75}},
@@ -206,7 +204,7 @@ protected:
     population_.insert(individuals);
   }
 
-  population_t population_{raw_cmp_t{}, gal::disabled_comparator{}, false};
+  population_t population_{cmp_t{}, gal::disabled_comparator{}, false};
   gal::stats::history<statistics_t> statistics_{1};
   population_ctx_t context_{population_, statistics_};
 };

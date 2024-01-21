@@ -25,7 +25,7 @@ constexpr fitness_t f2a{1, 0};
 constexpr fitness_t f2b{0, 1};
 constexpr fitness_t f3a{1, 1};
 
-class elitism_tests : public testing::Test {
+class elitism_tests : public ::testing::Test {
 protected:
   void SetUp() override {
     using individual_t = population_t::individual_t;
