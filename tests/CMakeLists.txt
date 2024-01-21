@@ -7,6 +7,7 @@ add_executable(tests
   multiobjective/pareto_tests.cpp
   multiobjective/ranking_tests.cpp
   multiobjective/elitism_tests.cpp
+  multiobjective/projection_tests.cpp
   main.cpp)
 
 target_link_libraries(tests PRIVATE

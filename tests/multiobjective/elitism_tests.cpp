@@ -1,5 +1,6 @@
 
 #include "elitism.hpp"
+
 #include "ranking.hpp"
 
 #include <gmock/gmock.h>
