@@ -200,45 +200,82 @@ namespace cluster {
       return value >= zero ? value / size : neg_1 - (neg_1 - value) / size;
     }
 
+    template<typename Value>
+    inline Value cacluate_hypercoordinate(Value minimum,
+                                          Value value,
+                                          Value size) noexcept {
+      return (value - minimum) / size;
+    }
+
     template<std::unsigned_integral Value>
     inline Value cacluate_hypercoordinate(Value value, Value size) noexcept {
       return value / size;
     }
 
     template<std::floating_point Value>
-    inline std::ptrdiff_t cacluate_hypercoordinate(Value value,
-                                                   Value size) noexcept {
-      return static_cast<std::ptrdiff_t>(std::floor(value / size));
+    inline std::int64_t cacluate_hypercoordinate(Value value,
+                                                 Value size) noexcept {
+      return static_cast<std::int64_t>(std::floor(value / size));
+    }
+
+    template<std::floating_point Value>
+    inline std::int64_t cacluate_hypercoordinate(Value minimum,
+                                                 Value value,
+                                                 Value size) noexcept {
+      return static_cast<std::int64_t>(std::floor((value - minimum) / size));
+    }
+
+    struct no_minimum {};
+
+    template<typename Fitness, std::size_t... Idxs>
+    using array_t =
+        std::array<multiobjective_value_t<Fitness>, sizeof...(Idxs)>;
+
+    template<grid_fitness Fitness, std::size_t... Idxs>
+    inline auto
+        get_hypercoordinates(Fitness const& fitness,
+                             no_minimum /*unused*/,
+                             array_t<Fitness, Idxs...> const& granularity,
+                             std::index_sequence<Idxs...> /*unused*/) noexcept {
+      return hypercooridnates_t<multiobjective_value_t<Fitness>,
+                                sizeof...(Idxs)>{
+          cacluate_hypercoordinate(fitness[Idxs], granularity[Idxs])...};
     }
 
     template<grid_fitness Fitness, std::size_t... Idxs>
     inline auto
         get_hypercoordinates(Fitness const& fitness,
-                             std::array<multiobjective_value_t<Fitness>,
-                                        sizeof...(Idxs)> const& granularity,
+                             array_t<Fitness, Idxs...> const& minimums,
+                             array_t<Fitness, Idxs...> const& granularity,
                              std::index_sequence<Idxs...> /*unused*/) noexcept {
-      return details::hypercooridnates_t<multiobjective_value_t<Fitness>,
-                                         sizeof...(Idxs)>{
-          cacluate_hypercoordinate(fitness[Idxs], granularity[Idxs])...};
+      return hypercooridnates_t<multiobjective_value_t<Fitness>,
+                                sizeof...(Idxs)>{cacluate_hypercoordinate(
+          minimums[Idxs], fitness[Idxs], granularity[Idxs])...};
     }
 
-    template<grid_fitness Fitness, std::size_t Dimensions>
+    template<grid_fitness Fitness, typename Min, std::size_t Dimensions>
     inline auto get_hypercoordinates(
         Fitness const& fitness,
+        Min const& minimums,
         std::array<multiobjective_value_t<Fitness>, Dimensions> const&
             granularity) noexcept {
       return get_hypercoordinates<Fitness>(
-          fitness, granularity, std::make_index_sequence<Dimensions>{});
+          fitness,
+          minimums,
+          granularity,
+          std::make_index_sequence<Dimensions>{});
     }
 
     template<typename Population,
              typename Preserved,
+             typename Min,
              std::size_t Dimensions,
              typename FitnessValue = multiobjective_value_t<
                  get_fitness_t<raw_fitness_tag, Population>>>
     auto
         mark_hyperbox(Population& population,
                       population_pareto_t<Population, Preserved>& sets,
+                      Min const& minimums,
                       std::array<FitnessValue, Dimensions> const& granularity) {
       using individual_t = typename Population::individual_t;
       using hypermap_t =
@@ -248,15 +285,14 @@ namespace cluster {
 
       cluster_set result;
 
-      std::size_t processed = true;
-      for (auto&& set : sets) {
+      for (std::size_t processed = 0; auto&& set : sets) {
         if (processed < population.target_size()) {
           result.next_level();
 
           hypermap_t hypermap{};
           for (auto&& individual : set) {
-            auto coords = get_hypercoordinates(individual->evaluation().raw(),
-                                               granularity);
+            auto coords = get_hypercoordinates(
+                individual->evaluation().raw(), minimums, granularity);
             hypermap[coords].push_back(individual);
           }
 
@@ -300,9 +336,25 @@ namespace cluster {
     inline auto
         operator()(Population& population,
                    population_pareto_t<Population, Preserved>& sets) const {
-      return details::mark_hyperbox(population, sets, granularity);
+      return details::mark_hyperbox(
+          population, sets, details::no_minimum{}, granularity);
     }
   };
+
+  namespace details {
+
+    template<std::floating_point Granularity>
+    inline auto adjust_division(std::size_t original) noexcept {
+      return std::nextafter(static_cast<Granularity>(original),
+                            std::numeric_limits<Granularity>::lowest());
+    }
+
+    template<typename Granularity>
+    inline auto adjust_division(std::size_t original) noexcept {
+      return static_cast<Granularity>(original);
+    }
+
+  } // namespace details
 
   // adaptive cell-sharing (rdga)
   template<std::size_t... Divisions>
@@ -345,11 +397,11 @@ namespace cluster {
       auto min_first = minimums.begin(), max_first = maximums.begin();
       for (auto last = minimums.end(); min_first != last;
            ++gr_first, ++div_first, ++min_first, ++max_first) {
-        *gr_first =
-            static_cast<granularity_t>((*max_first - *min_first) / *div_first);
+        auto div = details::adjust_division<granularity_t>(*div_first);
+        *gr_first = static_cast<granularity_t>((*max_first - *min_first) / div);
       }
 
-      return details::mark_hyperbox(population, sets, granularity);
+      return details::mark_hyperbox(population, sets, minimums, granularity);
     }
   };
 
