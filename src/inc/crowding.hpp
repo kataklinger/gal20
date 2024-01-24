@@ -120,15 +120,15 @@ namespace crowd {
           }
         }
 
-        auto max_distance = std::numeric_limits<double>::min();
+        auto min_distance = std::numeric_limits<double>::max();
         for (auto&& individual : set) {
           double distance{get_tag<crowd_density_t>(*individual)};
-          max_distance = std::max(max_distance, distance);
+          min_distance = std::min(min_distance, distance);
         }
 
         for (auto&& individual : set) {
           auto& distance = get_tag<crowd_density_t>(*individual);
-          distance = distance.get() / max_distance;
+          distance = min_distance / (distance.get() + 1.);
         }
       }
     }
@@ -215,14 +215,10 @@ namespace crowd {
                             cluster_set const& clusters) const {
       if (label.is_proper()) {
         auto count = static_cast<double>(clusters[label.index()].members_);
-        return std::pow(count, Alpha);
+        return 1. - 1. / std::pow(count, Alpha);
       }
 
-      if (label.is_unique()) {
-        return 1.;
-      }
-
-      return 0.;
+      return label.is_unique() ? 0. : 1.;
     }
   };
 
