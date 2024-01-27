@@ -256,7 +256,7 @@ namespace prune {
 
       std::size_t buffer_size = 0;
       for (auto&& cluster : clusters) {
-        buffer_index.emplace_back(buffer_size, 0);
+        buffer_index.emplace_back(buffer_size, buffer_size);
         buffer_size += cluster.members_;
       }
 
@@ -268,8 +268,8 @@ namespace prune {
           auto& [first, current] = buffer_index[label.index()];
 
           double total_distance = 0.;
-          for (; first <= current; ++first) {
-            auto& [other_individual, other_distance] = buffer[first];
+          for (auto idx = first; idx < current; ++idx) {
+            auto& [other_individual, other_distance] = buffer[idx];
 
             auto distance =
                 euclidean_distance(individual.evaluation().raw(),
@@ -279,7 +279,7 @@ namespace prune {
             total_distance += distance;
           }
 
-          buffer[++current] = std::tuple{&individual, total_distance};
+          buffer[current++] = std::tuple{&individual, total_distance};
 
           get_tag<prune_state_t>(individual) = true;
 
@@ -288,9 +288,9 @@ namespace prune {
                 buffer.begin() + first,
                 buffer.begin() + current,
                 std::ranges::less{},
-                [](auto& element) { std::get<1>(element); });
+                [](auto& element) { return std::get<1>(element); });
 
-            get_tag<prune_state_t>(center) = false;
+            get_tag<prune_state_t>(*center) = false;
           }
         }
         else {
