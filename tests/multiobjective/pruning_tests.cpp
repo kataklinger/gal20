@@ -14,24 +14,30 @@ using fitness_t = std::array<double, 2>;
 using tags_t = std::tuple<gal::frontier_level_t,
                           gal::int_rank_t,
                           gal::crowd_density_t,
-                          gal::cluster_label>;
+                          gal::cluster_label,
+                          gal::prune_state_t>;
 
 using population_t = gal::
     population<int, fitness_t, cmp_t, double, gal::disabled_comparator, tags_t>;
 
 template<typename Tag, typename Population>
 inline auto get_tag_value(Population const& population, std::size_t index) {
-  return gal::get_tag<Tag>(population.individuals()[index]).get();
+  return gal::get_tag<Tag>(population.individuals()[index]);
 }
 
 template<typename Population>
 inline auto get_crowd_density(Population const& population, std::size_t index) {
-  return get_tag_value<gal::crowd_density_t>(population, index);
+  return get_tag_value<gal::crowd_density_t>(population, index).get();
 }
 
 template<typename Population>
 inline auto get_ranking(Population const& population, std::size_t index) {
-  return get_tag_value<gal::int_rank_t>(population, index);
+  return get_tag_value<gal::int_rank_t>(population, index).get();
+}
+
+template<typename Population>
+inline auto get_cluster(Population const& population, std::size_t index) {
+  return get_tag_value<gal::cluster_label>(population, index).index();
 }
 
 class global_worst_tests : public ::testing::Test {
@@ -43,14 +49,14 @@ protected:
     constexpr fitness_t fit{0, 0};
 
     std::vector<individual_t> individuals{
-        {0, evaluation_t{fit}, tags_t{3, 3, 0.1, 0}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0.4, 0}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0.3, 0}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0.2, 0}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0.1, 0}},
-        {0, evaluation_t{fit}, tags_t{1, 1, 0.3, 0}},
-        {0, evaluation_t{fit}, tags_t{1, 1, 0.2, 0}},
-        {0, evaluation_t{fit}, tags_t{1, 1, 0.1, 0}}};
+        {0, evaluation_t{fit}, tags_t{3, 3, 0.1, 0, false}},
+        {0, evaluation_t{fit}, tags_t{2, 2, 0.4, 0, false}},
+        {0, evaluation_t{fit}, tags_t{2, 2, 0.3, 0, false}},
+        {0, evaluation_t{fit}, tags_t{2, 2, 0.2, 0, false}},
+        {0, evaluation_t{fit}, tags_t{2, 2, 0.1, 0, false}},
+        {0, evaluation_t{fit}, tags_t{1, 1, 0.3, 0, false}},
+        {0, evaluation_t{fit}, tags_t{1, 1, 0.2, 0, false}},
+        {0, evaluation_t{fit}, tags_t{1, 1, 0.1, 0, false}}};
 
     population_.insert(individuals);
   }
@@ -102,19 +108,220 @@ protected:
     constexpr fitness_t fit{0, 0};
 
     std::vector<individual_t> individuals{
-        {0, evaluation_t{fit}, tags_t{3, 3, 0.1, 0}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0.4, 0}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0.3, 0}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0.2, 0}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0.1, 0}},
-        {0, evaluation_t{fit}, tags_t{1, 1, 0.3, 0}},
-        {0, evaluation_t{fit}, tags_t{1, 1, 0.2, 0}},
-        {0, evaluation_t{fit}, tags_t{1, 1, 0.1, 0}}};
+        {0, evaluation_t{fit}, tags_t{1, 1, 0, 0, false}},
+        {0, evaluation_t{fit}, tags_t{1, 1, 0, 0, false}},
+        {0, evaluation_t{fit}, tags_t{1, 1, 0, 0, false}},
 
-    population_.insert(individuals);
+        {0, evaluation_t{fit}, tags_t{1, 1, 0, 1, false}},
+        {0, evaluation_t{fit}, tags_t{1, 1, 0, 1, false}},
+
+        {0, evaluation_t{fit}, tags_t{1, 1, 0, 2, false}},
+
+        {0, evaluation_t{fit}, tags_t{2, 2, 0, 3, false}},
+
+        {0, evaluation_t{fit}, tags_t{2, 2, 0, 4, false}},
+        {0, evaluation_t{fit}, tags_t{2, 2, 0, 4, false}},
+        {0, evaluation_t{fit}, tags_t{2, 2, 0, 4, false}},
+
+        {0, evaluation_t{fit}, tags_t{3, 3, 0, 5, false}},
+
+        {0, evaluation_t{fit}, tags_t{3, 3, 0, 6, false}},
+        {0, evaluation_t{fit}, tags_t{3, 3, 0, 6, false}}};
+
+    clusters_.next_level();
+    clusters_.add_cluster(3);
+    clusters_.add_cluster(2);
+    clusters_.add_cluster(1);
+
+    clusters_.next_level();
+    clusters_.add_cluster(1);
+    clusters_.add_cluster(3);
+
+    clusters_.next_level();
+    clusters_.add_cluster(1);
+    clusters_.add_cluster(2);
+
+    population_3_.insert(individuals);
+    population_5_.insert(individuals);
+    population_6_.insert(individuals);
+    population_9_.insert(individuals);
+    population_12_.insert(individuals);
+    population_13_.insert(individuals);
   }
 
-  population_t population_{cmp_t{}, gal::disabled_comparator{}, 5, false};
+  std::mt19937 rng_{};
+
+  population_t population_3_{cmp_t{}, gal::disabled_comparator{}, 3, false};
+  population_t population_5_{cmp_t{}, gal::disabled_comparator{}, 5, false};
+  population_t population_6_{cmp_t{}, gal::disabled_comparator{}, 6, false};
+  population_t population_9_{cmp_t{}, gal::disabled_comparator{}, 9, false};
+  population_t population_12_{cmp_t{}, gal::disabled_comparator{}, 12, false};
+  population_t population_13_{cmp_t{}, gal::disabled_comparator{}, 13, false};
+
+  gal::cluster_set clusters_;
 };
+
+TEST_F(cluster_random_tests, no_pruning_population_size) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // assert
+  op(population_13_, clusters_);
+
+  // act
+  EXPECT_EQ(population_13_.current_size(), 13);
+}
+
+TEST_F(cluster_random_tests, pruning_one_cluster_population_size) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // assert
+  op(population_12_, clusters_);
+
+  // act
+  EXPECT_EQ(population_12_.current_size(), 12);
+}
+
+TEST_F(cluster_random_tests, pruning_one_cluster_population_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_12_, clusters_);
+
+  // assert
+  EXPECT_EQ(get_ranking(population_12_, 10), 3);
+  EXPECT_EQ(get_cluster(population_12_, 10), 5);
+
+  EXPECT_EQ(get_ranking(population_12_, 11), 3);
+  EXPECT_EQ(get_cluster(population_12_, 11), 6);
+}
+
+TEST_F(cluster_random_tests,
+       pruning_one_level_and_one_cluster_population_size) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // assert
+  op(population_9_, clusters_);
+
+  // act
+  EXPECT_EQ(population_9_.current_size(), 9);
+}
+
+TEST_F(cluster_random_tests,
+       pruning_one_level_and_one_cluster_population_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_9_, clusters_);
+
+  // assert
+  EXPECT_EQ(get_ranking(population_9_, 6), 2);
+  EXPECT_EQ(get_cluster(population_9_, 6), 3);
+
+  EXPECT_EQ(get_ranking(population_9_, 7), 2);
+  EXPECT_EQ(get_cluster(population_9_, 7), 4);
+
+  EXPECT_EQ(get_ranking(population_9_, 8), 2);
+  EXPECT_EQ(get_cluster(population_9_, 8), 4);
+}
+
+TEST_F(cluster_random_tests, pruning_multiple_levels_population_size) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // assert
+  op(population_6_, clusters_);
+
+  // act
+  EXPECT_EQ(population_6_.current_size(), 6);
+}
+
+TEST_F(cluster_random_tests, pruning_multiple_levels_population_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_6_, clusters_);
+
+  // assert
+  EXPECT_EQ(get_ranking(population_6_, 2), 1);
+  EXPECT_EQ(get_cluster(population_6_, 2), 0);
+
+  EXPECT_EQ(get_ranking(population_6_, 3), 1);
+  EXPECT_EQ(get_cluster(population_6_, 3), 1);
+
+  EXPECT_EQ(get_ranking(population_6_, 4), 1);
+  EXPECT_EQ(get_cluster(population_6_, 4), 1);
+
+  EXPECT_EQ(get_ranking(population_6_, 5), 1);
+  EXPECT_EQ(get_cluster(population_6_, 5), 2);
+}
+
+TEST_F(cluster_random_tests, pruning_nondominated_level_some_population_size) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // assert
+  op(population_5_, clusters_);
+
+  // act
+  EXPECT_EQ(population_5_.current_size(), 5);
+}
+
+TEST_F(cluster_random_tests,
+       pruning_nondominated_level_some_population_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_5_, clusters_);
+
+  // assert
+  EXPECT_EQ(get_ranking(population_5_, 1), 1);
+  EXPECT_EQ(get_cluster(population_5_, 1), 0);
+
+  EXPECT_EQ(get_ranking(population_5_, 2), 1);
+  EXPECT_EQ(get_cluster(population_5_, 2), 1);
+
+  EXPECT_EQ(get_ranking(population_5_, 3), 1);
+  EXPECT_EQ(get_cluster(population_5_, 3), 1);
+
+  EXPECT_EQ(get_ranking(population_5_, 4), 1);
+  EXPECT_EQ(get_cluster(population_5_, 4), 2);
+}
+
+TEST_F(cluster_random_tests, pruning_nondominated_level_allopulation_size) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // assert
+  op(population_3_, clusters_);
+
+  // act
+  EXPECT_EQ(population_3_.current_size(), 3);
+}
+
+TEST_F(cluster_random_tests,
+       pruning_nondominated_level_all_population_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_3_, clusters_);
+
+  // assert
+  EXPECT_EQ(get_ranking(population_3_, 0), 1);
+  EXPECT_EQ(get_cluster(population_3_, 0), 0);
+
+  EXPECT_EQ(get_ranking(population_3_, 1), 1);
+  EXPECT_EQ(get_cluster(population_3_, 1), 1);
+
+  EXPECT_EQ(get_ranking(population_3_, 2), 1);
+  EXPECT_EQ(get_cluster(population_3_, 2), 2);
+}
 
 } // namespace tests::pruning
