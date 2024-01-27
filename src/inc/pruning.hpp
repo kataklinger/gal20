@@ -87,12 +87,12 @@ namespace prune {
           buffer_size += cluster.members_;
         }
 
-        buffer_.resize(buffer_size);
+        buffer_.reserve(buffer_size);
       }
 
       inline void push(std::size_t cluster_index, prune_state_t& prune_state) {
-        auto idx = entries_[cluster_index].count_++;
-        buffer_[idx] = &prune_state;
+        entries_[cluster_index].count_++;
+        buffer_.push_back(&prune_state);
       }
 
       inline void update_set(cluster_set& target) noexcept {
@@ -162,9 +162,10 @@ namespace prune {
           do {
             auto [i, density, level] = fetch_level(generator);
             for (; excess != 0 && density != 0; --density) {
+              auto j = i;
               do {
-                mark_one(i++);
-              } while ((--excess) != 0 && same_density(i, density));
+                mark_one(j++);
+              } while ((--excess) != 0 && same_density(j, density));
             }
 
             if (excess > 0) {
@@ -217,9 +218,9 @@ namespace prune {
       auto level_prune = [&individuals = population.individuals()](
                              std::size_t level, std::size_t& excess) {
         for (auto&& individual : individuals) {
-          if (get_tag<frontier_level_t>(individual) == level &&
-              get_tag<cluster_label>(individual).is_unique()) {
-            get_tag<prune_state_t>(individual) = true;
+          auto& state = get_tag<prune_state_t>(individual);
+          if (!state && get_tag<frontier_level_t>(individual) == level) {
+            state = true;
 
             if (--excess == 0) {
               break;
