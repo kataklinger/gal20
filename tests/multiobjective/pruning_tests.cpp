@@ -294,7 +294,7 @@ TEST_F(cluster_random_tests,
   EXPECT_EQ(get_cluster(population_5_, 4), 2);
 }
 
-TEST_F(cluster_random_tests, pruning_nondominated_level_allopulation_size) {
+TEST_F(cluster_random_tests, pruning_nondominated_level_all_population_size) {
   // arrange
   gal::prune::cluster_random op{rng_};
 
@@ -322,6 +322,100 @@ TEST_F(cluster_random_tests,
 
   EXPECT_EQ(get_ranking(population_3_, 2), 1);
   EXPECT_EQ(get_cluster(population_3_, 2), 2);
+}
+
+constexpr fitness_t f1a{0.1, 1.9};
+constexpr fitness_t f1b{0.2, 1.8};
+constexpr fitness_t f1c{0.3, 1.7};
+constexpr fitness_t f1d{0.8, 1.2};
+constexpr fitness_t f1e{1.2, 0.8};
+constexpr fitness_t f1f{1.7, 0.3};
+constexpr fitness_t f1g{1.8, 0.2};
+constexpr fitness_t f1h{1.9, 0.1};
+
+constexpr fitness_t f2a{1.1, 2.9};
+constexpr fitness_t f2b{1.2, 2.8};
+constexpr fitness_t f2c{1.3, 2.7};
+constexpr fitness_t f2d{1.8, 2.2};
+constexpr fitness_t f2e{2.2, 1.8};
+constexpr fitness_t f2f{2.7, 1.3};
+constexpr fitness_t f2g{2.8, 1.2};
+constexpr fitness_t f2h{2.9, 1.1};
+
+class cluster_edge_tests : public ::testing::Test {
+protected:
+  void SetUp() override {
+    using individual_t = population_t::individual_t;
+    using evaluation_t = individual_t::evaluation_t;
+
+    std::vector<individual_t> individuals{
+        {0, evaluation_t{f1a}, tags_t{1, 1, 0, 0, false}},
+        {0, evaluation_t{f1b}, tags_t{1, 1, 0, 0, false}},
+        {0, evaluation_t{f1c}, tags_t{1, 1, 0, 0, false}},
+
+        {0, evaluation_t{f1d}, tags_t{1, 1, 0, 1, false}},
+
+        {0, evaluation_t{f1e}, tags_t{1, 1, 0, 2, false}},
+
+        {0, evaluation_t{f1f}, tags_t{1, 1, 0, 3, false}},
+        {0, evaluation_t{f1g}, tags_t{1, 1, 0, 3, false}},
+        {0, evaluation_t{f1h}, tags_t{1, 1, 0, 3, false}},
+
+        {0, evaluation_t{f2a}, tags_t{2, 2, 0, 4, false}},
+        {0, evaluation_t{f2b}, tags_t{2, 2, 0, 4, false}},
+        {0, evaluation_t{f2c}, tags_t{2, 2, 0, 4, false}},
+
+        {0, evaluation_t{f2d}, tags_t{2, 2, 0, 5, false}},
+
+        {0, evaluation_t{f2e}, tags_t{2, 2, 0, 6, false}},
+
+        {0, evaluation_t{f2f}, tags_t{2, 2, 0, 7, false}},
+        {0, evaluation_t{f2g}, tags_t{2, 2, 0, 7, false}},
+        {0, evaluation_t{f2h}, tags_t{2, 2, 0, 7, false}}};
+
+    clusters_.next_level();
+    clusters_.add_cluster(3);
+    clusters_.add_cluster(1);
+    clusters_.add_cluster(1);
+    clusters_.add_cluster(3);
+
+    clusters_.next_level();
+    clusters_.add_cluster(3);
+    clusters_.add_cluster(1);
+    clusters_.add_cluster(1);
+    clusters_.add_cluster(3);
+
+    population_.insert(individuals);
+  }
+
+  population_t population_{cmp_t{}, gal::disabled_comparator{}, false};
+
+  gal::cluster_set clusters_;
+};
+
+TEST_F(cluster_edge_tests, pruning_population_size) {
+  // arrange
+  gal::prune::cluster_edge op{};
+
+  // assert
+  op(population_, clusters_);
+
+  // act
+  EXPECT_EQ(population_.current_size(), 8);
+}
+
+TEST_F(cluster_edge_tests, pruning_population_content) {
+  // arrange
+  gal::prune::cluster_edge op{};
+
+  // act
+  op(population_, clusters_);
+
+  // assert
+  for (std::size_t i = 0; i < 8; ++i) {
+    EXPECT_EQ(get_ranking(population_, i), i / 4 + 1);
+    EXPECT_EQ(get_cluster(population_, i), i);
+  }
 }
 
 } // namespace tests::pruning
