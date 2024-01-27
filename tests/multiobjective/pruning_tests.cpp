@@ -424,29 +424,29 @@ protected:
     using evaluation_t = individual_t::evaluation_t;
 
     std::vector<individual_t> individuals{
-        {0, evaluation_t{f1a}, tags_t{1, 1, 0, 0, false}},
-        {0, evaluation_t{f1b}, tags_t{1, 1, 0, 0, false}},
-        {0, evaluation_t{f1c}, tags_t{1, 1, 0, 0, false}},
+        {0, evaluation_t{f1a}, tags_t{1, 1, 1, 0, false}},
+        {0, evaluation_t{f1b}, tags_t{1, 1, 2, 0, false}},
+        {0, evaluation_t{f1c}, tags_t{1, 1, 3, 0, false}},
 
-        {0, evaluation_t{f1d}, tags_t{1, 1, 0, 1, false}},
+        {0, evaluation_t{f1d}, tags_t{1, 1, 4, 1, false}},
 
-        {0, evaluation_t{f1e}, tags_t{1, 1, 0, 2, false}},
+        {0, evaluation_t{f1e}, tags_t{1, 1, 5, 2, false}},
 
-        {0, evaluation_t{f1f}, tags_t{1, 1, 0, 3, false}},
-        {0, evaluation_t{f1g}, tags_t{1, 1, 0, 3, false}},
-        {0, evaluation_t{f1h}, tags_t{1, 1, 0, 3, false}},
+        {0, evaluation_t{f1f}, tags_t{1, 1, 6, 3, false}},
+        {0, evaluation_t{f1g}, tags_t{1, 1, 7, 3, false}},
+        {0, evaluation_t{f1h}, tags_t{1, 1, 8, 3, false}},
 
-        {0, evaluation_t{f2a}, tags_t{2, 2, 0, 4, false}},
-        {0, evaluation_t{f2b}, tags_t{2, 2, 0, 4, false}},
-        {0, evaluation_t{f2c}, tags_t{2, 2, 0, 4, false}},
+        {0, evaluation_t{f2a}, tags_t{2, 2, 9, 4, false}},
+        {0, evaluation_t{f2b}, tags_t{2, 2, 10, 4, false}},
+        {0, evaluation_t{f2c}, tags_t{2, 2, 11, 4, false}},
 
-        {0, evaluation_t{f2d}, tags_t{2, 2, 0, 5, false}},
+        {0, evaluation_t{f2d}, tags_t{2, 2, 12, 5, false}},
 
-        {0, evaluation_t{f2e}, tags_t{2, 2, 0, 6, false}},
+        {0, evaluation_t{f2e}, tags_t{2, 2, 13, 6, false}},
 
-        {0, evaluation_t{f2f}, tags_t{2, 2, 0, 7, false}},
-        {0, evaluation_t{f2g}, tags_t{2, 2, 0, 7, false}},
-        {0, evaluation_t{f2h}, tags_t{2, 2, 0, 7, false}}};
+        {0, evaluation_t{f2f}, tags_t{2, 2, 14, 7, false}},
+        {0, evaluation_t{f2g}, tags_t{2, 2, 15, 7, false}},
+        {0, evaluation_t{f2h}, tags_t{2, 2, 16, 7, false}}};
 
     clusters_.next_level();
     clusters_.add_cluster(3);
@@ -491,6 +491,11 @@ TEST_F(cluster_edge_tests, pruning_population_content) {
     EXPECT_EQ(get_ranking(population_, i), i / 4 + 1);
     EXPECT_EQ(get_cluster(population_, i), i);
   }
+
+  EXPECT_EQ(get_crowd_density(population_, 0), 2);
+  EXPECT_EQ(get_crowd_density(population_, 3), 7);
+  EXPECT_EQ(get_crowd_density(population_, 4), 10);
+  EXPECT_EQ(get_crowd_density(population_, 7), 15);
 }
 
 TEST_F(cluster_edge_tests, pruning_set_content) {
