@@ -198,6 +198,21 @@ TEST_F(cluster_random_tests, pruning_one_cluster_population_content) {
   EXPECT_EQ(get_cluster(population_12_, 11), 6);
 }
 
+TEST_F(cluster_random_tests, pruning_one_cluster_set_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_12_, clusters_);
+
+  // assert
+  std::vector all(clusters_.begin(), clusters_.end());
+  std::vector<gal::cluster_set::cluster> expected{
+      {1, 3}, {1, 2}, {1, 1}, {2, 1}, {2, 3}, {3, 1}, {3, 1}};
+
+  EXPECT_THAT(all, ::testing::ElementsAreArray(expected));
+}
+
 TEST_F(cluster_random_tests,
        pruning_one_level_and_one_cluster_population_size) {
   // arrange
@@ -227,6 +242,21 @@ TEST_F(cluster_random_tests,
 
   EXPECT_EQ(get_ranking(population_9_, 8), 2);
   EXPECT_EQ(get_cluster(population_9_, 8), 4);
+}
+
+TEST_F(cluster_random_tests, pruning_one_level_and_one_cluster_set_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_9_, clusters_);
+
+  // assert
+  std::vector all(clusters_.begin(), clusters_.end());
+  std::vector<gal::cluster_set::cluster> expected{
+      {1, 3}, {1, 2}, {1, 1}, {2, 1}, {2, 2}, {3, 0}, {3, 0}};
+
+  EXPECT_THAT(all, ::testing::ElementsAreArray(expected));
 }
 
 TEST_F(cluster_random_tests, pruning_multiple_levels_population_size) {
@@ -259,6 +289,21 @@ TEST_F(cluster_random_tests, pruning_multiple_levels_population_content) {
 
   EXPECT_EQ(get_ranking(population_6_, 5), 1);
   EXPECT_EQ(get_cluster(population_6_, 5), 2);
+}
+
+TEST_F(cluster_random_tests, pruning_multiple_levels_set_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_6_, clusters_);
+
+  // assert
+  std::vector all(clusters_.begin(), clusters_.end());
+  std::vector<gal::cluster_set::cluster> expected{
+      {1, 3}, {1, 2}, {1, 1}, {2, 0}, {2, 0}, {3, 0}, {3, 0}};
+
+  EXPECT_THAT(all, ::testing::ElementsAreArray(expected));
 }
 
 TEST_F(cluster_random_tests, pruning_nondominated_level_some_population_size) {
@@ -294,6 +339,21 @@ TEST_F(cluster_random_tests,
   EXPECT_EQ(get_cluster(population_5_, 4), 2);
 }
 
+TEST_F(cluster_random_tests, pruning_nondominated_level_some_set_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_5_, clusters_);
+
+  // assert
+  std::vector all(clusters_.begin(), clusters_.end());
+  std::vector<gal::cluster_set::cluster> expected{
+      {1, 2}, {1, 2}, {1, 1}, {2, 0}, {2, 0}, {3, 0}, {3, 0}};
+
+  EXPECT_THAT(all, ::testing::ElementsAreArray(expected));
+}
+
 TEST_F(cluster_random_tests, pruning_nondominated_level_all_population_size) {
   // arrange
   gal::prune::cluster_random op{rng_};
@@ -322,6 +382,21 @@ TEST_F(cluster_random_tests,
 
   EXPECT_EQ(get_ranking(population_3_, 2), 1);
   EXPECT_EQ(get_cluster(population_3_, 2), 2);
+}
+
+TEST_F(cluster_random_tests, pruning_nondominated_level_all_set_content) {
+  // arrange
+  gal::prune::cluster_random op{rng_};
+
+  // act
+  op(population_3_, clusters_);
+
+  // assert
+  std::vector all(clusters_.begin(), clusters_.end());
+  std::vector<gal::cluster_set::cluster> expected{
+      {1, 1}, {1, 1}, {1, 1}, {2, 0}, {2, 0}, {3, 0}, {3, 0}};
+
+  EXPECT_THAT(all, ::testing::ElementsAreArray(expected));
 }
 
 constexpr fitness_t f1a{0.1, 1.9};
@@ -416,6 +491,21 @@ TEST_F(cluster_edge_tests, pruning_population_content) {
     EXPECT_EQ(get_ranking(population_, i), i / 4 + 1);
     EXPECT_EQ(get_cluster(population_, i), i);
   }
+}
+
+TEST_F(cluster_edge_tests, pruning_set_content) {
+  // arrange
+  gal::prune::cluster_edge op{};
+
+  // act
+  op(population_, clusters_);
+
+  // assert
+  std::vector all(clusters_.begin(), clusters_.end());
+  std::vector<gal::cluster_set::cluster> expected{
+      {1, 1}, {1, 1}, {1, 1}, {1, 1}, {2, 1}, {2, 1}, {2, 1}, {2, 1}};
+
+  EXPECT_THAT(all, ::testing::ElementsAreArray(expected));
 }
 
 } // namespace tests::pruning
