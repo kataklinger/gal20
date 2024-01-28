@@ -51,13 +51,11 @@ namespace crowd {
                     cluster_set const& /*unused*/) const {
       clean_tags<crowd_density_t>(population);
 
-      for (auto&& set : sets) {
-        double total = 0.;
-
-        for (auto&& left : set) {
+      for (double total = 0.; auto&& set : sets) {
+        for (auto in = std::ranges::begin(set); auto&& left : set) {
+          std::ranges::advance(in, 1);
           for (auto&& right :
-               std::ranges::subrange{std::ranges::next(std::ranges::begin(set)),
-                                     std::ranges::end(set)}) {
+               std::ranges::subrange{in, std::ranges::end(set)}) {
             auto dist = static_cast<double>(
                 proximity_(left->chromosome(), right->chromosome()));
 
@@ -72,7 +70,7 @@ namespace crowd {
 
         for (auto&& individual : set) {
           auto& tag = get_tag<crowd_density_t>(*individual);
-          tag += static_cast<double>(tag) / total;
+          tag = static_cast<double>(tag) / total;
         }
       }
     }
