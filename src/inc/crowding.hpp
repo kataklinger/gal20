@@ -51,7 +51,9 @@ namespace crowd {
                     cluster_set const& /*unused*/) const {
       clean_tags<crowd_density_t>(population);
 
-      for (double total = 0.; auto&& set : sets) {
+      for (auto&& set : sets) {
+        double total = 0.;
+
         for (auto in = std::ranges::begin(set); auto&& left : set) {
           std::ranges::advance(in, 1);
           for (auto&& right :
