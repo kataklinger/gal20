@@ -98,11 +98,14 @@ namespace crowd {
       auto objectives =
           std::ranges::size(population.individuals()[0].evaluation().raw());
 
+      constexpr auto objective = [](auto ind, std::size_t obj) {
+        return ind->evaluation().raw()[obj];
+      };
+
       for (auto&& set : sets) {
-        for (std::size_t objective = 0; objective < objectives; ++objective) {
-          std::ranges::sort(set, [objective](auto const& lhs, auto const& rhs) {
-            return lhs->evaluation().raw()[objective] <
-                   rhs->evaluation().raw()[objective];
+        for (std::size_t i = 0; i < objectives; ++i) {
+          std::ranges::sort(set, [i](auto const& lhs, auto const& rhs) {
+            return objective(lhs, i) < objective(rhs, i);
           });
 
           auto first = std::ranges::begin(set);
@@ -112,11 +115,8 @@ namespace crowd {
               std::numeric_limits<double>::infinity();
 
           while (++first != last) {
-            auto distance = static_cast<double>(
-                (*(first + 1))->evaluation().raw()[objective] -
-                (*(first - 1))->evaluation().raw()[objective]);
-
-            get_tag<crowd_density_t>(**first) += distance;
+            get_tag<crowd_density_t>(**first) += static_cast<double>(
+                objective(*(first + 1), i) - objective(*(first - 1), i));
           }
         }
 
