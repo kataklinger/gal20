@@ -170,11 +170,11 @@ public:
   using value_t = Value;
 
 public:
-  inline tag_adapted_value() noexcept(
+  inline constexpr tag_adapted_value() noexcept(
       std::is_nothrow_default_constructible_v<value_t>) {
   }
 
-  inline tag_adapted_value(value_t value) noexcept(
+  inline constexpr tag_adapted_value(value_t value) noexcept(
       std::is_nothrow_copy_constructible_v<value_t>)
       : value_{value} {
   }
