@@ -178,18 +178,17 @@ namespace crowd {
     template<typename Individuals>
     void assign_density(std::vector<double>& distances,
                         Individuals& individuals) const noexcept {
-      auto count = individuals.size();
+      auto count = individuals.size(),
+           kth = static_cast<std::size_t>(std::sqrt(count)) + 1;
 
-      auto kth = static_cast<std::size_t>(std::sqrt(count)) + 1;
-      auto first = distances.begin(), last = distances.begin() + count;
+      auto first = distances.begin();
       for (std::size_t i = 0; i < count; ++i) {
+        auto last = (first++) + count;
 
-        auto d = *std::ranges::nth_element(
-            first, first + kth, last, std::ranges::less{});
-        get_tag<crowd_density_t>(individuals[i]) = 1. / (d + 2.);
+        std::ranges::nth_element(first, first + kth, last, std::ranges::less{});
+        get_tag<crowd_density_t>(individuals[i]) = 1. / (*(first + kth) + 2.);
 
         first = last;
-        last += count;
       }
     }
   };
