@@ -1,6 +1,8 @@
 
 #include "crowding.hpp"
 
+#include "ranking.hpp"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -47,46 +49,78 @@ constexpr fitness_t f2f{2.7, 1.3};
 constexpr fitness_t f2g{2.8, 1.2};
 constexpr fitness_t f2h{2.9, 1.1};
 
-class neighbor_tests : public ::testing::Test {
+class crowding_base_tests : public ::testing::Test {
 protected:
   void SetUp() override {
     using individual_t = population_t::individual_t;
     using evaluation_t = individual_t::evaluation_t;
 
-    std::vector<individual_t> individuals{
-        {0, evaluation_t{f1a}, tags_t{1, 1, 0, 0}},
-        {0, evaluation_t{f1b}, tags_t{1, 1, 0, 0}},
-        {0, evaluation_t{f1c}, tags_t{1, 1, 0, 0}},
+    tags_t tags{0, 0, 0, 0};
 
-        {0, evaluation_t{f1d}, tags_t{1, 1, 0, 0}},
-
-        {0, evaluation_t{f1e}, tags_t{1, 1, 0, 0}},
-
-        {0, evaluation_t{f1f}, tags_t{1, 1, 0, 0}},
-        {0, evaluation_t{f1g}, tags_t{1, 1, 0, 0}},
-        {0, evaluation_t{f1h}, tags_t{1, 1, 0, 0}},
-
-        {0, evaluation_t{f2a}, tags_t{2, 2, 0, 0}},
-        {0, evaluation_t{f2b}, tags_t{2, 2, 0, 0}},
-        {0, evaluation_t{f2c}, tags_t{2, 2, 0, 0}},
-
-        {0, evaluation_t{f2d}, tags_t{2, 2, 0, 0}},
-
-        {0, evaluation_t{f2e}, tags_t{2, 2, 0, 0}},
-
-        {0, evaluation_t{f2f}, tags_t{2, 2, 0, 0}},
-        {0, evaluation_t{f2g}, tags_t{2, 2, 0, 0}},
-        {0, evaluation_t{f2h}, tags_t{2, 2, 0, 0}}};
+    std::vector<individual_t> individuals{{0, evaluation_t{f1a}, tags},
+                                          {0, evaluation_t{f1b}, tags},
+                                          {0, evaluation_t{f1c}, tags},
+                                          {0, evaluation_t{f1d}, tags},
+                                          {0, evaluation_t{f1e}, tags},
+                                          {0, evaluation_t{f1f}, tags},
+                                          {0, evaluation_t{f1g}, tags},
+                                          {0, evaluation_t{f1h}, tags},
+                                          {0, evaluation_t{f2a}, tags},
+                                          {0, evaluation_t{f2b}, tags},
+                                          {0, evaluation_t{f2c}, tags},
+                                          {0, evaluation_t{f2d}, tags},
+                                          {0, evaluation_t{f2e}, tags},
+                                          {0, evaluation_t{f2f}, tags},
+                                          {0, evaluation_t{f2g}, tags},
+                                          {0, evaluation_t{f2h}, tags}};
 
     population_.insert(individuals);
   }
 
   population_t population_{cmp_t{}, gal::disabled_comparator{}, false};
+};
+
+class distance_crowding_tests : public crowding_base_tests {
+protected:
+  gal::cluster_set clusters_{};
+};
+
+TEST_F(distance_crowding_tests, population_labels) {
+  // arrange
+  gal::crowd::distance op{};
+  auto pareto = gal::rank::level{}(population_, gal::pareto_preserved_tag);
+
+  // act
+  op(population_, pareto, clusters_);
+
+  // assert
+  auto result = get_all_density(population_);
+  EXPECT_THAT(result,
+              ::testing::ElementsAre(0,
+                                     0.28571428571428564,
+                                     0.18181818181818177,
+                                     0.14285714285714282,
+                                     0.14285714285714282,
+                                     0.18181818181818177,
+                                     0.28571428571428564,
+                                     0,
+                                     0,
+                                     0.28571428571428553,
+                                     0.18181818181818171,
+                                     0.14285714285714274,
+                                     0.14285714285714274,
+                                     0.18181818181818171,
+                                     0.28571428571428553,
+                                     0));
+}
+
+class neighbor_crowding_tests : public crowding_base_tests {
+protected:
   gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto_{0};
   gal::cluster_set clusters_{};
 };
 
-TEST_F(neighbor_tests, population_labels) {
+TEST_F(neighbor_crowding_tests, population_labels) {
   // arrange
   gal::crowd::neighbor op{};
 
