@@ -17,8 +17,12 @@ using tags_t = std::tuple<gal::frontier_level_t,
                           gal::crowd_density_t,
                           gal::cluster_label>;
 
-using population_t = gal::
-    population<int, fitness_t, cmp_t, double, gal::disabled_comparator, tags_t>;
+using population_t = gal::population<fitness_t,
+                                     fitness_t,
+                                     cmp_t,
+                                     double,
+                                     gal::disabled_comparator,
+                                     tags_t>;
 
 template<typename Population>
 inline auto get_all_density(Population const& population) {
@@ -55,30 +59,68 @@ protected:
     using individual_t = population_t::individual_t;
     using evaluation_t = individual_t::evaluation_t;
 
-    tags_t tags{0, 0, 0, 0};
+    constexpr tags_t tags{0, 0, 0, 0};
 
-    std::vector<individual_t> individuals{{0, evaluation_t{f1a}, tags},
-                                          {0, evaluation_t{f1b}, tags},
-                                          {0, evaluation_t{f1c}, tags},
-                                          {0, evaluation_t{f1d}, tags},
-                                          {0, evaluation_t{f1e}, tags},
-                                          {0, evaluation_t{f1f}, tags},
-                                          {0, evaluation_t{f1g}, tags},
-                                          {0, evaluation_t{f1h}, tags},
-                                          {0, evaluation_t{f2a}, tags},
-                                          {0, evaluation_t{f2b}, tags},
-                                          {0, evaluation_t{f2c}, tags},
-                                          {0, evaluation_t{f2d}, tags},
-                                          {0, evaluation_t{f2e}, tags},
-                                          {0, evaluation_t{f2f}, tags},
-                                          {0, evaluation_t{f2g}, tags},
-                                          {0, evaluation_t{f2h}, tags}};
+    std::vector<individual_t> individuals{{f1a, evaluation_t{f1a}, tags},
+                                          {f1b, evaluation_t{f1b}, tags},
+                                          {f1c, evaluation_t{f1c}, tags},
+                                          {f1d, evaluation_t{f1d}, tags},
+                                          {f1e, evaluation_t{f1e}, tags},
+                                          {f1f, evaluation_t{f1f}, tags},
+                                          {f1g, evaluation_t{f1g}, tags},
+                                          {f1h, evaluation_t{f1h}, tags},
+                                          {f2a, evaluation_t{f2a}, tags},
+                                          {f2b, evaluation_t{f2b}, tags},
+                                          {f2c, evaluation_t{f2c}, tags},
+                                          {f2d, evaluation_t{f2d}, tags},
+                                          {f2e, evaluation_t{f2e}, tags},
+                                          {f2f, evaluation_t{f2f}, tags},
+                                          {f2g, evaluation_t{f2g}, tags},
+                                          {f2h, evaluation_t{f2h}, tags}};
 
     population_.insert(individuals);
   }
 
   population_t population_{cmp_t{}, gal::disabled_comparator{}, false};
 };
+
+class sharing_crowding_tests : public crowding_base_tests {
+protected:
+  gal::cluster_set clusters_{};
+};
+
+TEST_F(sharing_crowding_tests, population_labels) {
+  // arrange
+  gal::crowd::sharing op{
+      0.3, 1., [](fitness_t const& lhs, fitness_t const& rhs) {
+        return gal::euclidean_distance(lhs, rhs);
+      }};
+
+  auto pareto = gal::rank::level{}(population_, gal::pareto_preserved_tag);
+
+  // act
+  op(population_, pareto, clusters_);
+
+  // assert
+  auto result = get_all_density(population_);
+  EXPECT_THAT(result,
+              ::testing::ElementsAre(0.26283019707021149,
+                                     0.47433960585957713,
+                                     0.26283019707021127,
+                                     0,
+                                     0,
+                                     0.26283019707021127,
+                                     0.47433960585957713,
+                                     0.26283019707021149,
+                                     0.13141509853510575,
+                                     0.23716980292978859,
+                                     0.13141509853510586,
+                                     0,
+                                     0,
+                                     0.13141509853510586,
+                                     0.23716980292978859,
+                                     0.13141509853510575));
+}
 
 class distance_crowding_tests : public crowding_base_tests {
 protected:
@@ -157,15 +199,15 @@ protected:
     constexpr fitness_t fit{0, 0};
 
     std::vector<individual_t> individuals{
-        {0, evaluation_t{fit}, tags_t{1, 1, 0, 0}},
-        {0, evaluation_t{fit}, tags_t{1, 1, 0, 0}},
-        {0, evaluation_t{fit}, tags_t{1, 1, 0, 1}},
-        {0, evaluation_t{fit}, tags_t{1, 1, 0, 1}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0, 2}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0, 2}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0, 2}},
-        {0, evaluation_t{fit}, tags_t{2, 2, 0, 2}},
-        {0, evaluation_t{fit}, tags_t{3, 3, 0, 3}}};
+        {fit, evaluation_t{fit}, tags_t{1, 1, 0, 0}},
+        {fit, evaluation_t{fit}, tags_t{1, 1, 0, 0}},
+        {fit, evaluation_t{fit}, tags_t{1, 1, 0, 1}},
+        {fit, evaluation_t{fit}, tags_t{1, 1, 0, 1}},
+        {fit, evaluation_t{fit}, tags_t{2, 2, 0, 2}},
+        {fit, evaluation_t{fit}, tags_t{2, 2, 0, 2}},
+        {fit, evaluation_t{fit}, tags_t{2, 2, 0, 2}},
+        {fit, evaluation_t{fit}, tags_t{2, 2, 0, 2}},
+        {fit, evaluation_t{fit}, tags_t{3, 3, 0, 3}}};
 
     clusters_.next_level();
     clusters_.add_cluster(2);
