@@ -21,6 +21,82 @@
 #include "moo.hpp"
 #include "soo.hpp"
 
+#include <format>
+#include <iostream>
+
+namespace f1 {
+
+using chromosome_t = std::array<double, 2>;
+using fitness_t = double;
+
+struct spawn {
+  std::mt19937* rng_;
+
+  inline chromosome_t operator()() const noexcept {
+    std::uniform_real_distribution<> dist{-10., 10.};
+    return {dist(*rng_), dist(*rng_)};
+  }
+};
+
+struct evaluate {
+  inline fitness_t operator()(chromosome_t const& c) const noexcept {
+    return std::pow(c[0], 2.) + std::pow(c[1], 2.);
+  }
+};
+
+struct observe {
+  template<typename Population, typename History>
+  inline void operator()(Population const& population,
+                         History const& history) const {
+    std::cout << std::format("{:-^32}", history.current().generation_value())
+              << std::endl;
+
+    for (int idx = 1; auto&& individual : population.individuals()) {
+      auto&& c = individual.chromosome();
+      auto&& f = individual.evaluation().raw();
+
+      std::cout << std::format(
+                       "#{:3}| {:7.4f}, {:7.4f} | {:7.4f}", idx, c[0], c[1], f)
+                << std::endl;
+
+      ++idx;
+    }
+
+    std::cout << std::format("{:-^32}", 'x') << std::endl;
+  }
+};
+
+} // namespace f1
+
+namespace f1f2 {
+
+using chromosome_t = std::array<double, 2>;
+using fitness_t = std::array<double, 2>;
+
+struct spawn {
+  std::mt19937* rng_;
+
+  inline chromosome_t operator()() const noexcept {
+    std::uniform_real_distribution<> dist{-10., 10.};
+    return {dist(*rng_), dist(*rng_)};
+  }
+};
+
+struct evaluate {
+  inline fitness_t operator()(chromosome_t const& c) const noexcept {
+    return {std::pow(c[0] + 1., 2.), std::pow(c[1] - 1., 2.)};
+  }
+};
+
+struct observe {
+  template<typename Population, typename History>
+  inline void operator()(Population const& /*population*/,
+                         History const& /*history*/) const {
+  }
+};
+
+} // namespace f1f2
+
 void simple() {
   using namespace gal;
 
@@ -33,11 +109,8 @@ void simple() {
       .begin()
       .limit(20)
       .tag()
-      .spawn([&rng, &dist] {
-        return std::vector<double>{dist(rng), dist(rng)};
-      })
-      .evaluate([](auto& c) { return std::pow(c[0] + c[1], 2.0); },
-                gal::floatingpoint_three_way{})
+      .spawn(f1::spawn{&rng})
+      .evaluate(f1::evaluate{}, gal::floatingpoint_three_way{})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale()
@@ -47,11 +120,11 @@ void simple() {
              stats::average_fitness_raw,
              stats::fitness_deviation_raw>(10)
       .stop(criteria::generation_limit{100})
-      .select(select::roulette_raw{select::unique<4>, rng})
+      .select(select::random{select::unique<4>, rng})
+      //.select(select::roulette_raw{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::worst_raw{})
-      .observe(observe{generation_event,
-                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .observe(observe{generation_event, f1::observe{}})
       .build<soo::algo>()
       .run(stop);
 }
@@ -68,14 +141,8 @@ void nsga() {
       .begin()
       .limit(20)
       .tag<frontier_level_t, int_rank_t, crowd_density_t>()
-      .spawn([&rng, &dist] {
-        return std::vector<double>{dist(rng), dist(rng)};
-      })
-      .evaluate(
-          [](auto& c) {
-            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
-          },
-          gal::dominate{std::less{}})
+      .spawn(f1f2::spawn{&rng})
+      .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale<double>(gal::floatingpoint_three_way{})
@@ -90,8 +157,7 @@ void nsga() {
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::total{})
-      .observe(observe{generation_event,
-                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
 }
@@ -108,14 +174,8 @@ void nsga_ii() {
       .begin()
       .limit(20)
       .tag<frontier_level_t, int_rank_t, crowd_density_t>()
-      .spawn([&rng, &dist] {
-        return std::vector<double>{dist(rng), dist(rng)};
-      })
-      .evaluate(
-          [](auto& c) {
-            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
-          },
-          gal::dominate{std::less{}})
+      .spawn(f1f2::spawn{&rng})
+      .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale<std::tuple<std::size_t, double>>(
@@ -132,8 +192,7 @@ void nsga_ii() {
           select::tournament_scaled{select::unique<2>, select::rounds<2>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
-      .observe(observe{generation_event,
-                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
 }
@@ -150,14 +209,8 @@ void spea() {
       .begin()
       .limit(20)
       .tag<frontier_level_t, real_rank_t, cluster_label, prune_state_t>()
-      .spawn([&rng, &dist] {
-        return std::vector<double>{dist(rng), dist(rng)};
-      })
-      .evaluate(
-          [](auto& c) {
-            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
-          },
-          gal::dominate{std::less{}})
+      .spawn(f1f2::spawn{&rng})
+      .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale<double>(gal::floatingpoint_three_way{})
@@ -172,8 +225,7 @@ void spea() {
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
-      .observe(observe{generation_event,
-                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
 }
@@ -190,14 +242,8 @@ void spea_ii() {
       .begin()
       .limit(20)
       .tag<frontier_level_t, int_rank_t, crowd_density_t>()
-      .spawn([&rng, &dist] {
-        return std::vector<double>{dist(rng), dist(rng)};
-      })
-      .evaluate(
-          [](auto& c) {
-            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
-          },
-          gal::dominate{std::less{}})
+      .spawn(f1f2::spawn{&rng})
+      .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale<double>(gal::floatingpoint_three_way{})
@@ -212,8 +258,7 @@ void spea_ii() {
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
-      .observe(observe{generation_event,
-                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
 }
@@ -230,14 +275,8 @@ void rdga() {
       .begin()
       .limit(20)
       .tag<frontier_level_t, int_rank_t, crowd_density_t, cluster_label>()
-      .spawn([&rng, &dist] {
-        return std::vector<double>{dist(rng), dist(rng)};
-      })
-      .evaluate(
-          [](auto& c) {
-            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
-          },
-          gal::dominate{std::less{}})
+      .spawn(f1f2::spawn{&rng})
+      .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale<double>(gal::floatingpoint_three_way{})
@@ -252,8 +291,7 @@ void rdga() {
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
-      .observe(observe{generation_event,
-                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
 }
@@ -274,14 +312,8 @@ void pesa() {
            crowd_density_t,
            cluster_label,
            prune_state_t>()
-      .spawn([&rng, &dist] {
-        return std::vector<double>{dist(rng), dist(rng)};
-      })
-      .evaluate(
-          [](auto& c) {
-            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
-          },
-          gal::dominate{std::less{}})
+      .spawn(f1f2::spawn{&rng})
+      .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale<double>(gal::floatingpoint_three_way{})
@@ -296,8 +328,7 @@ void pesa() {
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
-      .observe(observe{generation_event,
-                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
 }
@@ -314,14 +345,8 @@ void pesa_ii() {
       .begin()
       .limit(20)
       .tag<frontier_level_t, bin_rank_t, cluster_label, prune_state_t>()
-      .spawn([&rng, &dist] {
-        return std::vector<double>{dist(rng), dist(rng)};
-      })
-      .evaluate(
-          [](auto& c) {
-            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
-          },
-          gal::dominate{std::less{}})
+      .spawn(f1f2::spawn{&rng})
+      .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale()
@@ -337,8 +362,7 @@ void pesa_ii() {
           gal::select::shared<cluster_label>, select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
-      .observe(observe{generation_event,
-                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
 }
@@ -360,14 +384,8 @@ void paes() {
            cluster_label,
            prune_state_t,
            ancestry_t>()
-      .spawn([&rng, &dist] {
-        return std::vector<double>{dist(rng), dist(rng)};
-      })
-      .evaluate(
-          [](auto& c) {
-            return std::array{std::pow(c[0], 2.), std::pow(c[1], 2.)};
-          },
-          gal::dominate{std::less{}})
+      .spawn(f1f2::spawn{&rng})
+      .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale<double>(gal::floatingpoint_three_way{})
@@ -382,13 +400,48 @@ void paes() {
       .select(select::local_scaled{})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
-      .observe(observe{generation_event,
-                       [](auto const& /*unused*/, auto const& /*unused*/) {}})
+      .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
 }
 
 int main() {
+  auto render_line = [](int no, std::string_view name) {
+    return std::format(
+        "({:2}) | MOO ({:6}) | y1 = (x1 + 1) ^ 2, y2 = (x2 + 1) ^ 2\n",
+        no,
+        name);
+  };
+
+  while (true) {
+    std::cout << "Algorithms:" << std::endl;
+    std::cout << "( 1) | SOO          | z = x ^ 2 + y ^ 2" << std::endl;
+    std::cout << render_line(2, "NSGA");
+    std::cout << render_line(3, "NSGAII");
+    std::cout << render_line(4, "SPEA");
+    std::cout << render_line(5, "SPEAII");
+    std::cout << render_line(6, "RDGA");
+    std::cout << render_line(7, "PESA");
+    std::cout << render_line(8, "PESAII");
+    std::cout << render_line(9, "PAES");
+    std::cout << "Pick algorithm [1-9]: ";
+
+    int choice = -1;
+    std::cin >> choice;
+
+    switch (choice) {
+    case 1: simple(); break;
+    case 2: nsga(); break;
+    case 3: nsga_ii(); break;
+    case 4: spea(); break;
+    case 5: spea_ii(); break;
+    case 6: rdga(); break;
+    case 7: pesa(); break;
+    case 8: pesa_ii(); break;
+    case 9: paes(); break;
+    }
+  }
+
   simple();
   return 0;
 }
