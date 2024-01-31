@@ -11,6 +11,7 @@ add_executable(tests
   multiobjective/crowding_tests.cpp
   multiobjective/pruning_tests.cpp
   multiobjective/projection_tests.cpp
+  operations/selection_tests.cpp
   main.cpp)
 
 target_link_libraries(tests PRIVATE

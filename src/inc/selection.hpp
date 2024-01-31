@@ -369,7 +369,7 @@ namespace select {
     auto operator()(Population& population) const {
       std::vector<std::tuple<std::size_t, std::size_t>> clusters;
       for (auto&& individual : population.individuals()) {
-        auto index = index_(get_tag<cluster_tag_t>(individual));
+        auto index = std::invoke(index_, get_tag<cluster_tag_t>(individual));
         if (index >= clusters.size()) {
           clusters.resize(index);
         }
@@ -384,7 +384,7 @@ namespace select {
 
       std::vector<std::size_t> buffer(population.current_size());
       for (std::size_t i = 0; auto&& individual : population.individuals()) {
-        auto index = index_(get_tag<cluster_tag_t>(individual));
+        auto index = std::invoke(index_, get_tag<cluster_tag_t>(individual));
         auto& fill = std::get<1>(clusters[index]);
         buffer[fill++] = i++;
       }
