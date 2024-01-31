@@ -15,7 +15,7 @@ struct no_tags {};
 using population_t =
     gal::population<int, fitness_t, cmp_t, fitness_t, cmp_t, no_tags>;
 
-class random_tests : public ::testing::Test {
+class selection_tests : public ::testing::Test {
 protected:
   void SetUp() override {
     using individual_t = population_t::individual_t;
@@ -38,7 +38,7 @@ protected:
   std::mt19937 rng_{};
 };
 
-TEST_F(random_tests, unique_selection_size) {
+TEST_F(selection_tests, random_unique_selection_size) {
   // arrange
   gal::select::random op{gal::select::unique<8>, rng_};
 
@@ -49,7 +49,7 @@ TEST_F(random_tests, unique_selection_size) {
   EXPECT_THAT(result, ::testing::SizeIs(8));
 }
 
-TEST_F(random_tests, unique_selection_content) {
+TEST_F(selection_tests, random_unique_selection_content) {
   // arrange
   gal::select::random op{gal::select::unique<8>, rng_};
 
@@ -65,7 +65,7 @@ TEST_F(random_tests, unique_selection_content) {
   EXPECT_THAT(unique, ::testing::SizeIs(8));
 }
 
-TEST_F(random_tests, nonunique_selection_size) {
+TEST_F(selection_tests, random_nonunique_selection_size) {
   // arrange
   gal::select::random op{gal::select::nonunique<8>, rng_};
 
@@ -76,9 +76,125 @@ TEST_F(random_tests, nonunique_selection_size) {
   EXPECT_THAT(result, ::testing::SizeIs(8));
 }
 
-TEST_F(random_tests, nonunique_selection_content) {
+TEST_F(selection_tests, random_nonunique_selection_content) {
   // arrange
   gal::select::random op{gal::select::nonunique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  auto transformed = result | std::views::transform([](auto const& i) {
+                       return i->evaluation().raw();
+                     });
+
+  std::unordered_set<double> unique{transformed.begin(), transformed.end()};
+  EXPECT_THAT(unique.size(), ::testing::Le(8));
+}
+
+TEST_F(selection_tests, tournament_raw_unique_selection_size) {
+  // arrange
+  gal::select::tournament_raw op{
+      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, tournament_raw_unique_selection_content) {
+  // arrange
+  gal::select::tournament_raw op{
+      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  auto transformed = result | std::views::transform([](auto const& i) {
+                       return i->evaluation().raw();
+                     });
+
+  std::unordered_set<double> unique{transformed.begin(), transformed.end()};
+  EXPECT_THAT(unique, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, tournament_raw_nonunique_selection_size) {
+  // arrange
+  gal::select::tournament_raw op{
+      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, tournament_raw_nonunique_selection_content) {
+  // arrange
+  gal::select::tournament_raw op{
+      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  auto transformed = result | std::views::transform([](auto const& i) {
+                       return i->evaluation().raw();
+                     });
+
+  std::unordered_set<double> unique{transformed.begin(), transformed.end()};
+  EXPECT_THAT(unique.size(), ::testing::Le(8));
+}
+
+TEST_F(selection_tests, tournament_scaled_unique_selection_size) {
+  // arrange
+  gal::select::tournament_scaled op{
+      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, tournament_scaled_unique_selection_content) {
+  // arrange
+  gal::select::tournament_scaled op{
+      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  auto transformed = result | std::views::transform([](auto const& i) {
+                       return i->evaluation().raw();
+                     });
+
+  std::unordered_set<double> unique{transformed.begin(), transformed.end()};
+  EXPECT_THAT(unique, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, tournament_scaled_nonunique_selection_size) {
+  // arrange
+  gal::select::tournament_scaled op{
+      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, tournament_scaled_nonunique_selection_content) {
+  // arrange
+  gal::select::tournament_scaled op{
+      gal::select::unique<8>, gal::select::rounds<2>, rng_};
 
   // act
   auto result = op(population_);
