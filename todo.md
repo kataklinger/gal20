@@ -3,6 +3,8 @@
 List of task to implement or improve
 
 ## General
+ - [ ] do not share distribution object (crossover operations)
+ - [ ] handle NaNs for minimization floating point three way comparison
  - [x] individual grouping
  - [x] improve tagging system
  - [x] use std::invoke for calling operations
@@ -16,7 +18,6 @@ List of task to implement or improve
  - [ ] optimize linkage clustering to recalculate only merged clusters
  - [ ] add pruning operation that removes the worst parents and offsprings (paes)
  - [ ] substractive translate projection
- - [ ] do not share distribution object (crossover operations)
  - [x] tournament selection (random, roulette wheel)
  - [x] selection of hypercells rather than individuals
  - [x] insert-only replacement
