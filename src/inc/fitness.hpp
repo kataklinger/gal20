@@ -85,7 +85,7 @@ struct floatingpoint_three_way {
   inline auto operator()(Ty left, Tx right) const {
     if (std::isnan(left)) {
       return std::isnan(right) ? std::weak_ordering::equivalent
-                               : std::weak_ordering::greater;
+                               : std::weak_ordering::less;
     }
 
     if (std::isnan(right) || right < left) {
@@ -94,6 +94,28 @@ struct floatingpoint_three_way {
 
     return left < right ? std::weak_ordering::less
                         : std::weak_ordering::equivalent;
+  }
+};
+
+template<typename Comparator>
+struct maximize {
+  Comparator cmp_;
+
+  template<typename Ty, typename Tx>
+  inline auto operator()(Ty const& left, Tx const& right) const
+      noexcept(noexcept(std::declval<Comparator const&>()(left, right))) {
+    return cmp_(left, right);
+  }
+};
+
+template<typename Comparator>
+struct minimize {
+  Comparator cmp_;
+
+  template<typename Ty, typename Tx>
+  inline auto operator()(Ty const& left, Tx const& right) const
+      noexcept(noexcept(std::declval<Comparator const&>()(left, right))) {
+    return cmp_(right, left);
   }
 };
 
