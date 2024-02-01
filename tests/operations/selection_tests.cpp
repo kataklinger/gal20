@@ -8,7 +8,7 @@ namespace tests::selection {
 
 using fitness_t = double;
 
-using cmp_t = gal::minimize<gal::floatingpoint_three_way>;
+using cmp_t = gal::maximize<gal::floatingpoint_three_way>;
 
 struct no_tags {};
 
@@ -16,12 +16,22 @@ using population_t =
     gal::population<int, fitness_t, cmp_t, fitness_t, cmp_t, no_tags>;
 
 template<typename Results>
-inline auto get_unique_count(Results& results) {
-  auto transformed = results | std::views::transform([](auto const& i) {
-                       return i->evaluation().raw();
-                     });
+inline auto get_transformed(Results& results) {
+  return results | std::views::transform(
+                       [](auto const& i) { return i->evaluation().raw(); });
+};
 
-  std::unordered_set<double> unique{transformed.begin(), transformed.end()};
+template<typename Results>
+inline auto get_unique(Results& results) {
+  auto transformed = get_transformed(results);
+  return std::vector<double>{transformed.begin(), transformed.end()};
+};
+
+template<typename Results>
+inline auto get_unique_count(Results& results) {
+  auto transformed = get_transformed(results);
+  auto unique =
+      std::unordered_set<double>{transformed.begin(), transformed.end()};
   return unique.size();
 };
 
@@ -31,15 +41,15 @@ protected:
     using individual_t = population_t::individual_t;
     using evaluation_t = individual_t::evaluation_t;
 
-    std::vector<individual_t> individuals{{0, evaluation_t{0.7, 0.7}},
-                                          {0, evaluation_t{0.6, 0.6}},
-                                          {0, evaluation_t{0.4, 0.4}},
-                                          {0, evaluation_t{0.8, 0.8}},
-                                          {0, evaluation_t{0.9, 0.9}},
-                                          {0, evaluation_t{0.3, 0.3}},
-                                          {0, evaluation_t{0.2, 0.2}},
-                                          {0, evaluation_t{0.1, 0.1}},
-                                          {0, evaluation_t{0.5, 0.5}}};
+    std::vector<individual_t> individuals{{0, evaluation_t{7., 7.}},
+                                          {0, evaluation_t{6., 6.}},
+                                          {0, evaluation_t{4., 4.}},
+                                          {0, evaluation_t{8., 8.}},
+                                          {0, evaluation_t{9., 9.}},
+                                          {0, evaluation_t{3., 3.}},
+                                          {0, evaluation_t{2., 2.}},
+                                          {0, evaluation_t{1., 1.}},
+                                          {0, evaluation_t{5., 5.}}};
 
     population_.insert(individuals);
   }
@@ -119,7 +129,7 @@ TEST_F(selection_tests, tournament_raw_unique_selection_content) {
 TEST_F(selection_tests, tournament_raw_nonunique_selection_size) {
   // arrange
   gal::select::tournament_raw op{
-      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+      gal::select::nonunique<8>, gal::select::rounds<2>, rng_};
 
   // act
   auto result = op(population_);
@@ -131,7 +141,7 @@ TEST_F(selection_tests, tournament_raw_nonunique_selection_size) {
 TEST_F(selection_tests, tournament_raw_nonunique_selection_content) {
   // arrange
   gal::select::tournament_raw op{
-      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+      gal::select::nonunique<8>, gal::select::rounds<2>, rng_};
 
   // act
   auto result = op(population_);
@@ -167,7 +177,7 @@ TEST_F(selection_tests, tournament_scaled_unique_selection_content) {
 TEST_F(selection_tests, tournament_scaled_nonunique_selection_size) {
   // arrange
   gal::select::tournament_scaled op{
-      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+      gal::select::nonunique<8>, gal::select::rounds<2>, rng_};
 
   // act
   auto result = op(population_);
@@ -179,7 +189,139 @@ TEST_F(selection_tests, tournament_scaled_nonunique_selection_size) {
 TEST_F(selection_tests, tournament_scaled_nonunique_selection_content) {
   // arrange
   gal::select::tournament_scaled op{
-      gal::select::unique<8>, gal::select::rounds<2>, rng_};
+      gal::select::nonunique<8>, gal::select::rounds<2>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique_count(result), ::testing::Le(8));
+}
+
+TEST_F(selection_tests, best_raw_selection_size) {
+  // arrange
+  gal::select::best_raw<4> op{};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(4));
+}
+
+TEST_F(selection_tests, best_raw_selection_content) {
+  // arrange
+  gal::select::best_raw<4> op{};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique(result), ::testing::ElementsAre(9., 8., 7., 6.));
+}
+
+TEST_F(selection_tests, best_scaled_selection_size) {
+  // arrange
+  gal::select::best_scaled<4> op{};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(4));
+}
+
+TEST_F(selection_tests, best_scaled_selection_content) {
+  // arrange
+  gal::select::best_scaled<4> op{};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique(result), ::testing::ElementsAre(9., 8., 7., 6.));
+}
+
+TEST_F(selection_tests, roulette_raw_unique_selection_size) {
+  // arrange
+  gal::select::roulette_raw op{gal::select::unique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, roulette_raw_unique_selection_content) {
+  // arrange
+  gal::select::roulette_raw op{gal::select::unique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique_count(result), ::testing::Eq(8));
+}
+
+TEST_F(selection_tests, roulette_raw_nonunique_selection_size) {
+  // arrange
+  gal::select::roulette_raw op{gal::select::nonunique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, roulette_raw_nonunique_selection_content) {
+  // arrange
+  gal::select::roulette_raw op{gal::select::nonunique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique_count(result), ::testing::Le(8));
+}
+
+TEST_F(selection_tests, roulette_scaled_unique_selection_size) {
+  // arrange
+  gal::select::roulette_scaled op{gal::select::unique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, roulette_scaled_unique_selection_content) {
+  // arrange
+  gal::select::roulette_scaled op{gal::select::unique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique_count(result), ::testing::Eq(8));
+}
+
+TEST_F(selection_tests, roulette_scaled_nonunique_selection_size) {
+  // arrange
+  gal::select::roulette_scaled op{gal::select::nonunique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(selection_tests, roulette_scaled_nonunique_selection_content) {
+  // arrange
+  gal::select::roulette_scaled op{gal::select::nonunique<8>, rng_};
 
   // act
   auto result = op(population_);
