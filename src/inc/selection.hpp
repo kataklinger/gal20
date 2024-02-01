@@ -237,7 +237,7 @@ namespace select {
              typename Proj = std::identity>
     inline auto
         roll_wheel(Range const& wheel, Generator& generator, Proj proj = {}) {
-      auto selected = Dist{{}, *std::ranges::rend(wheel)}(generator);
+      auto selected = Dist{{}, *std::ranges::rbegin(wheel)}(generator);
       return std::ranges::lower_bound(
                  wheel, selected, std::ranges::less{}, proj) -
              wheel.begin();
