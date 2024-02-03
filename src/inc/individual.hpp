@@ -269,7 +269,7 @@ public:
   cluster_label() = default;
 
   inline constexpr explicit cluster_label(std::size_t index) noexcept
-      : raw_{(index << 1) | 1} {
+      : raw_{((index + 1) << 2) | 1} {
   }
 
   inline auto is_proper() const noexcept {
@@ -277,7 +277,7 @@ public:
   }
 
   inline auto is_unique() const noexcept {
-    return (raw_ & 1) == 0 && raw_ > 0;
+    return (raw_ & 1) == 0 && raw_ != 0;
   }
 
   inline auto is_unassigned() const noexcept {
@@ -287,28 +287,13 @@ public:
   inline auto index() const noexcept {
     assert(is_proper());
 
-    return raw_ >> 1;
+    return (raw_ >> 2) - 1;
   }
+
+  auto operator<=>(cluster_label const&) const = default;
 
 private:
   std::size_t raw_{};
-};
-
-template<typename Cluster>
-struct cluster_index;
-
-template<std::integral Cluster>
-struct cluster_index<Cluster> {
-  inline auto operator()(Cluster cluster) const noexcept {
-    return cluster;
-  }
-};
-
-template<>
-struct cluster_index<cluster_label> {
-  inline auto operator()(cluster_label cluster) const noexcept {
-    return cluster.is_proper() ? cluster.index() : 0;
-  }
 };
 
 } // namespace gal

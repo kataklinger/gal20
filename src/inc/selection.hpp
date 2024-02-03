@@ -306,41 +306,87 @@ namespace select {
   roulette_scaled(Attribute, Generator)
       -> roulette_scaled<Attribute, Generator>;
 
-  template<typename Options>
-  concept clustering = requires {
-    typename Options::cluster_tag_t;
-    requires std::same_as<decltype(Options::sharing), bool const>;
-  };
-
-  template<typename ClusterTag, bool Sharing>
-  struct selection_clustering {
-    using cluster_tag_t = ClusterTag;
-
-    inline static constexpr auto sharing = Sharing;
-  };
+  template<typename ClusterTag>
+  inline constexpr std::false_type uniform{};
 
   template<typename ClusterTag>
-  inline constexpr selection_clustering<ClusterTag, false> uniform{};
+  inline constexpr std::true_type shared{};
 
-  template<typename ClusterTag>
-  inline constexpr selection_clustering<ClusterTag, true> shared{};
+  namespace details {
+    class clustering {
+    public:
+      template<typename Iter>
+      clustering(Iter first, Iter valid, Iter last) {
+        auto proper = std::ranges::find_if(valid, last, [](auto& i) {
+          return !get_tag<cluster_label>(i).is_unique();
+        });
 
-  template<clustering Clustering,
-           attribute Attribute,
-           typename Generator,
-           typename ClusterIndex =
-               cluster_index<typename Clustering::cluster_tag_t>>
+        if (proper != valid) {
+          clusters_.emplace_back(
+              static_cast<std::size_t>(proper - valid), 0, true);
+        }
+
+        adjustement_ = clusters_.size();
+
+        for (auto it = proper; it != last; ++it) {
+          auto index = get_tag<cluster_label>(*it).index() + adjustement_;
+          if (index >= clusters_.size()) {
+            clusters_.resize(index + 1);
+          }
+
+          ++std::get<0>(clusters_[index]);
+        }
+
+        for (std::size_t i = 0; auto&& [pos, fill, u] : clusters_) {
+          i += std::exchange(pos, i);
+          fill = pos;
+        }
+      }
+
+      template<typename Iter>
+      auto prepare_buffer(Iter first, Iter valid, Iter last) {
+        std::vector<std::size_t> buffer(last - first);
+
+        auto i = static_cast<std::size_t>(valid - first);
+        for (auto it = valid; it != last; ++it) {
+          auto label = get_tag<cluster_label>(*it);
+          auto index = label.is_unique() ? 0 : label.index() + adjustement_;
+          auto& fill = std::get<1>(clusters_[index]);
+          buffer[fill++] = i++;
+        }
+
+        return buffer;
+      }
+
+      inline auto extract_clusters() noexcept {
+        for (auto&& [pos, count, u] : clusters_) {
+          count -= pos;
+        }
+
+        std::ranges::sort(clusters_.begin() + adjustement_,
+                          clusters_.end(),
+                          std::ranges::less{},
+                          [](auto const& c) { return std::get<1>(c); });
+
+        return std::move(clusters_);
+      }
+
+    private:
+      std::vector<std::tuple<std::size_t, std::size_t, bool>> clusters_;
+      std::size_t adjustement_;
+    };
+  } // namespace details
+
+  template<typename Clustering, attribute Attribute, typename Generator>
   class cluster {
   private:
     using clustering_t = Clustering;
 
   public:
-    using cluster_tag_t = typename Clustering::cluster_tag_t;
     using attribute_t = Attribute;
     using generator_t = Generator;
-    using cluster_index_t = ClusterIndex;
 
-    inline static constexpr auto sharing = Clustering::sharing;
+    inline static constexpr auto sharing = Clustering::value;
 
   private:
     using wheel_t = std::conditional_t<sharing, double, std::size_t>;
@@ -353,52 +399,29 @@ namespace select {
   public:
     inline cluster(clustering_t /*unused*/,
                    attribute_t /*unused*/,
-                   generator_t& generator,
-                   cluster_index_t index) noexcept
-        : generator_{&generator}
-        , index_{index} {
-    }
-
-    inline cluster(clustering_t clust,
-                   attribute_t attrib,
                    generator_t& generator) noexcept
-        : cluster{clust, attrib, generator, cluster_index_t{}} {
+        : generator_{&generator} {
     }
 
-    template<population_tagged_with<cluster_tag_t> Population>
+    template<population_tagged_with<cluster_label> Population>
     auto operator()(Population& population) const {
-      std::vector<std::tuple<std::size_t, std::size_t>> clusters;
-      for (auto&& individual : population.individuals()) {
-        auto index = std::invoke(index_, get_tag<cluster_tag_t>(individual));
-        if (index >= clusters.size()) {
-          clusters.resize(index);
-        }
-
-        ++std::get<0>(clusters[index]);
-      }
-
-      for (std::size_t i = 0; auto&& [pos, fill] : clusters) {
-        i += std::exchange(pos, i);
-        fill = pos;
-      }
-
-      std::vector<std::size_t> buffer(population.current_size());
-      for (std::size_t i = 0; auto&& individual : population.individuals()) {
-        auto index = std::invoke(index_, get_tag<cluster_tag_t>(individual));
-        auto& fill = std::get<1>(clusters[index]);
-        buffer[fill++] = i++;
-      }
-
-      for (auto&& [pos, count] : clusters) {
-        count -= pos;
-      }
-
-      std::ranges::sort(clusters, std::ranges::greater{}, [](auto const& c) {
-        return std::get<1>(c);
+      population.sort([](auto const& lhs, auto const& rhs) {
+        return get_tag<cluster_label>(lhs) < get_tag<cluster_label>(rhs);
       });
 
+      auto first = std::ranges::begin(population.individuals());
+      auto last = std::ranges::end(population.individuals());
+      auto valid = std::ranges::find_if(first, last, [](auto& i) {
+        return !get_tag<cluster_label>(i).is_unassigned();
+      });
+
+      details::clustering staging{first, valid, last};
+      auto buffer = staging.prepare_buffer(first, valid, last);
+      auto clusters = staging.extract_clusters();
+
       auto wheel = details::generate_wheel(clusters, [](auto const& c) {
-        return get_probability(std::get<1>(c));
+        auto const& [p, count, packed] = c;
+        return get_probability(count, packed);
       });
 
       return sample_many(
@@ -409,24 +432,28 @@ namespace select {
             return std::tuple{c, std::get<1>(clusters[c])};
           },
           [&clusters, &buffer, this](std::size_t c) {
-            auto& [pos, count] = clusters[c];
+            auto& [pos, count, u] = clusters[c];
             return buffer[item_dist_t{pos, pos + count - 1}(*generator_)];
           });
     }
 
   private:
-    inline static wheel_t get_probability(std::size_t cluster_size) noexcept {
+    inline static wheel_t get_probability(std::size_t cluster_size,
+                                          bool packed) noexcept {
+      if (cluster_size == 0) {
+        return 0;
+      }
+
       if constexpr (sharing) {
-        return 1. / cluster_size;
+        return packed ? static_cast<wheel_t>(cluster_size) : 1. / cluster_size;
       }
       else {
-        return cluster_size;
+        return packed ? cluster_size : 1;
       }
     }
 
   private:
     generator_t* generator_;
-    cluster_index_t index_;
   };
 
   template<typename FitnessTag>

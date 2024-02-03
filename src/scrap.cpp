@@ -150,10 +150,6 @@ void test_ground() {
   gal::select::roulette_scaled sl4{gal::select::unique<2>, gen};
   sl4(p);
 
-  gal::select::cluster sl5{
-      gal::select::shared<int>, gal::select::unique<2>, gen};
-  sl5(p);
-
   gal::select::local_raw sl6{};
   sl6(p);
 
@@ -317,6 +313,10 @@ void test_ground() {
   };
 
   mo_pop_t mp{{}, {}, true};
+
+  gal::select::cluster sl5{
+      gal::select::shared<int>, gal::select::unique<2>, gen};
+  sl5(mp);
 
   gal::rank::binary rk0{};
   rk0(mp, gal::pareto_preserved_tag);

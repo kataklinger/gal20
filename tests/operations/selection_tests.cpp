@@ -6,15 +6,6 @@
 
 namespace tests::selection {
 
-using fitness_t = double;
-
-using cmp_t = gal::maximize<gal::floatingpoint_three_way>;
-
-struct no_tags {};
-
-using population_t =
-    gal::population<int, fitness_t, cmp_t, fitness_t, cmp_t, no_tags>;
-
 template<typename Results>
 inline auto get_transformed(Results& results) {
   return results | std::views::transform(
@@ -37,6 +28,15 @@ inline auto get_unique_count(Results& results) {
 
 class selection_tests : public ::testing::Test {
 protected:
+  using fitness_t = double;
+
+  using cmp_t = gal::maximize<gal::floatingpoint_three_way>;
+
+  struct no_tags {};
+
+  using population_t =
+      gal::population<int, fitness_t, cmp_t, fitness_t, cmp_t, no_tags>;
+
   void SetUp() override {
     using individual_t = population_t::individual_t;
     using evaluation_t = individual_t::evaluation_t;
@@ -322,6 +322,140 @@ TEST_F(selection_tests, roulette_scaled_nonunique_selection_size) {
 TEST_F(selection_tests, roulette_scaled_nonunique_selection_content) {
   // arrange
   gal::select::roulette_scaled op{gal::select::nonunique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique_count(result), ::testing::Le(8));
+}
+
+class cluster_selection_tests : public ::testing::Test {
+protected:
+  using fitness_t = double;
+
+  using cmp_t = gal::maximize<gal::floatingpoint_three_way>;
+
+  using tags_t = gal::cluster_label;
+
+  using population_t =
+      gal::population<int, fitness_t, cmp_t, fitness_t, cmp_t, tags_t>;
+
+  void SetUp() override {
+    using individual_t = population_t::individual_t;
+    using evaluation_t = individual_t::evaluation_t;
+
+    std::vector<individual_t> individuals{
+        {0, evaluation_t{7., 7.}, tags_t{0}},
+        {0, evaluation_t{6., 6.}, tags_t{gal::cluster_label::unassigned()}},
+        {0, evaluation_t{6., 6.}, tags_t{gal::cluster_label::unique()}},
+        {0, evaluation_t{4., 4.}, tags_t{0}},
+        {0, evaluation_t{8., 8.}, tags_t{1}},
+        {0, evaluation_t{9., 9.}, tags_t{1}},
+        {0, evaluation_t{3., 3.}, tags_t{4}},
+        {0, evaluation_t{2., 2.}, tags_t{3}},
+        {0, evaluation_t{1., 1.}, tags_t{gal::cluster_label::unique()}},
+        {0, evaluation_t{5., 5.}, tags_t{0}}};
+
+    population_.insert(individuals);
+  }
+
+  population_t population_{cmp_t{}, cmp_t{}, true};
+  std::mt19937 rng_{};
+};
+
+TEST_F(cluster_selection_tests, uniform_unique_selection_size) {
+  // arrange
+  gal::select::cluster op{
+      gal::select::uniform<gal::cluster_label>, gal::select::unique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(cluster_selection_tests, uniform_unique_selection_content) {
+  // arrange
+  gal::select::cluster op{
+      gal::select::uniform<gal::cluster_label>, gal::select::unique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique_count(result), ::testing::Eq(8));
+}
+
+TEST_F(cluster_selection_tests, uniform_nonunique_selection_size) {
+  // arrange
+  gal::select::cluster op{gal::select::uniform<gal::cluster_label>,
+                          gal::select::nonunique<8>,
+                          rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(cluster_selection_tests, uniform_nonunique_selection_content) {
+  // arrange
+  gal::select::cluster op{gal::select::uniform<gal::cluster_label>,
+                          gal::select::nonunique<8>,
+                          rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique_count(result), ::testing::Le(8));
+}
+
+////
+
+TEST_F(cluster_selection_tests, shared_unique_selection_size) {
+  // arrange
+  gal::select::cluster op{
+      gal::select::shared<gal::cluster_label>, gal::select::unique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(cluster_selection_tests, shared_unique_selection_content) {
+  // arrange
+  gal::select::cluster op{
+      gal::select::shared<gal::cluster_label>, gal::select::unique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(get_unique_count(result), ::testing::Eq(8));
+}
+
+TEST_F(cluster_selection_tests, shared_nonunique_selection_size) {
+  // arrange
+  gal::select::cluster op{
+      gal::select::shared<gal::cluster_label>, gal::select::nonunique<8>, rng_};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(8));
+}
+
+TEST_F(cluster_selection_tests, shared_nonunique_selection_content) {
+  // arrange
+  gal::select::cluster op{
+      gal::select::shared<gal::cluster_label>, gal::select::nonunique<8>, rng_};
 
   // act
   auto result = op(population_);
