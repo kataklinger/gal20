@@ -135,7 +135,7 @@ auto sample_many(Population& population, State&& state, Fn&& produce) {
   std::ranges::generate_n(
       result.begin(),
       result.size(),
-      [first = population.individuals().begin(), &state, &produce] {
+      [first = std::ranges::begin(population.individuals()), &state, &produce] {
         return first + details::sample_single(state, produce);
       });
 
@@ -168,7 +168,7 @@ auto sample_many(Population& population,
   std::ranges::generate_n(
       result.begin(),
       result.size(),
-      [first = population.individuals().begin(),
+      [first = std::ranges::begin(population.individuals()),
        &state,
        &outer_state,
        &outer,

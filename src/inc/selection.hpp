@@ -469,8 +469,8 @@ namespace select {
     auto operator()(Population& population) const {
       std::vector<typename Population::iterator_t> result;
 
-      for (auto it = population.individuals().begin();
-           it != population.individuals().end();
+      for (auto it = std::ranges::begin(population.individuals());
+           it != std::ranges::end(population.individuals());
            ++it) {
 
         if (auto& ancestry = get_tag<ancestry_t>(*it);

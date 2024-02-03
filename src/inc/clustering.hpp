@@ -371,11 +371,13 @@ namespace cluster {
       using granularity_t =
           multiobjective_value_t<get_fitness_t<raw_fitness_tag, Population>>;
 
-      auto first = population.individuals().begin();
+      auto first = std::ranges::begin(population.individuals());
       auto minimums = first->evaluation().raw();
       auto maximums = first->evaluation().raw();
 
-      for (auto last = population.individuals().end(); first != last; ++first) {
+      for (auto last = std::ranges::end(population.individuals());
+           first != last;
+           ++first) {
         auto min_first = minimums.begin(), max_first = maximums.begin();
         for (auto&& v : first->evaluation().raw()) {
           if (v < *min_first) {

@@ -352,8 +352,8 @@ namespace stats {
       body() = default;
 
       inline body(Population const& population, body const& previous) noexcept
-          : value_{std::accumulate(population.individuals().begin(),
-                                   population.individuals().end(),
+          : value_{std::accumulate(std::ranges::begin(population.individuals()),
+                                   std::ranges::end(population.individuals()),
                                    state_t{},
                                    [](state_t acc, auto const& ind) {
                                      return acc.add(
@@ -509,8 +509,8 @@ namespace stats {
 
         variance_ =
             std::accumulate(
-                population.individuals().begin(),
-                population.individuals().end(),
+                std::ranges::begin(population.individuals()),
+                std::ranges::end(population.individuals()),
                 state_t{},
                 [](state_t acc, auto const& ind) {
                   return acc.add(pow_(avg - ind.evaluation().get(fitness_tag)));

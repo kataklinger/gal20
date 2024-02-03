@@ -98,7 +98,7 @@ namespace rank {
             return get_tag<bin_rank_t>(ind) != binary_rank::undefined;
           });
 
-      std::ranges::subrange ranked{population.individuals().begin(),
+      std::ranges::subrange ranked{std::ranges::begin(population.individuals()),
                                    nonranked.begin()};
 
       pareto::identify_dominated(
