@@ -25,7 +25,7 @@ using pop_t = gal::population<int,
                               gal::floatingpoint_three_way,
                               double,
                               gal::floatingpoint_three_way,
-                              std::tuple<int, gal::ancestry_t>>;
+                              std::tuple<int, gal::lineage_t>>;
 
 using mo_fit_t = std::array<int, 2>;
 
@@ -150,7 +150,7 @@ void test_ground() {
   gal::select::roulette_scaled sl4{gal::select::unique<2>, gen};
   sl4(p);
 
-  gal::select::local_raw sl6{};
+  gal::select::lineal_raw sl6{};
   sl6(p);
 
   gal::replace::random<std::mt19937, 2> ro1{gen};

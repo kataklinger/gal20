@@ -244,11 +244,15 @@ struct tag_adopted_traits<Adopted<Tag, Value>> {
   using value_t = typename tag_adapted_value<Tag, Value>::value_t;
 };
 
-enum class ancestry_status : std::uint8_t { parent = 0, child = 1, none = 2 };
+enum class lineage : std::uint8_t { parent = 0, child = 1, none = 2 };
 
-struct ancestry_tag {};
+inline auto operator<=>(lineage lhs, lineage rhs) noexcept {
+  return static_cast<std::uint8_t>(lhs) <=> static_cast<std::uint8_t>(rhs);
+};
 
-using ancestry_t = tag_adapted_value<ancestry_tag, ancestry_status>;
+struct lineage_tag {};
+
+using lineage_t = tag_adapted_value<lineage_tag, lineage>;
 
 class cluster_label {
 private:

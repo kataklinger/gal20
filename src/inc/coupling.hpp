@@ -420,8 +420,8 @@ namespace couple {
         individual_t offspring{std::move(child),
                                std::invoke(context_->evaluator(), child)};
 
-        get_tag<ancestry_t>(*parent) = ancestry_status::parent;
-        get_tag<ancestry_t>(offspring) = ancestry_status::child;
+        get_tag<lineage_t>(*parent) = lineage::parent;
+        get_tag<lineage_t>(offspring) = lineage::child;
 
         results_.emplace_back(parent, std::move(offspring));
       }

@@ -383,7 +383,7 @@ void paes() {
            crowd_density_t,
            cluster_label,
            prune_state_t,
-           ancestry_t>()
+           lineage_t>()
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
@@ -397,7 +397,7 @@ void paes() {
       .crowd(crowd::cluster{})
       .prune(prune::cluster_random{rng})
       .project(project::factory<project::truncate, crowd_density_t>{})
-      .select(select::local_scaled{})
+      .select(select::lineal_scaled{})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::insert{})
       .observe(observe{generation_event, f1f2::observe{}})

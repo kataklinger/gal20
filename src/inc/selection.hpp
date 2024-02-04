@@ -457,14 +457,14 @@ namespace select {
   };
 
   template<typename FitnessTag>
-  class local {
+  class lineal {
   private:
     using fitness_tag_t = FitnessTag;
 
     inline static constexpr fitness_tag_t fitness_tag{};
 
   public:
-    template<population_tagged_with<ancestry_t> Population>
+    template<population_tagged_with<lineage_t> Population>
       requires(sortable_population<Population, FitnessTag>)
     auto operator()(Population& population) const {
       std::vector<typename Population::iterator_t> result;
@@ -473,28 +473,28 @@ namespace select {
            it != std::ranges::end(population.individuals());
            ++it) {
 
-        if (auto& ancestry = get_tag<ancestry_t>(*it);
-            static_cast<std::uint8_t>(ancestry.get()) < 2) {
+        if (auto& line = get_tag<lineage_t>(*it); line.get() < lineage::none) {
           result.push_back(it);
-          ancestry = ancestry_status::none;
+          line = lineage::none;
         }
       }
 
       if (result.size() > 1) {
-        std::ranges::sort(
+        std::ranges::nth_element(
             result,
+            result.begin(),
             gal::fitness_better{population.comparator(fitness_tag)},
             [](auto const& ind) { return ind->evaluation().get(fitness_tag); });
 
-        result.erase(result.begin() + 1, result.end());
+        result.resize(1);
       }
 
       return result;
     }
   };
 
-  class local_raw : public local<raw_fitness_tag> {};
-  class local_scaled : public local<scaled_fitness_tag> {};
+  class lineal_raw : public lineal<raw_fitness_tag> {};
+  class lineal_scaled : public lineal<scaled_fitness_tag> {};
 
 } // namespace select
 } // namespace gal
