@@ -414,8 +414,6 @@ TEST_F(cluster_selection_tests, uniform_nonunique_selection_content) {
   EXPECT_THAT(get_unique_count(result), ::testing::Le(8));
 }
 
-////
-
 TEST_F(cluster_selection_tests, shared_unique_selection_size) {
   // arrange
   gal::select::cluster op{
@@ -462,6 +460,84 @@ TEST_F(cluster_selection_tests, shared_nonunique_selection_content) {
 
   // assert
   EXPECT_THAT(get_unique_count(result), ::testing::Le(8));
+}
+
+class lineal_selection_tests : public ::testing::Test {
+protected:
+  using fitness_t = double;
+
+  using cmp_t = gal::maximize<gal::floatingpoint_three_way>;
+
+  using tags_t = gal::lineage_t;
+
+  using population_t =
+      gal::population<int, fitness_t, cmp_t, fitness_t, cmp_t, tags_t>;
+
+  void SetUp() override {
+    using individual_t = population_t::individual_t;
+    using evaluation_t = individual_t::evaluation_t;
+
+    std::vector<individual_t> individuals{
+        {0, evaluation_t{7., 7.}, tags_t{gal::lineage::child}},
+        {0, evaluation_t{6., 6.}, tags_t{gal::lineage::parent}},
+        {0, evaluation_t{6., 6.}, tags_t{gal::lineage::none}},
+        {0, evaluation_t{4., 4.}, tags_t{gal::lineage::none}},
+        {0, evaluation_t{8., 8.}, tags_t{gal::lineage::parent}},
+        {0, evaluation_t{9., 9.}, tags_t{gal::lineage::child}},
+        {0, evaluation_t{3., 3.}, tags_t{gal::lineage::none}},
+        {0, evaluation_t{2., 2.}, tags_t{gal::lineage::none}},
+        {0, evaluation_t{1., 1.}, tags_t{gal::lineage::none}},
+        {0, evaluation_t{5., 5.}, tags_t{gal::lineage::none}}};
+
+    population_.insert(individuals);
+  }
+
+  population_t population_{cmp_t{}, cmp_t{}, true};
+  std::mt19937 rng_{};
+};
+
+TEST_F(lineal_selection_tests, raw_selection_size) {
+  // arrange
+  gal::select::lineal_raw op{};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(1));
+}
+
+TEST_F(lineal_selection_tests, raw_selection_content) {
+  // arrange
+  gal::select::lineal_raw op{};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result[0]->evaluation().raw(), ::testing::Eq(9.));
+}
+
+TEST_F(lineal_selection_tests, scaled_selection_size) {
+  // arrange
+  gal::select::lineal_scaled op{};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(1));
+}
+
+TEST_F(lineal_selection_tests, scaled_selection_content) {
+  // arrange
+  gal::select::lineal_scaled op{};
+
+  // act
+  auto result = op(population_);
+
+  // assert
+  EXPECT_THAT(result[0]->evaluation().scaled(), ::testing::Eq(9.));
 }
 
 } // namespace tests::selection
