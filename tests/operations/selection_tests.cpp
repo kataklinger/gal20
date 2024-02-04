@@ -30,7 +30,7 @@ class selection_tests : public ::testing::Test {
 protected:
   using fitness_t = double;
 
-  using cmp_t = gal::maximize<gal::floatingpoint_three_way>;
+  using cmp_t = gal::maximize<gal::max_floatingpoint_three_way>;
 
   struct no_tags {};
 
@@ -334,7 +334,7 @@ class cluster_selection_tests : public ::testing::Test {
 protected:
   using fitness_t = double;
 
-  using cmp_t = gal::maximize<gal::floatingpoint_three_way>;
+  using cmp_t = gal::maximize<gal::max_floatingpoint_three_way>;
 
   using tags_t = gal::cluster_label;
 
@@ -466,7 +466,7 @@ class lineal_selection_tests : public ::testing::Test {
 protected:
   using fitness_t = double;
 
-  using cmp_t = gal::maximize<gal::floatingpoint_three_way>;
+  using cmp_t = gal::maximize<gal::max_floatingpoint_three_way>;
 
   using tags_t = gal::lineage_t;
 

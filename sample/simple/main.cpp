@@ -110,7 +110,8 @@ void simple() {
       .limit(20)
       .tag()
       .spawn(f1::spawn{&rng})
-      .evaluate(f1::evaluate{}, gal::minimize{gal::floatingpoint_three_way{}})
+      .evaluate(f1::evaluate{},
+                gal::minimize{gal::min_floatingpoint_three_way{}})
       .reproduce(cross::symmetric_singlepoint{rng},
                  mutate::make_simple_flip<1>(rng, dist))
       .scale()

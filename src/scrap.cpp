@@ -22,9 +22,9 @@
 
 using pop_t = gal::population<int,
                               double,
-                              gal::floatingpoint_three_way,
+                              gal::max_floatingpoint_three_way,
                               double,
-                              gal::floatingpoint_three_way,
+                              gal::max_floatingpoint_three_way,
                               std::tuple<int, gal::lineage_t>>;
 
 using mo_fit_t = std::array<int, 2>;
@@ -33,7 +33,7 @@ using mo_pop_t = gal::population<int,
                                  mo_fit_t,
                                  gal::dominate<std::less<>>,
                                  double,
-                                 gal::floatingpoint_three_way,
+                                 gal::max_floatingpoint_three_way,
                                  std::tuple<gal::frontier_level_t,
                                             gal::bin_rank_t,
                                             gal::int_rank_t,

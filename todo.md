@@ -4,7 +4,7 @@ List of task to implement or improve
 
 ## General
  - [ ] do not share distribution object (crossover operations)
- - [ ] handle NaNs for minimization floating point three way comparison
+ - [x] handle NaNs for minimization floating point three way comparison
  - [x] individual grouping
  - [x] improve tagging system
  - [x] use std::invoke for calling operations
