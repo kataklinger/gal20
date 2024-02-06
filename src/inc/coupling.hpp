@@ -87,7 +87,7 @@ namespace couple {
 
     template<typename Context, typename Population>
     concept with_scaling = requires(Context ctx) {
-      { ctx.scaling() } -> scaling<Population>;
+      { ctx.scaling() } -> local_scaling<Population>;
     };
 
     template<typename Population, typename Context>
