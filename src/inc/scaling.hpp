@@ -98,7 +98,7 @@ namespace scale {
 
     inline void operator()(ordinal_t /*unused*/,
                            individual_t& individual) const {
-      auto eval = individual.evaluation();
+      auto& eval = individual.evaluation();
       eval.set_scaled(calculate(eval.raw()));
     }
 
@@ -169,7 +169,7 @@ namespace scale {
 
     inline void operator()(ordinal_t /*unused*/,
                            individual_t& individual) const {
-      auto eval = individual.evaluation();
+      auto& eval = individual.evaluation();
       eval.set_scaled(calculate(eval.raw()));
     }
 
@@ -229,7 +229,7 @@ namespace scale {
     }
 
     inline void operator()(ordinal_t ordinal, individual_t& individual) const {
-      auto eval = individual.evaluation();
+      auto& eval = individual.evaluation();
 
       auto value = Preassure - 2. * (*ordinal - 1.) * (Preassure - 1.) /
                                    (population_->current_size() - 1.);
@@ -272,7 +272,7 @@ namespace scale {
     }
 
     inline void operator()(ordinal_t ordinal, individual_t& individual) const {
-      auto eval = individual.evaluation();
+      auto& eval = individual.evaluation();
 
       auto power = population_->current_size() - *ordinal - 1;
       eval.set_scaled(scaled_fitness_t{std::pow(Base, power)});
@@ -323,7 +323,7 @@ namespace scale {
     }
 
     inline void operator()(ordinal_t ordinal, individual_t& individual) const {
-      auto eval = individual.evaluation();
+      auto& eval = individual.evaluation();
       eval.set_scaled(
           scaled_fitness_t{*ordinal <= cutoff ? Proportion * eval.raw() : 0});
     }
@@ -363,7 +363,7 @@ namespace scale {
     }
 
     inline void operator()(individual_t& individual) const {
-      auto eval = individual.evaluation();
+      auto& eval = individual.evaluation();
       eval.set_scaled(scaled_fitness_t{std::pow(eval.raw(), Power)});
     }
   };
@@ -400,7 +400,7 @@ namespace scale {
 
     inline void operator()(ordinal_t /*unused*/,
                            individual_t& individual) const {
-      auto eval = individual.evaluation();
+      auto& eval = individual.evaluation();
       eval.set_scaled(scaled_fitness_t{eval.raw() - get_worst()});
     }
 
