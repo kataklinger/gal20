@@ -37,10 +37,10 @@ struct evaluation_test {
 
 using fitness_cmp_t = gal::maximize<std::compare_three_way>;
 
-struct tags {};
+using tags_t = std::tuple<gal::lineage_t>;
 
 using population_t = gal::
-    population<chromosome_test, int, fitness_cmp_t, int, fitness_cmp_t, tags>;
+    population<chromosome_test, int, fitness_cmp_t, int, fitness_cmp_t, tags_t>;
 
 using statistics_t = gal::stats::statistics<population_t, gal::stats::blank>;
 using history_t = gal::stats::history<statistics_t>;
@@ -111,15 +111,16 @@ struct coupling_tests : public ::testing::Test {
 protected:
   void SetUp() override {
     std::vector<individual_t> individuals{
-        {chromosome_test{false}, evaluation_t{2, 4}, tags{}},
-        {chromosome_test{false}, evaluation_t{2, 4}, tags{}},
-        {chromosome_test{true}, evaluation_t{2, 4}, tags{}},
-        {chromosome_test{true}, evaluation_t{2, 4}, tags{}}};
+        {chromosome_test{false}, evaluation_t{2, 4}, tags_t{}},
+        {chromosome_test{false}, evaluation_t{2, 4}, tags_t{}},
+        {chromosome_test{true}, evaluation_t{2, 4}, tags_t{}},
+        {chromosome_test{true}, evaluation_t{2, 4}, tags_t{}}};
 
     population_.insert(individuals);
 
     auto first = population_.individuals().begin();
-    parents_ = {first + 0, first + 1, first + 2, first + 3};
+    parents_4_ = {first + 0, first + 1, first + 2, first + 3};
+    parents_2_ = {first + 1, first + 2};
   }
 
   population_t population_{fitness_cmp_t{}, fitness_cmp_t{}, true};
@@ -140,7 +141,8 @@ protected:
                                          scaling_test>
       scaling_ctx_{population_, history_, {}, {}, {}, {}};
 
-  std::vector<population_t::iterator_t> parents_;
+  std::vector<population_t::iterator_t> parents_4_;
+  std::vector<population_t::iterator_t> parents_2_;
 
   std::mt19937 rng_;
 };
@@ -151,7 +153,7 @@ TEST_F(coupling_tests, exclusive_child_count) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(result, ::testing::SizeIs(4));
@@ -163,7 +165,7 @@ TEST_F(coupling_tests, exclusive_parents) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_parent_indices(population_, result),
@@ -176,7 +178,7 @@ TEST_F(coupling_tests, exclusive_child_raw_fitness) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_raw_fitness(population_, result),
@@ -189,7 +191,7 @@ TEST_F(coupling_tests, exclusive_child_no_scaling) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_scaled_fitness(population_, result),
@@ -202,7 +204,7 @@ TEST_F(coupling_tests, exclusive_child_scaled_fitness) {
       rng_)(scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_scaled_fitness(population_, result),
@@ -215,7 +217,7 @@ TEST_F(coupling_tests, exclusive_child_no_crossover) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_crossovers(population_, result),
@@ -228,7 +230,7 @@ TEST_F(coupling_tests, exclusive_child_no_mutation) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_mutations(population_, result),
@@ -241,7 +243,7 @@ TEST_F(coupling_tests, exclusive_child_with_crossover) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_crossovers(population_, result),
@@ -254,7 +256,7 @@ TEST_F(coupling_tests, exclusive_child_with_mutation) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_mutations(population_, result),
@@ -267,7 +269,7 @@ TEST_F(coupling_tests, exclusive_child_with_improving_mutation) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_mutations(population_, result),
@@ -280,7 +282,7 @@ TEST_F(coupling_tests, overlapping_child_count) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(result, ::testing::SizeIs(4));
@@ -292,7 +294,7 @@ TEST_F(coupling_tests, overlapping_parents) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_parent_indices(population_, result),
@@ -305,7 +307,7 @@ TEST_F(coupling_tests, overlapping_child_raw_fitness) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_raw_fitness(population_, result),
@@ -318,7 +320,7 @@ TEST_F(coupling_tests, overlapping_child_no_scaling) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_scaled_fitness(population_, result),
@@ -331,7 +333,7 @@ TEST_F(coupling_tests, overlapping_child_scaled_fitness) {
       rng_)(scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_scaled_fitness(population_, result),
@@ -344,7 +346,7 @@ TEST_F(coupling_tests, overlapping_child_no_crossover) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_crossovers(population_, result),
@@ -357,7 +359,7 @@ TEST_F(coupling_tests, overlapping_child_no_mutation) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_mutations(population_, result),
@@ -370,7 +372,7 @@ TEST_F(coupling_tests, overlapping_child_with_crossover) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_crossovers(population_, result),
@@ -383,7 +385,7 @@ TEST_F(coupling_tests, overlapping_child_with_mutation) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_mutations(population_, result),
@@ -396,7 +398,7 @@ TEST_F(coupling_tests, overlapping_child_with_improving_mutation) {
       rng_)(no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_mutations(population_, result),
@@ -409,7 +411,7 @@ TEST_F(coupling_tests, field_child_count) {
       no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(result, ::testing::SizeIs(4));
@@ -421,7 +423,7 @@ TEST_F(coupling_tests, field_parents) {
       no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_parent_indices(population_, result),
@@ -434,7 +436,7 @@ TEST_F(coupling_tests, field_child_raw_fitness) {
       no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_raw_fitness(population_, result),
@@ -447,7 +449,7 @@ TEST_F(coupling_tests, field_child_no_scaling) {
       no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_scaled_fitness(population_, result),
@@ -460,7 +462,7 @@ TEST_F(coupling_tests, field_child_scaled_fitness) {
       scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_scaled_fitness(population_, result),
@@ -473,7 +475,7 @@ TEST_F(coupling_tests, field_child_no_crossover) {
       no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_crossovers(population_, result),
@@ -486,7 +488,7 @@ TEST_F(coupling_tests, field_child_no_mutation) {
       no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_mutations(population_, result),
@@ -499,7 +501,7 @@ TEST_F(coupling_tests, field_child_with_crossover) {
       no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_crossovers(population_, result),
@@ -512,7 +514,7 @@ TEST_F(coupling_tests, field_child_with_mutation) {
       no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_mutations(population_, result),
@@ -525,11 +527,113 @@ TEST_F(coupling_tests, field_child_with_improving_mutation) {
       no_scaling_ctx_);
 
   // act
-  auto result = op(parents_);
+  auto result = op(parents_4_);
 
   // assert
   EXPECT_THAT(get_child_mutations(population_, result),
               ::testing::ElementsAre(true, true, false, false));
+}
+
+//////////////////////
+
+TEST_F(coupling_tests, local_child_count) {
+  // arrange
+  gal::couple::local op{no_scaling_ctx_};
+
+  // act
+  auto result = op(parents_2_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(2));
+}
+
+TEST_F(coupling_tests, local_parents) {
+  // arrange
+  gal::couple::local op{no_scaling_ctx_};
+  // act
+  auto result = op(parents_2_);
+
+  // assert
+  EXPECT_THAT(get_parent_indices(population_, result),
+              ::testing::ElementsAre(1, 2));
+}
+
+TEST_F(coupling_tests, local_child_raw_fitness) {
+  // arrange
+  gal::couple::local op{no_scaling_ctx_};
+
+  // act
+  auto result = op(parents_2_);
+
+  // assert
+  EXPECT_THAT(get_child_raw_fitness(population_, result),
+              ::testing::ElementsAre(1, 3));
+}
+
+TEST_F(coupling_tests, local_child_no_scaling) {
+  // arrange
+  gal::couple::local op{no_scaling_ctx_};
+
+  // act
+  auto result = op(parents_2_);
+
+  // assert
+  EXPECT_THAT(get_child_scaled_fitness(population_, result),
+              ::testing::ElementsAre(0, 0));
+}
+
+TEST_F(coupling_tests, local_child_scaled_fitness) {
+  // arrange
+  gal::couple::local op{scaling_ctx_};
+
+  // act
+  auto result = op(parents_2_);
+
+  // assert
+  EXPECT_THAT(get_child_scaled_fitness(population_, result),
+              ::testing::ElementsAre(10, 30));
+}
+
+TEST_F(coupling_tests, local_child_no_crossover) {
+  // arrange
+  gal::couple::local op{no_scaling_ctx_};
+
+  // act
+  auto result = op(parents_2_);
+
+  // assert
+  EXPECT_THAT(get_child_crossovers(population_, result),
+              ::testing::ElementsAre(false, false));
+}
+
+TEST_F(coupling_tests, local_child_with_mutation) {
+  // arrange
+  gal::couple::local op{no_scaling_ctx_};
+
+  // act
+  auto result = op(parents_2_);
+
+  // assert
+  EXPECT_THAT(get_child_mutations(population_, result),
+              ::testing::ElementsAre(true, true));
+}
+
+TEST_F(coupling_tests, local_child_parent_tags) {
+  // arrange
+  gal::couple::local op{no_scaling_ctx_};
+
+  // act
+  auto result = op(parents_2_);
+
+  EXPECT_EQ(gal::get_tag<gal::lineage_t>(*get_parent(result[0])).get(),
+            gal::lineage::parent);
+  EXPECT_EQ(gal::get_tag<gal::lineage_t>(*get_parent(result[1])).get(),
+            gal::lineage::parent);
+
+  EXPECT_EQ(gal::get_tag<gal::lineage_t>(get_child(result[0])).get(),
+            gal::lineage::child);
+  EXPECT_EQ(gal::get_tag<gal::lineage_t>(get_child(result[1])).get(),
+            gal::lineage::child);
 }
 
 } // namespace tests::coupling
