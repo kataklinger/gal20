@@ -411,7 +411,7 @@ namespace couple {
 
     template<parents_range<population_t> Parents>
     inline auto operator()(Parents&& parents) {
-      std::vector<parentship_t> results_;
+      std::vector<parentship_t> results;
 
       for (auto&& parent : parents) {
         auto child = parent->chromosome();
@@ -420,13 +420,17 @@ namespace couple {
         individual_t offspring{std::move(child),
                                std::invoke(context_->evaluator(), child)};
 
+        if constexpr (details::has_scaling_v<population_t, context_t>) {
+          std::invoke(context_->scaling(), offspring);
+        }
+
         get_tag<lineage_t>(*parent) = lineage::parent;
         get_tag<lineage_t>(offspring) = lineage::child;
 
-        results_.emplace_back(parent, std::move(offspring));
+        results.emplace_back(parent, std::move(offspring));
       }
 
-      return results_;
+      return results;
     }
 
   private:
