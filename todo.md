@@ -18,6 +18,7 @@ List of task to implement or improve
  - [ ] optimize linkage clustering to recalculate only merged clusters
  - [ ] add pruning operation that removes the worst parents and offsprings (paes)
  - [ ] substractive translate projection
+ - [ ] optimize field coupling by creating slot for each parent (avoid sorting)
  - [x] tournament selection (random, roulette wheel)
  - [x] selection of hypercells rather than individuals
  - [x] insert-only replacement

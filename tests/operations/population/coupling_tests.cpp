@@ -274,4 +274,262 @@ TEST_F(coupling_tests, exclusive_child_with_improving_mutation) {
               ::testing::ElementsAre(false, false, true, true));
 }
 
+TEST_F(coupling_tests, overlapping_child_count) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
+      rng_)(no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(4));
+}
+
+TEST_F(coupling_tests, overlapping_parents) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
+      rng_)(no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_parent_indices(population_, result),
+              ::testing::ElementsAre(0, 1, 2, 3));
+}
+
+TEST_F(coupling_tests, overlapping_child_raw_fitness) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
+      rng_)(no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_raw_fitness(population_, result),
+              ::testing::ElementsAre(2, 2, 2, 2));
+}
+
+TEST_F(coupling_tests, overlapping_child_no_scaling) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
+      rng_)(no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_scaled_fitness(population_, result),
+              ::testing::ElementsAre(0, 0, 0, 0));
+}
+
+TEST_F(coupling_tests, overlapping_child_scaled_fitness) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
+      rng_)(scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_scaled_fitness(population_, result),
+              ::testing::ElementsAre(20, 20, 20, 20));
+}
+
+TEST_F(coupling_tests, overlapping_child_no_crossover) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
+      rng_)(no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_crossovers(population_, result),
+              ::testing::ElementsAre(false, false, false, false));
+}
+
+TEST_F(coupling_tests, overlapping_child_no_mutation) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
+      rng_)(no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_mutations(population_, result),
+              ::testing::ElementsAre(false, false, false, false));
+}
+
+TEST_F(coupling_tests, overlapping_child_with_crossover) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 1., 0., false>(
+      rng_)(no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_crossovers(population_, result),
+              ::testing::ElementsAre(true, true, true, true));
+}
+
+TEST_F(coupling_tests, overlapping_child_with_mutation) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 1., false>(
+      rng_)(no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_mutations(population_, result),
+              ::testing::ElementsAre(true, true, true, true));
+}
+
+TEST_F(coupling_tests, overlapping_child_with_improving_mutation) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 1., true>(
+      rng_)(no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_mutations(population_, result),
+              ::testing::ElementsAre(false, true, true, true));
+}
+
+TEST_F(coupling_tests, field_child_count) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
+      no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(result, ::testing::SizeIs(4));
+}
+
+TEST_F(coupling_tests, field_parents) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
+      no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_parent_indices(population_, result),
+              ::testing::ElementsAre(0, 1, 2, 3));
+}
+
+TEST_F(coupling_tests, field_child_raw_fitness) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
+      no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_raw_fitness(population_, result),
+              ::testing::ElementsAre(2, 2, 2, 2));
+}
+
+TEST_F(coupling_tests, field_child_no_scaling) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
+      no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_scaled_fitness(population_, result),
+              ::testing::ElementsAre(0, 0, 0, 0));
+}
+
+TEST_F(coupling_tests, field_child_scaled_fitness) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
+      scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_scaled_fitness(population_, result),
+              ::testing::ElementsAre(20, 20, 20, 20));
+}
+
+TEST_F(coupling_tests, field_child_no_crossover) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
+      no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_crossovers(population_, result),
+              ::testing::ElementsAre(false, false, false, false));
+}
+
+TEST_F(coupling_tests, field_child_no_mutation) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
+      no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_mutations(population_, result),
+              ::testing::ElementsAre(false, false, false, false));
+}
+
+TEST_F(coupling_tests, field_child_with_crossover) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 1., 0., false>(rng_)(
+      no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_crossovers(population_, result),
+              ::testing::ElementsAre(true, true, true, true));
+}
+
+TEST_F(coupling_tests, field_child_with_mutation) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 0., 1., false>(rng_)(
+      no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_mutations(population_, result),
+              ::testing::ElementsAre(true, true, true, true));
+}
+
+TEST_F(coupling_tests, field_child_with_improving_mutation) {
+  // arrange
+  auto op = gal::couple::parametrize<gal::couple::field, 0., 1., true>(rng_)(
+      no_scaling_ctx_);
+
+  // act
+  auto result = op(parents_);
+
+  // assert
+  EXPECT_THAT(get_child_mutations(population_, result),
+              ::testing::ElementsAre(true, true, false, false));
+}
+
 } // namespace tests::coupling
