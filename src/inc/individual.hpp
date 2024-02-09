@@ -300,4 +300,39 @@ private:
   std::size_t raw_{};
 };
 
+template<typename Replaced, typename Replacement>
+struct parentship : std::tuple<Replaced, Replacement> {
+  using std::tuple<Replaced, Replacement>::tuple;
+};
+
+template<typename Replaced, typename Replacement>
+inline auto const& get_parent(parentship<Replaced, Replacement> const& pair) {
+  return std::get<0>(pair);
+}
+
+template<typename Replaced, typename Replacement>
+inline auto& get_parent(parentship<Replaced, Replacement>& pair) {
+  return std::get<0>(pair);
+}
+
+template<typename Replaced, typename Replacement>
+inline auto&& get_parent(parentship<Replaced, Replacement>&& pair) {
+  return std::move(std::get<0>(pair));
+}
+
+template<typename Replaced, typename Replacement>
+inline auto const& get_child(parentship<Replaced, Replacement> const& pair) {
+  return std::get<1>(pair);
+}
+
+template<typename Replaced, typename Replacement>
+inline auto& get_child(parentship<Replaced, Replacement>& pair) {
+  return std::get<1>(pair);
+}
+
+template<typename Replaced, typename Replacement>
+inline auto&& get_child(parentship<Replaced, Replacement>&& pair) {
+  return std::move(std::get<1>(pair));
+}
+
 } // namespace gal

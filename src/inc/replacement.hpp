@@ -41,7 +41,7 @@ namespace replace {
 
     template<std::ranges::sized_range Replaced, typename Offspring>
     inline auto apply_replaced(Replaced& replaced, Offspring& offspring) {
-      return std::views::iota(std::size_t{}, std::size(replaced)) |
+      return std::views::iota(std::size_t{}, std::ranges::size(replaced)) |
              std::views::transform([&replaced, &offspring](std::size_t idx) {
                return replacement_view{replaced[idx],
                                        get_child(offspring[idx])};
@@ -56,13 +56,16 @@ namespace replace {
 
   } // namespace details
 
-  template<typename Generator, std::size_t Elitism>
+  template<typename Generator, std::size_t Elitism, typename FitnessTag>
   class random {
   public:
     using generator_t = Generator;
+    using fitness_tag_t = FitnessTag;
 
   private:
     using distribution_t = std::uniform_int_distribution<std::size_t>;
+
+    inline static constexpr fitness_tag_t fitness_tag{};
 
   public:
     inline explicit random(generator_t& generator) noexcept
@@ -75,6 +78,9 @@ namespace replace {
     inline auto operator()(Population& population,
                            Offspring&& offspring) const {
       auto allowed = population.current_size() - Elitism;
+      if constexpr (Elitism > 0) {
+        population.sort(fitness_tag);
+      }
 
       distribution_t dist{0, allowed - 1};
       auto to_replace = sample_many(
@@ -88,6 +94,12 @@ namespace replace {
   private:
     generator_t* generator_;
   };
+
+  template<typename Generator, std::size_t Elitism>
+  using random_raw = random<Generator, Elitism, raw_fitness_tag>;
+
+  template<typename Generator, std::size_t Elitism>
+  using random_scaled = random<Generator, Elitism, scaled_fitness_tag>;
 
   template<typename FitnessTag>
   class worst {
