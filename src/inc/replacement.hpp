@@ -95,10 +95,10 @@ namespace replace {
     generator_t* generator_;
   };
 
-  template<typename Generator, std::size_t Elitism>
+  template<typename Generator, std::size_t Elitism = 0>
   using random_raw = random<Generator, Elitism, raw_fitness_tag>;
 
-  template<typename Generator, std::size_t Elitism>
+  template<typename Generator, std::size_t Elitism = 0>
   using random_scaled = random<Generator, Elitism, scaled_fitness_tag>;
 
   template<typename FitnessTag>
