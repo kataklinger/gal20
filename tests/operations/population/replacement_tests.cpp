@@ -53,7 +53,7 @@ protected:
 
     auto first = population_.individuals().begin();
     offsprings_5_ = std::vector<offspring_t>{
-        offspring_t{first + 4, {8, evaluation_t{9, 0}, no_tags{}}},
+        offspring_t{first + 4, {9, evaluation_t{9, 0}, no_tags{}}},
         offspring_t{first + 3, {8, evaluation_t{8, 1}, no_tags{}}},
         offspring_t{first + 2, {7, evaluation_t{2, 2}, no_tags{}}},
         offspring_t{first + 1, {6, evaluation_t{1, 8}, no_tags{}}},
@@ -71,7 +71,7 @@ protected:
   std::mt19937 rng_;
 };
 
-TEST_F(replacement_tests, random_raw_replace_elitism_replaced_count) {
+TEST_F(replacement_tests, random_raw_replace_elitism_removed_count) {
   // arrange
   gal::replace::random_raw<std::mt19937, 2> op{rng_};
 
@@ -82,7 +82,7 @@ TEST_F(replacement_tests, random_raw_replace_elitism_replaced_count) {
   EXPECT_THAT(replaced, ::testing::SizeIs(3));
 }
 
-TEST_F(replacement_tests, random_raw_replace_elitism_replaced_content) {
+TEST_F(replacement_tests, random_raw_replace_elitism_removed_content) {
   // arrange
   gal::replace::random_raw<std::mt19937, 2> op{rng_};
 
@@ -92,6 +92,123 @@ TEST_F(replacement_tests, random_raw_replace_elitism_replaced_content) {
   // assert
   EXPECT_THAT(get_raw_fitness(replaced),
               ::testing::UnorderedElementsAre(3, 4, 5));
+}
+
+TEST_F(replacement_tests, random_raw_replace_elitism_added_content) {
+  // arrange
+  gal::replace::random_raw<std::mt19937, 2> op{rng_};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(9, 8, 7, 6, 2));
+}
+
+TEST_F(replacement_tests, random_scaled_replace_elitism_removed_count) {
+  // arrange
+  gal::replace::random_scaled<std::mt19937, 2> op{rng_};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(3));
+}
+
+TEST_F(replacement_tests, random_scaled_replace_elitism_removed_content) {
+  // arrange
+  gal::replace::random_scaled<std::mt19937, 2> op{rng_};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(replaced),
+              ::testing::UnorderedElementsAre(3, 4, 5));
+}
+
+TEST_F(replacement_tests, random_scaled_replace_elitism_added_content) {
+  // arrange
+  gal::replace::random_scaled<std::mt19937, 2> op{rng_};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(0, 1, 2, 7, 6));
+}
+
+TEST_F(replacement_tests, random_raw_replace_no_elitism_removed_count) {
+  // arrange
+  gal::replace::random_raw op{rng_};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(5));
+}
+
+TEST_F(replacement_tests, random_raw_replace_no_elitism_removed_content) {
+  // arrange
+  gal::replace::random_raw op{rng_};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(replaced),
+              ::testing::UnorderedElementsAre(3, 4, 5, 6, 7));
+}
+
+TEST_F(replacement_tests, random_raw_replace_no_elitism_added_content) {
+  // arrange
+  gal::replace::random_raw op{rng_};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(9, 8, 2, 1, 0));
+}
+
+TEST_F(replacement_tests, random_scaled_replace_no_elitism_removed_count) {
+  // arrange
+  gal::replace::random_scaled op{rng_};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(5));
+}
+
+TEST_F(replacement_tests, random_scaled_replace_no_elitism_removed_content) {
+  // arrange
+  gal::replace::random_scaled op{rng_};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(replaced),
+              ::testing::UnorderedElementsAre(3, 4, 5, 6, 7));
+}
+
+TEST_F(replacement_tests, random_scaled_replace_no_elitism_added_content) {
+  // arrange
+  gal::replace::random_scaled op{rng_};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(0, 1, 2, 8, 9));
 }
 
 } // namespace tests::replacement
