@@ -63,7 +63,7 @@ protected:
     offsprings_3_.erase(offsprings_3_.begin() + 3, offsprings_3_.end());
   }
 
-  population_t population_{fitness_cmp_t{}, fitness_cmp_t{}, true};
+  population_t population_{fitness_cmp_t{}, fitness_cmp_t{}, 5, true};
 
   std::vector<offspring_t> offsprings_5_;
   std::vector<offspring_t> offsprings_3_;
@@ -71,7 +71,7 @@ protected:
   std::mt19937 rng_;
 };
 
-TEST_F(replacement_tests, random_raw_replace_elitism_removed_count) {
+TEST_F(replacement_tests, random_raw_elitism_removed_count) {
   // arrange
   gal::replace::random_raw<std::mt19937, 2> op{rng_};
 
@@ -82,7 +82,7 @@ TEST_F(replacement_tests, random_raw_replace_elitism_removed_count) {
   EXPECT_THAT(replaced, ::testing::SizeIs(3));
 }
 
-TEST_F(replacement_tests, random_raw_replace_elitism_removed_content) {
+TEST_F(replacement_tests, random_raw_elitism_removed_content) {
   // arrange
   gal::replace::random_raw<std::mt19937, 2> op{rng_};
 
@@ -94,7 +94,7 @@ TEST_F(replacement_tests, random_raw_replace_elitism_removed_content) {
               ::testing::UnorderedElementsAre(3, 4, 5));
 }
 
-TEST_F(replacement_tests, random_raw_replace_elitism_added_content) {
+TEST_F(replacement_tests, random_raw_elitism_added_content) {
   // arrange
   gal::replace::random_raw<std::mt19937, 2> op{rng_};
 
@@ -106,7 +106,7 @@ TEST_F(replacement_tests, random_raw_replace_elitism_added_content) {
               ::testing::UnorderedElementsAre(9, 8, 7, 6, 2));
 }
 
-TEST_F(replacement_tests, random_scaled_replace_elitism_removed_count) {
+TEST_F(replacement_tests, random_scaled_elitism_removed_count) {
   // arrange
   gal::replace::random_scaled<std::mt19937, 2> op{rng_};
 
@@ -117,7 +117,7 @@ TEST_F(replacement_tests, random_scaled_replace_elitism_removed_count) {
   EXPECT_THAT(replaced, ::testing::SizeIs(3));
 }
 
-TEST_F(replacement_tests, random_scaled_replace_elitism_removed_content) {
+TEST_F(replacement_tests, random_scaled_elitism_removed_content) {
   // arrange
   gal::replace::random_scaled<std::mt19937, 2> op{rng_};
 
@@ -129,7 +129,7 @@ TEST_F(replacement_tests, random_scaled_replace_elitism_removed_content) {
               ::testing::UnorderedElementsAre(3, 4, 5));
 }
 
-TEST_F(replacement_tests, random_scaled_replace_elitism_added_content) {
+TEST_F(replacement_tests, random_scaled_elitism_added_content) {
   // arrange
   gal::replace::random_scaled<std::mt19937, 2> op{rng_};
 
@@ -141,7 +141,7 @@ TEST_F(replacement_tests, random_scaled_replace_elitism_added_content) {
               ::testing::UnorderedElementsAre(0, 1, 2, 7, 6));
 }
 
-TEST_F(replacement_tests, random_raw_replace_no_elitism_removed_count) {
+TEST_F(replacement_tests, random_raw_no_elitism_removed_count) {
   // arrange
   gal::replace::random_raw op{rng_};
 
@@ -152,7 +152,7 @@ TEST_F(replacement_tests, random_raw_replace_no_elitism_removed_count) {
   EXPECT_THAT(replaced, ::testing::SizeIs(5));
 }
 
-TEST_F(replacement_tests, random_raw_replace_no_elitism_removed_content) {
+TEST_F(replacement_tests, random_raw_no_elitism_removed_content) {
   // arrange
   gal::replace::random_raw op{rng_};
 
@@ -164,7 +164,7 @@ TEST_F(replacement_tests, random_raw_replace_no_elitism_removed_content) {
               ::testing::UnorderedElementsAre(3, 4, 5, 6, 7));
 }
 
-TEST_F(replacement_tests, random_raw_replace_no_elitism_added_content) {
+TEST_F(replacement_tests, random_raw_no_elitism_added_content) {
   // arrange
   gal::replace::random_raw op{rng_};
 
@@ -176,7 +176,7 @@ TEST_F(replacement_tests, random_raw_replace_no_elitism_added_content) {
               ::testing::UnorderedElementsAre(9, 8, 2, 1, 0));
 }
 
-TEST_F(replacement_tests, random_scaled_replace_no_elitism_removed_count) {
+TEST_F(replacement_tests, random_scaled_no_elitism_removed_count) {
   // arrange
   gal::replace::random_scaled op{rng_};
 
@@ -187,7 +187,7 @@ TEST_F(replacement_tests, random_scaled_replace_no_elitism_removed_count) {
   EXPECT_THAT(replaced, ::testing::SizeIs(5));
 }
 
-TEST_F(replacement_tests, random_scaled_replace_no_elitism_removed_content) {
+TEST_F(replacement_tests, random_scaled_no_elitism_removed_content) {
   // arrange
   gal::replace::random_scaled op{rng_};
 
@@ -199,7 +199,7 @@ TEST_F(replacement_tests, random_scaled_replace_no_elitism_removed_content) {
               ::testing::UnorderedElementsAre(3, 4, 5, 6, 7));
 }
 
-TEST_F(replacement_tests, random_scaled_replace_no_elitism_added_content) {
+TEST_F(replacement_tests, random_scaled_no_elitism_added_content) {
   // arrange
   gal::replace::random_scaled op{rng_};
 
@@ -209,6 +209,239 @@ TEST_F(replacement_tests, random_scaled_replace_no_elitism_added_content) {
   // assert
   EXPECT_THAT(get_scaled_fitness(population_.individuals()),
               ::testing::UnorderedElementsAre(0, 1, 2, 8, 9));
+}
+
+TEST_F(replacement_tests, worst_raw_removed_count) {
+  // arrange
+  gal::replace::worst_raw op{};
+
+  // act
+  auto replaced = op(population_, offsprings_3_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(3));
+}
+
+TEST_F(replacement_tests, worst_raw_removed_content) {
+  // arrange
+  gal::replace::worst_raw op{};
+
+  // act
+  auto replaced = op(population_, offsprings_3_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(replaced),
+              ::testing::UnorderedElementsAre(3, 4, 5));
+}
+
+TEST_F(replacement_tests, worst_raw_added_content) {
+  // arrange
+  gal::replace::worst_raw op{};
+
+  // act
+  op(population_, offsprings_3_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(9, 8, 7, 6, 2));
+}
+
+TEST_F(replacement_tests, worst_scaled_removed_count) {
+  // arrange
+  gal::replace::worst_scaled op{};
+
+  // act
+  auto replaced = op(population_, offsprings_3_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(3));
+}
+
+TEST_F(replacement_tests, worst_scaled_removed_content) {
+  // arrange
+  gal::replace::worst_scaled op{};
+
+  // act
+  auto replaced = op(population_, offsprings_3_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(replaced),
+              ::testing::UnorderedElementsAre(3, 4, 5));
+}
+
+TEST_F(replacement_tests, worst_scaled_added_content) {
+  // arrange
+  gal::replace::worst_scaled op{};
+
+  // act
+  op(population_, offsprings_3_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(0, 1, 2, 7, 6));
+}
+
+TEST_F(replacement_tests, crowd_raw_removed_count) {
+  // arrange
+  gal::replace::crowd_raw op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(5));
+}
+
+TEST_F(replacement_tests, crowd_raw_removed_content) {
+  // arrange
+  gal::replace::crowd_raw op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(replaced),
+              ::testing::UnorderedElementsAre(0, 1, 2, 3, 4));
+}
+
+TEST_F(replacement_tests, crowd_raw_added_content) {
+  // arrange
+  gal::replace::crowd_raw op{};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(9, 8, 7, 6, 5));
+}
+
+TEST_F(replacement_tests, crowd_scaled_removed_count) {
+  // arrange
+  gal::replace::crowd_scaled op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(5));
+}
+
+TEST_F(replacement_tests, crowd_scaled_removed_content) {
+  // arrange
+  gal::replace::crowd_scaled op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(replaced),
+              ::testing::UnorderedElementsAre(0, 1, 2, 3, 4));
+}
+
+TEST_F(replacement_tests, crowd_scaled_added_content) {
+  // arrange
+  gal::replace::crowd_scaled op{};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(9, 8, 7, 6, 5));
+}
+
+TEST_F(replacement_tests, parents_removed_count) {
+  // arrange
+  gal::replace::parents op{};
+
+  // act
+  auto replaced = op(population_, offsprings_3_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(3));
+}
+
+TEST_F(replacement_tests, parents_removed_content) {
+  // arrange
+  gal::replace::parents op{};
+
+  // act
+  auto replaced = op(population_, offsprings_3_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(replaced),
+              ::testing::UnorderedElementsAre(7, 6, 5));
+}
+
+TEST_F(replacement_tests, parents_added_content) {
+  // arrange
+  gal::replace::parents op{};
+
+  // act
+  op(population_, offsprings_3_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(9, 8, 2, 4, 3));
+}
+
+TEST_F(replacement_tests, total_removed_count) {
+  // arrange
+  gal::replace::total op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(5));
+}
+
+TEST_F(replacement_tests, total_removed_content) {
+  // arrange
+  gal::replace::total op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(replaced),
+              ::testing::UnorderedElementsAre(7, 6, 5, 4, 3));
+}
+
+TEST_F(replacement_tests, total_added_content) {
+  // arrange
+  gal::replace::total op{};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(9, 8, 2, 1, 0));
+}
+
+TEST_F(replacement_tests, append_removed_count) {
+  // arrange
+  gal::replace::append op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(0));
+}
+
+TEST_F(replacement_tests, append_added_content) {
+  // arrange
+  gal::replace::append op{};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(9, 8, 7, 6, 5, 4, 3, 2, 1, 0));
 }
 
 } // namespace tests::replacement
