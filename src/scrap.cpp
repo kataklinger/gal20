@@ -165,10 +165,10 @@ void test_ground() {
   gal::replace::total ro4{};
   ro4(p, std::vector<parent_replacement_t>{});
 
-  gal::replace::parents<10> ro5{};
+  gal::replace::parents ro5{};
   ro5(p, std::vector<parent_replacement_t>{});
 
-  gal::replace::insert ro6{};
+  gal::replace::append ro6{};
   ro6(p, std::vector<parent_replacement_t>{});
 
   using stat_t = gal::stats::statistics<

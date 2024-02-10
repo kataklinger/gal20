@@ -192,7 +192,7 @@ void nsga_ii() {
       .select(
           select::tournament_scaled{select::unique<2>, select::rounds<2>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
-      .replace(replace::insert{})
+      .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
@@ -225,7 +225,7 @@ void spea() {
       .project(project::factory<project::truncate, real_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
-      .replace(replace::insert{})
+      .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
@@ -258,7 +258,7 @@ void spea_ii() {
       .project(project::factory<project::translate, int_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
-      .replace(replace::insert{})
+      .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
@@ -291,7 +291,7 @@ void rdga() {
       .project(project::factory<project::alternate, int_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
-      .replace(replace::insert{})
+      .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
@@ -328,7 +328,7 @@ void pesa() {
       .project(project::factory<project::truncate, crowd_density_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
-      .replace(replace::insert{})
+      .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
@@ -362,7 +362,7 @@ void pesa_ii() {
       .select(select::cluster{
           gal::select::shared<cluster_label>, select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
-      .replace(replace::insert{})
+      .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
@@ -400,7 +400,7 @@ void paes() {
       .project(project::factory<project::truncate, crowd_density_t>{})
       .select(select::lineal_scaled{})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
-      .replace(replace::insert{})
+      .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);
