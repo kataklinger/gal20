@@ -149,8 +149,8 @@ namespace soo {
           std::invoke(scaling_);
         }
 
-        std::size_t ordinal{0};
-        for (auto&& individual : context_->population().individuals()) {
+        for (std::size_t ordinal{};
+             auto&& individual : context_->population().individuals()) {
           std::invoke(scaling_, ordinal, individual);
         }
       }
