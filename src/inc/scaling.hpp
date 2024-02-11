@@ -177,7 +177,7 @@ namespace scale {
 
   private:
     inline scaled_fitness_t calculate(raw_fitness_t const& raw) const noexcept {
-      if (auto dev = get_deviation(); dev > 0) {
+      if (auto dev = get_deviation(); dev > 0.) {
         return {1. + (raw - get_average()) / (2. * dev)};
       }
       else {
@@ -231,11 +231,10 @@ namespace scale {
     }
 
     inline void operator()(ordinal_t ordinal, individual_t& individual) const {
-      auto& eval = individual.evaluation();
-
-      auto value = Preassure - 2. * (*ordinal - 1.) * (Preassure - 1.) /
+      auto value = Preassure - 2. * (*ordinal) * (Preassure - 1.) /
                                    (population_->current_size() - 1.);
 
+      auto& eval = individual.evaluation();
       eval.set_scaled(scaled_fitness_t{value});
     }
 
@@ -364,7 +363,8 @@ namespace scale {
     inline explicit power(context_t& /*unused*/) {
     }
 
-    inline void operator()(individual_t& individual) const {
+    inline void operator()(ordinal_t /*unused*/,
+                           individual_t& individual) const {
       auto& eval = individual.evaluation();
       eval.set_scaled(scaled_fitness_t{std::pow(eval.raw(), Power)});
     }

@@ -196,7 +196,7 @@ void test_ground() {
   sc2(0, p.individuals()[0]);
 
   gal::scale::power<ctx_t, 2> sc3{ctx};
-  sc3(p.individuals()[0]);
+  sc3(0, p.individuals()[0]);
 
   gal::scale::window<ctx_t> sc4{ctx};
   sc4(0, p.individuals()[0]);
