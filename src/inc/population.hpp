@@ -25,7 +25,7 @@ struct sort_policy_base {
                      Comparator&& compare) noexcept {
     return std::ranges::minmax_element(
         individuals,
-        gal::fitness_better{std::forward<Comparator>(compare)},
+        gal::fitness_worse{std::forward<Comparator>(compare)},
         [](auto const& i) { return i.evaluation().get(fitness_tag); });
   }
 
