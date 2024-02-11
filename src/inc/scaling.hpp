@@ -22,14 +22,16 @@ namespace scale {
     linear_coefficients caclulate_linear_coefficients(Fitness const& fmin,
                                                       Fitness const& favg,
                                                       Fitness const& fmax) {
-      if (fmin > (Preassure * favg - fmax) / (Preassure - 1.)) {
+      constexpr auto p = Preassure - 1.;
+
+      if (auto pavg = Preassure * favg; fmin > (pavg - fmax) / p) {
         auto delta = fmax - favg;
         if (approaching_zero(delta)) {
           return {1, 0};
         }
 
         auto a = favg / delta;
-        return {a * (Preassure - 1.), a * (fmax - Preassure * favg)};
+        return {a * p, a * (fmax - pavg)};
       }
       else {
         auto delta = favg - fmin;
