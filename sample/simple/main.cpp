@@ -116,10 +116,10 @@ void simple() {
                  mutate::make_simple_flip<1>(rng, dist))
       .scale()
       .track<stats::generation,
-             stats::extreme_fitness_raw,
-             stats::total_fitness_raw,
+             stats::fitness_deviation_raw,
              stats::average_fitness_raw,
-             stats::fitness_deviation_raw>(10)
+             stats::total_fitness_raw,
+             stats::extreme_fitness_raw>(10)
       .stop(criteria::generation_limit{100})
       .select(select::random{select::unique<4>, rng})
       //.select(select::roulette_raw{select::unique<4>, rng})

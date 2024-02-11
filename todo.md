@@ -4,6 +4,7 @@ List of task to implement or improve
 
 ## General
  - [ ] do not share distribution object (crossover operations)
+ - [ ] add concepts to verify statistic model dependencies
  - [x] handle NaNs for minimization floating point three way comparison
  - [x] individual grouping
  - [x] improve tagging system

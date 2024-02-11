@@ -174,10 +174,10 @@ void test_ground() {
   using stat_t = gal::stats::statistics<
       pop_t,
       gal::stats::generation,
-      gal::stats::extreme_fitness<gal::raw_fitness_tag>,
-      gal::stats::total_fitness<gal::raw_fitness_tag>,
+      gal::stats::fitness_deviation<gal::raw_fitness_tag>,
       gal::stats::average_fitness<gal::raw_fitness_tag>,
-      gal::stats::fitness_deviation<gal::raw_fitness_tag>>;
+      gal::stats::total_fitness<gal::raw_fitness_tag>,
+      gal::stats::extreme_fitness<gal::raw_fitness_tag>>;
   stat_t stat{};
   gal::stats::history<decltype(stat)> hist{2};
 

@@ -167,8 +167,8 @@ namespace stats {
              model<Population> Model,
              model<Population>... Rest>
     class model_node<Population, Model, Rest...>
-        : public model_constructor<typename Model::template body<Population>>,
-          public model_node<Population, Rest...> {
+        : public model_node<Population, Rest...>,
+          public model_constructor<typename Model::template body<Population>> {
     public:
       using base_t = model_node<Population, Rest...>;
       using constructor_t =
@@ -179,7 +179,7 @@ namespace stats {
 
       inline model_node(Population const& population,
                         model_node const& previous)
-          : base_t{previous}
+          : base_t{population, previous}
           , constructor_t{population,
                           previous,
                           pack_dependencies<Population, Model>(*this)} {
@@ -315,7 +315,8 @@ namespace stats {
     public:
       body() = default;
 
-      inline body(Population const& population, body const& previous) noexcept {
+      inline body(Population const& population,
+                  body const& /*unused*/) noexcept {
         auto [mini, maxi] = population.extremes(fitness_tag);
         value_ = minmax_fitness_t{mini.evaluation().get(fitness_tag),
                                   maxi.evaluation().get(fitness_tag)};
@@ -351,7 +352,7 @@ namespace stats {
     public:
       body() = default;
 
-      inline body(Population const& population, body const& previous) noexcept
+      inline body(Population const& population, body const& /*unused*/) noexcept
           : value_{std::accumulate(std::ranges::begin(population.individuals()),
                                    std::ranges::end(population.individuals()),
                                    state_t{},
@@ -396,7 +397,7 @@ namespace stats {
       body() = default;
 
       inline body(Population const& population,
-                  body const& previous,
+                  body const& /*unused*/,
                   dependencies_t const& dependencies) noexcept {
         auto const& sum =
             unpack_dependency<pack_t, total_fitness_t>(dependencies)
@@ -501,7 +502,7 @@ namespace stats {
       body() = default;
 
       inline body(Population const& population,
-                  body const& previous,
+                  body const& /*unused*/,
                   dependencies_t const& dependencies) noexcept {
         auto const& avg =
             unpack_dependency<pack_t, average_fitness_t>(dependencies)
@@ -512,7 +513,7 @@ namespace stats {
                 std::ranges::begin(population.individuals()),
                 std::ranges::end(population.individuals()),
                 state_t{},
-                [](state_t acc, auto const& ind) {
+                [this, &avg](state_t acc, auto const& ind) {
                   return acc.add(pow_(avg - ind.evaluation().get(fitness_tag)));
                 })
                 .sum();
@@ -558,11 +559,10 @@ namespace stats {
     }
 
   public:
-    inline statistics() {
-    }
+    statistics() = default;
 
     inline auto next(population_t const& population) const {
-      return statistics(population, *this);
+      return statistics{population, *this};
     }
 
     template<model<population_t> Model>

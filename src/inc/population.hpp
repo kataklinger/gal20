@@ -12,6 +12,8 @@ enum class sort_by { none, raw, scaled, both };
 
 template<typename FitnessTag>
 struct sort_policy_base {
+  inline static constexpr FitnessTag fitness_tag{};
+
   sort_by const by;
 
   inline explicit sort_policy_base(bool stable_scaling, sort_by value) noexcept
@@ -22,9 +24,9 @@ struct sort_policy_base {
   inline auto minmax(Collection const& individuals,
                      Comparator&& compare) noexcept {
     return std::ranges::minmax_element(
-        individuals, std::forward<Comparator>(compare), [](auto const& i) {
-          return i.evaluation().get(FitnessTag{});
-        });
+        individuals,
+        gal::fitness_better{std::forward<Comparator>(compare)},
+        [](auto const& i) { return i.evaluation().get(fitness_tag); });
   }
 
   template<typename Collection, typename Comparator>
@@ -32,7 +34,7 @@ struct sort_policy_base {
     std::ranges::sort(
         individuals,
         gal::fitness_better{std::forward<Comparator>(compare)},
-        [](auto const& i) { return i.evaluation().get(FitnessTag{}); });
+        [](auto const& i) { return i.evaluation().get(fitness_tag); });
 
     return by;
   }
