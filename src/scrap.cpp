@@ -236,16 +236,15 @@ void test_ground() {
   auto cp3 = gal::couple::local{rtx};
   cp3(std::vector<pop_t::iterator_t>{});
 
-  gal::stats::get_fitness_best_value<gal::raw_fitness_tag> getter{};
-
   gal::criteria::generation_limit cr1{2};
   cr1(p, hist);
 
-  gal::criteria::value_limit cr2{getter,
+  gal::criteria::value_limit cr2{gal::stats::get_raw_fitness_best_value{},
                                  [](double fitness) { return fitness >= 10; }};
   cr2(p, hist);
 
-  gal::criteria::value_progress cr3{getter, 2};
+  gal::criteria::value_progress cr3{
+      gal::stats::get_raw_fitness_best_value{}, std::less{}, 2};
   cr3(p, hist);
 
   gal::cross::symmetric_singlepoint<std::mt19937> cs1{gen};

@@ -1135,6 +1135,10 @@ namespace stats {
     }
   };
 
+  using get_raw_fitness_worst_value = get_fitness_worst_value<raw_fitness_tag>;
+  using get_scaled_fitness_worst_value =
+      get_fitness_worst_value<scaled_fitness_tag>;
+
   template<typename FitnessTag>
   struct get_fitness_best_value {
     using model_t = extreme_fitness<FitnessTag>;
@@ -1145,6 +1149,10 @@ namespace stats {
       return statistics.template get<model_t>().fitness_best_value();
     }
   };
+
+  using get_raw_fitness_best_value = get_fitness_best_value<raw_fitness_tag>;
+  using get_scaled_fitness_best_value =
+      get_fitness_best_value<scaled_fitness_tag>;
 
   template<typename FitnessTag>
   struct get_fitness_total_value {
@@ -1157,6 +1165,10 @@ namespace stats {
     }
   };
 
+  using get_raw_fitness_total_value = get_fitness_total_value<raw_fitness_tag>;
+  using get_scaled_fitness_total_value =
+      get_fitness_total_value<scaled_fitness_tag>;
+
   template<typename FitnessTag>
   struct get_fitness_average_value {
     using model_t = average_fitness<FitnessTag>;
@@ -1167,6 +1179,11 @@ namespace stats {
       return statistics.template get<model_t>().fitness_average_value();
     }
   };
+
+  using get_raw_fitness_average_value =
+      get_fitness_average_value<raw_fitness_tag>;
+  using get_scaled_fitness_average_value =
+      get_fitness_average_value<scaled_fitness_tag>;
 
   template<typename FitnessTag>
   struct get_fitness_variance_value {
@@ -1179,6 +1196,11 @@ namespace stats {
     }
   };
 
+  using get_raw_fitness_variance_value =
+      get_fitness_variance_value<raw_fitness_tag>;
+  using get_scaled_fitness_variance_value =
+      get_fitness_variance_value<scaled_fitness_tag>;
+
   template<typename FitnessTag>
   struct get_fitness_deviation_value {
     using model_t = fitness_deviation<FitnessTag>;
@@ -1189,6 +1211,11 @@ namespace stats {
       return statistics.template get<model_t>().fitness_deviation_value();
     }
   };
+
+  using get_raw_fitness_deviation_value =
+      get_fitness_deviation_value<raw_fitness_tag>;
+  using get_scaled_fitness_deviation_value =
+      get_fitness_deviation_value<scaled_fitness_tag>;
 
   template<statistical Statistics>
   class history {

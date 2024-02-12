@@ -121,8 +121,8 @@ void simple() {
              stats::total_fitness_raw,
              stats::extreme_fitness_raw>(10)
       .stop(criteria::generation_limit{100})
-      .select(select::random{select::unique<4>, rng})
-      //.select(select::roulette_raw{select::unique<4>, rng})
+      //.select(select::random{select::unique<4>, rng})
+      .select(select::roulette_raw{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
       .replace(replace::worst_raw{})
       .observe(observe{generation_event, f1::observe{}})

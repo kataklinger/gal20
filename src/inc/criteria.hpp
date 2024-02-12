@@ -26,49 +26,55 @@ namespace criteria {
     std::size_t limit_;
   };
 
-  template<typename Getter, typename Comparer>
+  template<typename Getter, typename Comparator>
   class value_limit {
   public:
     using getter_t = Getter;
-    using comparer_t = Comparer;
+    using comparator_t = Comparator;
 
     using model_t = typename Getter::model_t;
 
   public:
     inline explicit value_limit(getter_t const& getter,
-                                comparer_t const& comparer)
+                                comparator_t const& compare)
         : getter_{getter}
-        , comparer_{comparer} {
+        , comparator_{compare} {
     }
 
     template<typename Population, tracked_history<model_t> History>
     inline bool operator()(Population const& /*unused*/,
                            History const& history) const {
-      return comparer_(getter_(history.current()));
+      return std::invoke(comparator_, std::invoke(getter_, history.current()));
     }
 
   private:
     getter_t getter_;
-    comparer_t comparer_;
+    comparator_t comparator_;
   };
 
-  template<typename Getter>
+  template<typename Getter, typename Comparator>
   class value_progress {
   public:
     using getter_t = Getter;
+    using comparator_t = Comparator;
 
     using model_t = typename Getter::model_t;
 
   public:
-    inline explicit value_progress(getter_t const& getter, std::size_t limit)
+    inline explicit value_progress(getter_t const& getter,
+                                   comparator_t const& compare,
+                                   std::size_t limit)
         : getter_{getter}
+        , comparator_{compare}
         , limit_{limit} {
     }
 
     template<typename Population, tracked_history<model_t> History>
     inline bool operator()(Population const& /*unused*/,
                            History const& history) {
-      stagnated_ = getter_(history.current()) > getter_(history.previous())
+      stagnated_ = std::invoke(comparator_,
+                               std::invoke(getter_, history.current()),
+                               std::invoke(getter_, history.previous()))
                        ? 0
                        : stagnated_ + 1;
 
@@ -77,6 +83,8 @@ namespace criteria {
 
   private:
     getter_t getter_;
+    comparator_t comparator_;
+
     std::size_t limit_;
     std::size_t stagnated_{};
   };
