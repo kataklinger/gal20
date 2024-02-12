@@ -19,7 +19,7 @@ namespace criteria {
     template<typename Population, tracked_history<stats::generation> History>
     inline bool operator()(Population const& /*unused*/,
                            History const& history) const noexcept {
-      return stats::get_generation{}(history.current()) > limit_;
+      return stats::get_generation{}(history.current()) >= limit_;
     }
 
   private:
