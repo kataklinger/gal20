@@ -1232,7 +1232,7 @@ namespace stats {
     inline auto& next(population_t const& population) {
       auto& head = values_.emplace_back(current().next(population));
 
-      if (values_.size() >= depth_) {
+      if (values_.size() > depth_) {
         values_.pop_front();
       }
 
