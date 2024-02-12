@@ -54,7 +54,7 @@ protected:
     population_.insert(individuals);
   }
 
-  population_t population_{cmp_t{}, cmp_t{}, true};
+  population_t population_{{}, {}, true};
   std::mt19937 rng_{};
 };
 
@@ -360,7 +360,7 @@ protected:
     population_.insert(individuals);
   }
 
-  population_t population_{cmp_t{}, cmp_t{}, true};
+  population_t population_{{}, {}, true};
   std::mt19937 rng_{};
 };
 
@@ -492,7 +492,7 @@ protected:
     population_.insert(individuals);
   }
 
-  population_t population_{cmp_t{}, cmp_t{}, true};
+  population_t population_{{}, {}, true};
   std::mt19937 rng_{};
 };
 

@@ -63,7 +63,7 @@ protected:
     offsprings_3_.erase(offsprings_3_.begin() + 3, offsprings_3_.end());
   }
 
-  population_t population_{fitness_cmp_t{}, fitness_cmp_t{}, 5, true};
+  population_t population_{{}, {}, 5, true};
 
   std::vector<offspring_t> offsprings_5_;
   std::vector<offspring_t> offsprings_3_;

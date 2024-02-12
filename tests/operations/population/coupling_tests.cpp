@@ -123,7 +123,7 @@ protected:
     parents_2_ = {first + 1, first + 2};
   }
 
-  population_t population_{fitness_cmp_t{}, fitness_cmp_t{}, true};
+  population_t population_{{}, {}, true};
   history_t history_{1};
 
   gal::reproduction_context<population_t,

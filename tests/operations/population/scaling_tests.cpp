@@ -64,7 +64,7 @@ protected:
     history_.next(population_);
   }
 
-  population_t population_{fitness_cmp_t{}, fitness_cmp_t{}, true};
+  population_t population_{{}, {}, true};
   history_t history_{1};
 
   gal::population_context<population_t, statistics_t> context_{population_,
