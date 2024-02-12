@@ -91,8 +91,6 @@ TEST_F(criterion_tests, value_limit_over) {
   EXPECT_TRUE(result);
 }
 
-////////
-
 TEST_F(criterion_tests, value_progress_not_stagnated) {
   // arrange
   gal::criteria::value_progress op{
@@ -121,6 +119,25 @@ TEST_F(criterion_tests, value_progress_stagnated) {
 
   // assert
   EXPECT_TRUE(result);
+}
+
+TEST_F(criterion_tests, value_progress_to_non_stagnated) {
+  // arrange
+  gal::criteria::value_progress op{
+      gal::stats::get_raw_fitness_best_value{}, std::greater{}, 2};
+
+  history_.next(population_);
+
+  op(population_, history_);
+
+  population_.insert(std::array{individual_t{0, evaluation_t{3.}, no_tags{}}});
+  history_.next(population_);
+
+  // act
+  auto result = op(population_, history_);
+
+  // assert
+  EXPECT_FALSE(result);
 }
 
 } // namespace tests::criteria
