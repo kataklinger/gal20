@@ -144,7 +144,7 @@ TEST_F(scaling_tests, power) {
 
   // assert
   EXPECT_THAT(get_scaled_fitness(population_),
-              ::testing::ElementsAre(125., 64., 27., 8., 1.));
+              ::testing::ElementsAre(1., 8., 27., 64., 125.));
 }
 
 TEST_F(scaling_tests, window) {
