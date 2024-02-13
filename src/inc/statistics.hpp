@@ -541,13 +541,114 @@ namespace stats {
   using fitness_deviation_raw = fitness_deviation<raw_fitness_tag>;
   using fitness_deviation_scaled = fitness_deviation<scaled_fitness_tag>;
 
+  namespace details {
+
+    template<typename... Models>
+    struct model_list {};
+
+    template<typename Model, typename Resolved>
+    struct append_model;
+
+    template<typename Model, typename... Models>
+    struct append_model<Model, model_list<Models...>> {
+      using type = model_list<Model, Models...>;
+    };
+
+    template<typename Model, typename Resolved>
+    using append_model_t = typename append_model<Model, Resolved>::type;
+
+    template<typename Required, typename Resolved>
+    struct is_one_resolved;
+
+    template<typename Required, typename... Resolved>
+    struct is_one_resolved<Required, model_list<Resolved...>>
+        : std::disjunction<std::is_same<Required, Resolved>...> {};
+
+    template<typename Required, typename Resolved>
+    struct is_all_resolved;
+
+    template<typename... Required, typename Resolved>
+    struct is_all_resolved<dependencies<Required...>, Resolved>
+        : std::conjunction<is_one_resolved<Required, Resolved>...> {};
+
+    template<typename Model, typename Resolved, typename = void>
+    struct is_resolved : std::true_type {};
+
+    template<typename Model, typename Resolved>
+    struct is_resolved<Model, Resolved, std::void_t<typename Model::required_t>>
+        : is_all_resolved<typename Model::required_t, Resolved> {};
+
+    template<typename Resolved,
+             typename Postponed,
+             typename Remaining,
+             typename Previous>
+    struct sort_models;
+
+    template<typename Resolved, typename Previous>
+    struct sort_models<Resolved, model_list<>, model_list<>, Previous> {
+      using type = Resolved;
+    };
+
+    template<typename Resolved, typename Postponed>
+    struct sort_models<Resolved, Postponed, model_list<>, Postponed> {
+      // error missing dependencies
+    };
+
+    template<typename Resolved, typename Postponed, typename Previous>
+    struct sort_models<Resolved, Postponed, model_list<>, Previous> {
+      using type =
+          typename sort_models<Resolved, model_list<>, Postponed, Postponed>::
+              type;
+    };
+
+    template<typename Resolved,
+             typename Postponed,
+             typename Current,
+             typename... Rest,
+             typename Previous>
+    struct sort_models<Resolved,
+                       Postponed,
+                       model_list<Current, Rest...>,
+                       Previous> {
+      using type = typename std::conditional_t<
+          is_resolved<Current, Resolved>::value,
+          sort_models<append_model_t<Current, Resolved>,
+                      Postponed,
+                      model_list<Rest...>,
+                      Previous>,
+          sort_models<Resolved,
+                      append_model_t<Current, Postponed>,
+                      model_list<Rest...>,
+                      Previous>>::type;
+    };
+
+    template<typename... Models>
+    using sort_models_t = typename sort_models<model_list<>,
+                                               model_list<>,
+                                               model_list<Models...>,
+                                               model_list<Models...>>::type;
+
+    template<typename Population, typename Resolved>
+    struct get_model_node;
+
+    template<typename Population, typename... Models>
+    struct get_model_node<Population, model_list<Models...>> {
+      using type = model_node<Population, Models...>;
+    };
+
+    template<typename Population, typename... Models>
+    using get_model_node_t =
+        typename get_model_node<Population, sort_models_t<Models...>>::type;
+
+  } // namespace details
+
   template<typename Population, model<Population>... Models>
-  class statistics : public details::model_node<Population, Models...> {
+  class statistics : public details::get_model_node_t<Population, Models...> {
   public:
     using population_t = Population;
 
   private:
-    using base_t = details::model_node<population_t, Models...>;
+    using base_t = details::get_model_node_t<Population, Models...>;
 
     template<model<population_t> Model>
     using base_value_t = typename Model::template body<population_t>;
