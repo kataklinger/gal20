@@ -591,7 +591,10 @@ namespace stats {
 
     template<typename Resolved, typename Postponed>
     struct sort_models<Resolved, Postponed, model_list<>, Postponed> {
-      // error missing dependencies
+      static_assert(std::is_same_v<Postponed, model_list<>>,
+                    "missing dependencies");
+
+      using type = Resolved;
     };
 
     template<typename Resolved, typename Postponed, typename Previous>
