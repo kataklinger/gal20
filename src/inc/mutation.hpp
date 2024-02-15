@@ -63,7 +63,7 @@ public:
              right = details::get_random_iter(target, *generator_);
 
         if (left != right) {
-          std::iter_swap(left, right);
+          std::ranges::iter_swap(left, right);
           --i;
         }
       }
