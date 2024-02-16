@@ -106,7 +106,8 @@ public:
   inline static constexpr auto points = Points;
 
 public:
-  inline explicit symmetric_multipoint(generator_t& generator)
+  inline explicit symmetric_multipoint(generator_t& generator,
+                                       countable_t<Points> /*unused*/)
       : generator_{&generator} {
   }
 
@@ -196,7 +197,8 @@ public:
   inline static constexpr auto points = Points;
 
 public:
-  inline explicit asymmetric_multipoint(generator_t& generator)
+  inline explicit asymmetric_multipoint(generator_t& generator,
+                                        countable_t<Points> /*unused*/)
       : generator_{&generator} {
   }
 

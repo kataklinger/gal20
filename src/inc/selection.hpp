@@ -55,10 +55,7 @@ private:
 };
 
 template<std::size_t Count>
-struct selection_rounds : std::integral_constant<std::size_t, Count> {};
-
-template<std::size_t Count>
-inline constexpr selection_rounds<Count> rounds{};
+inline constexpr countable_t<Count> rounds{};
 
 namespace details {
 
@@ -66,7 +63,7 @@ namespace details {
   struct is_rounds : std::false_type {};
 
   template<std::size_t Count>
-  struct is_rounds<selection_rounds<Count>> : std::true_type {};
+  struct is_rounds<countable_t<Count>> : std::true_type {};
 
   template<typename Ty>
   inline constexpr auto is_rounds_v = is_rounds<Ty>::value;

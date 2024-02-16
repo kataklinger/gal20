@@ -113,7 +113,7 @@ void simple() {
       .evaluate(f1::evaluate{},
                 gal::minimize{gal::min_floatingpoint_three_way{}})
       .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::make_simple_flip<1>(rng, dist))
+                 mutate::simple_flip(rng, dist, gal::countable<1>))
       .scale()
       .track<stats::generation,
              stats::fitness_deviation_raw,
@@ -145,7 +145,7 @@ void nsga() {
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::make_simple_flip<1>(rng, dist))
+                 mutate::simple_flip(rng, dist, gal::countable<1>))
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -178,7 +178,7 @@ void nsga_ii() {
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::make_simple_flip<1>(rng, dist))
+                 mutate::simple_flip(rng, dist, gal::countable<1>))
       .scale<std::tuple<std::size_t, double>>(
           [](auto&, auto&) { return std::weak_ordering::less; })
       .track<stats::generation>(10)
@@ -213,7 +213,7 @@ void spea() {
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::make_simple_flip<1>(rng, dist))
+                 mutate::simple_flip(rng, dist, gal::countable<1>))
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -246,7 +246,7 @@ void spea_ii() {
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::make_simple_flip<1>(rng, dist))
+                 mutate::simple_flip(rng, dist, gal::countable<1>))
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -279,7 +279,7 @@ void rdga() {
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::make_simple_flip<1>(rng, dist))
+                 mutate::simple_flip(rng, dist, gal::countable<1>))
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -316,7 +316,7 @@ void pesa() {
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::make_simple_flip<1>(rng, dist))
+                 mutate::simple_flip(rng, dist, gal::countable<1>))
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -349,7 +349,7 @@ void pesa_ii() {
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::make_simple_flip<1>(rng, dist))
+                 mutate::simple_flip(rng, dist, gal::countable<1>))
       .scale()
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -388,7 +388,7 @@ void paes() {
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
       .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::make_simple_flip<1>(rng, dist))
+                 mutate::simple_flip(rng, dist, gal::countable<1>))
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})

@@ -51,7 +51,8 @@ public:
   inline static constexpr auto count = Count;
 
 public:
-  inline explicit interchange(generator_t& generator)
+  inline explicit interchange(generator_t& generator,
+                              countable_t<Count> /*unused*/)
       : generator_{&generator} {
   }
 
@@ -83,7 +84,7 @@ public:
   inline static constexpr auto count = Count;
 
 public:
-  inline explicit shuffle(generator_t& generator)
+  inline explicit shuffle(generator_t& generator, countable_t<Count> /*unused*/)
       : generator_{&generator} {
   }
 
@@ -115,7 +116,7 @@ public:
   inline static constexpr auto count = Count;
 
 public:
-  inline explicit destroy(generator_t& generator)
+  inline explicit destroy(generator_t& generator, countable_t<Count> /*unused*/)
       : generator_{&generator} {
   }
 
@@ -130,7 +131,7 @@ private:
   generator_t* generator_;
 };
 
-template<typename Generator, typename Fn, std::size_t Count>
+template<typename Generator, std::size_t Count, typename Fn>
   requires(Count > 0)
 class create {
 public:
@@ -139,7 +140,7 @@ public:
   inline static constexpr auto count = Count;
 
 public:
-  inline create(generator_t& generator, Fn fn)
+  inline create(generator_t& generator, countable_t<Count> /*unused*/, Fn fn)
       : generator_{&generator}
       , fn_{std::move(fn)} {
   }
@@ -156,7 +157,7 @@ private:
   Fn fn_;
 };
 
-template<typename Generator, typename Fn, std::size_t Count>
+template<typename Generator, std::size_t Count, typename Fn>
   requires(Count > 0)
 class flip {
 public:
@@ -165,7 +166,7 @@ public:
   inline static constexpr auto count = Count;
 
 public:
-  inline flip(generator_t& generator, Fn fn)
+  inline flip(generator_t& generator, countable_t<Count> /*unused*/, Fn fn)
       : generator_{&generator}
       , fn_{std::move(fn)} {
   }
@@ -214,32 +215,20 @@ private:
   distribution_t* distribution_;
 };
 
-template<std::size_t Count, typename Generator, typename Roll>
-inline constexpr auto make_create(Generator& generator, Roll&& roll) {
-  return create<Generator, std::remove_cvref_t<Roll>, Count>{
-      generator, std::forward<Roll>(roll)};
-}
-
-template<std::size_t Count, typename Generator, typename Distribution>
-inline constexpr auto make_simple_create(Generator& generator,
-                                         Distribution& distribution) {
+template<typename Generator, typename Distribution, std::size_t Count>
+inline constexpr auto simple_create(Generator& generator,
+                                    Distribution& distribution,
+                                    countable_t<Count> count) {
   using roll_t = roller<Generator, Distribution>;
-  return create<Generator, roll_t, Count>{generator,
-                                          roll_t{generator, distribution}};
+  return create{generator, count, roll_t{generator, distribution}};
 }
 
-template<std::size_t Count, typename Generator, typename Roll>
-inline constexpr auto make_flip(Generator& generator, Roll&& roll) {
-  return flip<Generator, std::remove_cvref_t<Roll>, Count>{
-      generator, std::forward<Roll>(roll)};
-}
-
-template<std::size_t Count, typename Generator, typename Distribution>
-inline constexpr auto make_simple_flip(Generator& generator,
-                                       Distribution& distribution) {
+template<typename Generator, typename Distribution, std::size_t Count>
+inline constexpr auto simple_flip(Generator& generator,
+                                  Distribution& distribution,
+                                  countable_t<Count> count) {
   using roll_t = roller<Generator, Distribution>;
-  return flip<Generator, roll_t, Count>{generator,
-                                        roll_t{generator, distribution}};
+  return flip{generator, count, roll_t{generator, distribution}};
 }
 
 } // namespace gal::mutate
