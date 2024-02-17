@@ -13,13 +13,13 @@ namespace details {
   }
 
   template<range_chromosome Chromosome>
-  inline auto get_count_min(std::size_t count,
-                            Chromosome const& target) noexcept {
+  inline std::size_t get_count_min(std::size_t count,
+                                   Chromosome const& target) noexcept {
     if (auto size = std::ranges::size(target); size > 0) {
       return std::min(count, size);
     }
 
-    return std::size_t{};
+    return 0;
   }
 
   template<typename Generator, range_chromosome Chromosome>
@@ -31,41 +31,42 @@ namespace details {
 
   template<range_chromosome Chromosome>
   inline auto get_iter(Chromosome& target, std::size_t index) noexcept {
-    return std::ranges::next(std::ranges::begin(target), index);
+    return std::pair{index,
+                     std::ranges::next(std::ranges::begin(target), index)};
   }
 
   template<range_chromosome Chromosome, typename Generator>
   inline auto get_random_iter(Chromosome& target,
                               Generator& generator) noexcept {
-    return get_iter(target, details::select(generator, target));
+    return get_iter(target, select(generator, target));
   }
 
 } // namespace details
 
-template<typename Generator, std::size_t Count>
-  requires(Count > 0)
+template<typename Generator, std::size_t Pairs>
+  requires(Pairs > 0)
 class interchange {
 public:
   using generator_t = Generator;
 
-  inline static constexpr auto count = Count;
+  inline static constexpr auto pairs = Pairs;
 
 public:
   inline explicit interchange(generator_t& generator,
-                              countable_t<Count> /*unused*/)
+                              countable_t<Pairs> /*unused*/)
       : generator_{&generator} {
   }
 
   template<range_chromosome Chromosome>
   void operator()(Chromosome& target) const {
     if (std::ranges::size(target) > 2) {
-      for (auto i = count; i > 0; --i) {
-        auto left = details::get_random_iter(target, *generator_),
-             right = details::get_random_iter(target, *generator_);
+      for (auto i = pairs * 2; i > 0;) {
+        auto [i1, left] = details::get_random_iter(target, *generator_);
+        auto [i2, right] = details::get_random_iter(target, *generator_);
 
         if (left != right) {
           std::ranges::iter_swap(left, right);
-          --i;
+          i -= 2;
         }
       }
     }
@@ -92,11 +93,16 @@ public:
   void operator()(Chromosome& target) const {
     if (std::ranges::size(target) > 2) {
       for (auto i = count; i > 0;) {
-        auto from = details::get_random_iter(target, *generator_),
-             to = details::get_random_iter(target, *generator_);
+        auto [idx_from, from] = details::get_random_iter(target, *generator_);
+        auto [idx_to, to] = details::get_random_iter(target, *generator_);
 
-        if (from != to) {
-          std::move(from, std::ranges::next(from), to);
+        if (idx_from < idx_to) {
+          std::ranges::rotate(
+              from, std::ranges::next(from), std::ranges::next(to));
+          --i;
+        }
+        else if (idx_from > idx_to) {
+          std::ranges::rotate(to, from, std::ranges::next(from));
           --i;
         }
       }
@@ -123,7 +129,7 @@ public:
   template<range_chromosome Chromosome>
   void operator()(Chromosome& target) const {
     for (auto i = details::get_count_min(count, target); i > 0; --i) {
-      target.erase(details::get_random_iter(target, *generator_));
+      target.erase(details::get_random_iter(target, *generator_).second);
     }
   }
 
@@ -148,7 +154,8 @@ public:
   template<range_chromosome Chromosome>
   void operator()(Chromosome& target) const {
     for (auto i = count; i > 0; --i) {
-      target.insert(details::get_random_iter(target, *generator_), fn_());
+      target.insert(details::get_random_iter(target, *generator_).second,
+                    fn_());
     }
   }
 
@@ -180,7 +187,7 @@ public:
         idx = details::select(*generator_, target);
       } while (!state.update(idx));
 
-      fn_(*details::get_iter(target, idx));
+      fn_(*details::get_iter(target, idx).second);
     }
   }
 
