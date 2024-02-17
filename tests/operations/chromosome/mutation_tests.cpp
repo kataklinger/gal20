@@ -1,4 +1,6 @@
 
+#include "..\..\random.hpp"
+
 #include <mutation.hpp>
 
 #include <gmock/gmock.h>
@@ -9,68 +11,12 @@ namespace tests::mutation {
 using chromosome_vector_t = std::vector<int>;
 using chromosome_list_t = std::list<int>;
 
-class defined_random_sequence {
-public:
-  inline defined_random_sequence(std::initializer_list<std::size_t> seq)
-      : seq_{seq} {
-  }
-
-  inline auto next() noexcept {
-    return seq_[current_++];
-  }
-
-private:
-  std::vector<std::size_t> seq_;
-  std::size_t current_{0};
-};
-
-struct random_index_adapter {
-  inline auto operator()() noexcept {
-    return seq_->next();
-  }
-
-  defined_random_sequence* seq_;
-};
-
-struct deterministic_index_generator {
-public:
-  inline deterministic_index_generator(std::initializer_list<std::size_t> seq)
-      : seq_{seq} {
-  }
-
-  inline auto operator()() const noexcept {
-    return random_index_adapter{&seq_};
-  }
-
-  inline auto operator()(std::size_t min_idx,
-                         std::ranges::sized_range auto const& range) const {
-    return random_index_adapter{&seq_};
-  }
-
-  inline auto operator()(std::ranges::sized_range auto const& range) const {
-    return random_index_adapter{&seq_};
-  }
-
-  inline auto operator()(std::size_t min_idx, std::size_t max_idx) const {
-    return random_index_adapter{&seq_};
-  }
-
-  inline auto operator()(std::size_t max_idx) const {
-    return random_index_adapter{&seq_};
-  }
-
-private:
-  mutable defined_random_sequence seq_;
-};
-
 struct mutation_tests : public ::testing::Test {
 protected:
-  inline static constexpr std::array original_{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-
   void SetUp() override {
-    chromosome_vector_ =
-        chromosome_vector_t{original_.begin(), original_.end()};
-    chromosome_list_ = chromosome_list_t{original_.begin(), original_.end()};
+    chromosome_vector_ = chromosome_vector_t{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    chromosome_list_ =
+        chromosome_list_t{chromosome_vector_.begin(), chromosome_vector_.end()};
   }
 
   chromosome_vector_t chromosome_vector_;
