@@ -272,27 +272,29 @@ void test_ground() {
   std::list<int> lst_chromo{};
   std::deque<int> deq_chromo{};
 
-  gal::mutate::flip mu1(gen, gal::countable<2>, [](int& a) { a = 1; });
+  gal::index_generator igen{gen};
+
+  gal::mutate::flip mu1{igen, gal::countable<2>, [](int& a) { a = 1; }};
   mu1(vec_chromo);
   mu1(lst_chromo);
   mu1(deq_chromo);
 
-  gal::mutate::create mu2(gen, gal::countable<2>, []() { return 1; });
+  gal::mutate::create mu2{igen, gal::countable<2>, []() { return 1; }};
   mu2(vec_chromo);
   mu2(lst_chromo);
   mu2(deq_chromo);
 
-  gal::mutate::destroy mu3{gen, gal::countable<2>};
+  gal::mutate::destroy mu3{igen, gal::countable<2>};
   mu3(vec_chromo);
   mu3(lst_chromo);
   mu3(deq_chromo);
 
-  gal::mutate::shuffle mu4{gen, gal::countable<2>};
+  gal::mutate::shuffle mu4{igen, gal::countable<2>};
   mu4(vec_chromo);
   mu4(lst_chromo);
   mu4(deq_chromo);
 
-  gal::mutate::interchange mu5{gen, gal::countable<2>};
+  gal::mutate::interchange mu5{igen, gal::countable<2>};
   mu5(vec_chromo);
   mu5(lst_chromo);
   mu5(deq_chromo);

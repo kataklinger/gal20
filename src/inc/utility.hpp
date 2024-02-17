@@ -4,16 +4,6 @@
 #include <concepts>
 #include <type_traits>
 
-namespace gal {
-
-template<std::size_t N>
-using countable_t = std::integral_constant<std::size_t, N>;
-
-template<std::size_t Count>
-inline constexpr countable_t<Count> countable{};
-
-} // namespace gal
-
 namespace gal::util {
 
 template<typename Ref, typename Decayed>

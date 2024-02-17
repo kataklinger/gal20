@@ -10,6 +10,66 @@
 
 namespace gal {
 
+template<std::size_t N>
+using countable_t = std::integral_constant<std::size_t, N>;
+
+template<std::size_t Count>
+inline constexpr countable_t<Count> countable{};
+
+template<typename Generator>
+class random_index_adapter {
+public:
+  using generator_t = Generator;
+  using distribution_t = std::uniform_int_distribution<std::size_t>;
+
+public:
+  inline random_index_adapter(generator_t& generator,
+                              std::size_t min_idx,
+                              std::size_t max_idx) noexcept
+      : generator_{&generator}
+      , dist_{min_idx, max_idx} {
+  }
+
+  inline auto operator()() {
+    return dist_(*generator_);
+  }
+
+private:
+  generator_t* generator_;
+  distribution_t dist_;
+};
+
+template<typename Generator>
+class index_generator {
+public:
+  using generator_t = Generator;
+
+public:
+  inline index_generator(generator_t& generator) noexcept
+      : generator_{&generator} {
+  }
+
+  inline auto operator()(std::size_t min_idx,
+                         std::ranges::sized_range auto const& range) const {
+    return random_index_adapter{*generator_, min_idx, std::ranges::size(range)};
+  }
+
+  inline auto operator()(std::ranges::sized_range auto const& range) const {
+    return operator()(0, std::ranges::size(range));
+  }
+
+  inline auto operator()(std::size_t min_idx, std::size_t max_idx) const {
+    return random_index_adapter{*generator_, min_idx, max_idx};
+  }
+
+  inline auto operator()(std::size_t max_idx) const {
+    return operator()(0, max_idx);
+  }
+
+private:
+  generator_t* generator_;
+};
+
 class nonunique_sample {
 public:
   struct outer {};

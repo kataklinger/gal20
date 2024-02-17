@@ -101,6 +101,8 @@ void simple() {
   using namespace gal;
 
   std::mt19937 rng{};
+  gal::index_generator igen{rng};
+
   std::stop_token stop{};
 
   std::uniform_real_distribution<> dist{-10.0, 10.0};
@@ -112,8 +114,9 @@ void simple() {
       .spawn(f1::spawn{&rng})
       .evaluate(f1::evaluate{},
                 gal::minimize{gal::min_floatingpoint_three_way{}})
-      .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::simple_flip(rng, dist, gal::countable<1>))
+      .reproduce(
+          cross::symmetric_singlepoint{rng},
+          mutate::flip{igen, gal::countable<1>, mutate::roller{rng, dist}})
       .scale()
       .track<stats::generation,
              stats::fitness_deviation_raw,
@@ -134,6 +137,7 @@ void nsga() {
   using namespace gal;
 
   std::mt19937 rng{};
+  gal::index_generator igen{rng};
   std::stop_token stop{};
 
   std::uniform_real_distribution<> dist{-10.0, 10.0};
@@ -144,8 +148,9 @@ void nsga() {
       .tag<frontier_level_t, int_rank_t, crowd_density_t>()
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
-      .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::simple_flip(rng, dist, gal::countable<1>))
+      .reproduce(
+          cross::symmetric_singlepoint{rng},
+          mutate::flip{igen, gal::countable<1>, mutate::roller{rng, dist}})
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -167,6 +172,7 @@ void nsga_ii() {
   using namespace gal;
 
   std::mt19937 rng{};
+  gal::index_generator igen{rng};
   std::stop_token stop{};
 
   std::uniform_real_distribution<> dist{-10.0, 10.0};
@@ -177,8 +183,9 @@ void nsga_ii() {
       .tag<frontier_level_t, int_rank_t, crowd_density_t>()
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
-      .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::simple_flip(rng, dist, gal::countable<1>))
+      .reproduce(
+          cross::symmetric_singlepoint{rng},
+          mutate::flip{igen, gal::countable<1>, mutate::roller{rng, dist}})
       .scale<std::tuple<std::size_t, double>>(
           [](auto&, auto&) { return std::weak_ordering::less; })
       .track<stats::generation>(10)
@@ -202,6 +209,7 @@ void spea() {
   using namespace gal;
 
   std::mt19937 rng{};
+  gal::index_generator igen{rng};
   std::stop_token stop{};
 
   std::uniform_real_distribution<> dist{-10.0, 10.0};
@@ -212,8 +220,9 @@ void spea() {
       .tag<frontier_level_t, real_rank_t, cluster_label, prune_state_t>()
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
-      .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::simple_flip(rng, dist, gal::countable<1>))
+      .reproduce(
+          cross::symmetric_singlepoint{rng},
+          mutate::flip{igen, gal::countable<1>, mutate::roller{rng, dist}})
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -235,6 +244,7 @@ void spea_ii() {
   using namespace gal;
 
   std::mt19937 rng{};
+  gal::index_generator igen{rng};
   std::stop_token stop{};
 
   std::uniform_real_distribution<> dist{-10.0, 10.0};
@@ -245,8 +255,9 @@ void spea_ii() {
       .tag<frontier_level_t, int_rank_t, crowd_density_t>()
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
-      .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::simple_flip(rng, dist, gal::countable<1>))
+      .reproduce(
+          cross::symmetric_singlepoint{rng},
+          mutate::flip{igen, gal::countable<1>, mutate::roller{rng, dist}})
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -268,6 +279,7 @@ void rdga() {
   using namespace gal;
 
   std::mt19937 rng{};
+  gal::index_generator igen{rng};
   std::stop_token stop{};
 
   std::uniform_real_distribution<> dist{-10.0, 10.0};
@@ -278,8 +290,9 @@ void rdga() {
       .tag<frontier_level_t, int_rank_t, crowd_density_t, cluster_label>()
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
-      .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::simple_flip(rng, dist, gal::countable<1>))
+      .reproduce(
+          cross::symmetric_singlepoint{rng},
+          mutate::flip{igen, gal::countable<1>, mutate::roller{rng, dist}})
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -301,6 +314,7 @@ void pesa() {
   using namespace gal;
 
   std::mt19937 rng{};
+  gal::index_generator igen{rng};
   std::stop_token stop{};
 
   std::uniform_real_distribution<> dist{-10.0, 10.0};
@@ -315,8 +329,9 @@ void pesa() {
            prune_state_t>()
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
-      .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::simple_flip(rng, dist, gal::countable<1>))
+      .reproduce(
+          cross::symmetric_singlepoint{rng},
+          mutate::flip{igen, gal::countable<1>, mutate::roller{rng, dist}})
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -338,6 +353,7 @@ void pesa_ii() {
   using namespace gal;
 
   std::mt19937 rng{};
+  gal::index_generator igen{rng};
   std::stop_token stop{};
 
   std::uniform_real_distribution<> dist{-10.0, 10.0};
@@ -348,8 +364,9 @@ void pesa_ii() {
       .tag<frontier_level_t, bin_rank_t, cluster_label, prune_state_t>()
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
-      .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::simple_flip(rng, dist, gal::countable<1>))
+      .reproduce(
+          cross::symmetric_singlepoint{rng},
+          mutate::flip{igen, gal::countable<1>, mutate::roller{rng, dist}})
       .scale()
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
@@ -372,6 +389,7 @@ void paes() {
   using namespace gal;
 
   std::mt19937 rng{};
+  gal::index_generator igen{rng};
   std::stop_token stop{};
 
   std::uniform_real_distribution<> dist{-10.0, 10.0};
@@ -387,8 +405,9 @@ void paes() {
            lineage_t>()
       .spawn(f1f2::spawn{&rng})
       .evaluate(f1f2::evaluate{}, gal::dominate{std::less{}})
-      .reproduce(cross::symmetric_singlepoint{rng},
-                 mutate::simple_flip(rng, dist, gal::countable<1>))
+      .reproduce(
+          cross::symmetric_singlepoint{rng},
+          mutate::flip{igen, gal::countable<1>, mutate::roller{rng, dist}})
       .scale<double>(gal::floatingpoint_three_way{})
       .track<stats::generation>(10)
       .stop(criteria::generation_limit{100})
