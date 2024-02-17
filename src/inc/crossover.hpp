@@ -7,23 +7,10 @@ namespace gal::cross {
 
 namespace details {
 
-  using distribution_t = std::uniform_int_distribution<std::size_t>;
-
   template<range_chromosome Chromosome>
-  using get_iterator_type = std::remove_reference_t<decltype(std::ranges::begin(
-      std::declval<std::add_lvalue_reference_t<Chromosome>>()))>;
-
-  template<range_chromosome Chromosome>
-  inline auto distribute(Chromosome const& parent) noexcept {
-    return distribution_t{1, std::ranges::size(parent) - 1};
-  }
-
-  template<range_chromosome Chromosome>
-  inline auto distribute(Chromosome const& parent1,
-                         Chromosome const& parent2) noexcept {
-    return distribution_t{
-        1,
-        std::min(std::ranges::size(parent1), std::ranges::size(parent2)) - 1};
+  inline auto shorter(Chromosome const& parent1,
+                      Chromosome const& parent2) noexcept {
+    return std::min(std::ranges::size(parent1), std::ranges::size(parent2));
   }
 
   template<range_chromosome Chromosome>
@@ -50,13 +37,13 @@ public:
   using generator_t = Generator;
 
 public:
-  inline explicit symmetric_singlepoint(generator_t& generator)
-      : generator_{&generator} {
+  inline explicit symmetric_singlepoint(generator_t const& generator)
+      : generator_{generator} {
   }
 
   template<range_chromosome Chromosome>
   inline auto operator()(Chromosome const& p1, Chromosome const& p2) const {
-    auto pt = details::distribute(p1, p2)(*generator_);
+    auto pt = std::invoke(std::invoke(generator_, 1, details::shorter(p1, p2)));
 
     std::pair<Chromosome, Chromosome> children{};
 
@@ -67,7 +54,7 @@ public:
   }
 
 private:
-  generator_t* generator_;
+  generator_t generator_;
 };
 
 template<typename Generator>
@@ -76,14 +63,14 @@ public:
   using generator_t = Generator;
 
 public:
-  inline explicit asymmetric_singlepoint(generator_t& generator)
-      : generator_{&generator} {
+  inline explicit asymmetric_singlepoint(generator_t const& generator)
+      : generator_{generator} {
   }
 
   template<range_chromosome Chromosome>
   inline auto operator()(Chromosome const& p1, Chromosome const& p2) const {
-    auto pt1 = details::distribute(p1)(*generator_),
-         pt2 = details::distribute(p2)(*generator_);
+    auto pt1 = std::invoke(std::invoke(generator_, 1, p1));
+    auto pt2 = std::invoke(std::invoke(generator_, 1, p2));
 
     std::pair<Chromosome, Chromosome> children{};
 
@@ -94,7 +81,7 @@ public:
   }
 
 private:
-  generator_t* generator_;
+  generator_t generator_;
 };
 
 template<typename Generator, std::size_t Points>
@@ -106,9 +93,9 @@ public:
   inline static constexpr auto points = Points;
 
 public:
-  inline explicit symmetric_multipoint(generator_t& generator,
+  inline explicit symmetric_multipoint(generator_t const& generator,
                                        countable_t<Points> /*unused*/)
-      : generator_{&generator} {
+      : generator_{generator} {
   }
 
   template<range_chromosome Chromosome>
@@ -120,9 +107,12 @@ public:
       return std::pair<Chromosome, Chromosome>{p1, p2};
     }
 
-    auto selected = sample_many(unique_sample{count}, [&p1, &p2, this] {
-      return details::distribute(p1, p2)(*generator_);
-    });
+    auto selected = sample_many(
+        unique_sample{count},
+        [this,
+         rnd = std::invoke(generator_, 1, details::shorter(p1, p2))]() mutable {
+          return std::invoke(rnd);
+        });
 
     std::ranges::sort(selected);
 
@@ -185,7 +175,7 @@ private:
   }
 
 private:
-  generator_t* generator_;
+  generator_t generator_;
 };
 
 template<typename Generator, std::size_t Points>
@@ -197,9 +187,9 @@ public:
   inline static constexpr auto points = Points;
 
 public:
-  inline explicit asymmetric_multipoint(generator_t& generator,
+  inline explicit asymmetric_multipoint(generator_t const& generator,
                                         countable_t<Points> /*unused*/)
-      : generator_{&generator} {
+      : generator_{generator} {
   }
 
   template<range_chromosome Chromosome>
@@ -211,15 +201,19 @@ public:
       return std::pair<Chromosome, Chromosome>{p1, p2};
     }
 
-    auto selected1 = sample_many(unique_sample{count}, [&p1, this] {
-      return details::distribute(p1)(*generator_);
-    });
+    auto selected1 =
+        sample_many(unique_sample{count},
+                    [this, rnd = std::invoke(generator_, 1, p1)]() mutable {
+                      return std::invoke(rnd);
+                    });
 
     std::ranges::sort(selected1);
 
-    auto selected2 = sample_many(unique_sample{count}, [&p2, this] {
-      return details::distribute(p2)(*generator_);
-    });
+    auto selected2 =
+        sample_many(unique_sample{count},
+                    [this, rnd = std::invoke(generator_, 1, p2)]() mutable {
+                      return std::invoke(rnd);
+                    });
 
     std::ranges::sort(selected2);
 
@@ -249,7 +243,7 @@ public:
   }
 
 private:
-  generator_t* generator_;
+  generator_t generator_;
 };
 
 template<typename Blender>

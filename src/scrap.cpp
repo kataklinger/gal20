@@ -247,18 +247,20 @@ void test_ground() {
       gal::stats::get_raw_fitness_best_value{}, std::less{}, 2};
   cr3(p, hist);
 
-  gal::cross::symmetric_singlepoint cs1{gen};
+  gal::index_generator igen{gen};
+
+  gal::cross::symmetric_singlepoint cs1{igen};
   cs1(std::vector<int>{}, std::vector<int>{});
 
-  gal::cross::asymmetric_singlepoint cs2{gen};
+  gal::cross::asymmetric_singlepoint cs2{igen};
   cs2(std::vector<int>{}, std::vector<int>{});
 
-  gal::cross::symmetric_multipoint cs3{gen, gal::countable<2>};
+  gal::cross::symmetric_multipoint cs3{igen, gal::countable<2>};
   cs3(std::vector<int>{}, std::vector<int>{});
   cs3(std::list<int>{}, std::list<int>{});
   cs3(std::deque<int>{}, std::deque<int>{});
 
-  gal::cross::asymmetric_multipoint cs4{gen, gal::countable<2>};
+  gal::cross::asymmetric_multipoint cs4{igen, gal::countable<2>};
   cs4(std::vector<int>{}, std::vector<int>{});
   cs4(std::list<int>{}, std::list<int>{});
   cs4(std::deque<int>{}, std::deque<int>{});
@@ -271,8 +273,6 @@ void test_ground() {
   std::vector<int> vec_chromo{};
   std::list<int> lst_chromo{};
   std::deque<int> deq_chromo{};
-
-  gal::index_generator igen{gen};
 
   gal::mutate::flip mu1{igen, gal::countable<2>, [](int& a) { a = 1; }};
   mu1(vec_chromo);
