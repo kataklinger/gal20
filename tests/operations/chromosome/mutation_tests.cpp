@@ -168,8 +168,6 @@ TEST_F(mutation_tests, suffle_vector_two) {
               ::testing::ElementsAre(9, 1, 2, 3, 4, 5, 6, 7, 8, 0));
 }
 
-//////////
-
 TEST_F(mutation_tests, suffle_list_one_forward) {
   // arrange
   deterministic_index_generator rng{1, 8};
@@ -207,6 +205,161 @@ TEST_F(mutation_tests, suffle_list_two) {
   // assert
   EXPECT_THAT(chromosome_list_,
               ::testing::ElementsAre(9, 1, 2, 3, 4, 5, 6, 7, 8, 0));
+}
+
+TEST_F(mutation_tests, destroy_vector_one) {
+  // arrange
+  deterministic_index_generator rng{8};
+  gal::mutate::destroy op{rng, gal::countable<1>};
+
+  // act
+  op(chromosome_vector_);
+
+  // assert
+  EXPECT_THAT(chromosome_vector_,
+              ::testing::ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 9));
+}
+
+TEST_F(mutation_tests, destroy_vector_two) {
+  // arrange
+  deterministic_index_generator rng{0, 8};
+  gal::mutate::destroy op{rng, gal::countable<2>};
+
+  // act
+  op(chromosome_vector_);
+
+  // assert
+  EXPECT_THAT(chromosome_vector_,
+              ::testing::ElementsAre(1, 2, 3, 4, 5, 6, 7, 8));
+}
+
+TEST_F(mutation_tests, destroy_list_one) {
+  // arrange
+  deterministic_index_generator rng{8};
+  gal::mutate::destroy op{rng, gal::countable<1>};
+
+  // act
+  op(chromosome_list_);
+
+  // assert
+  EXPECT_THAT(chromosome_list_,
+              ::testing::ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 9));
+}
+
+TEST_F(mutation_tests, destroy_list_two) {
+  // arrange
+  deterministic_index_generator rng{0, 8};
+  gal::mutate::destroy op{rng, gal::countable<2>};
+
+  // act
+  op(chromosome_list_);
+
+  // assert
+  EXPECT_THAT(chromosome_list_, ::testing::ElementsAre(1, 2, 3, 4, 5, 6, 7, 8));
+}
+
+TEST_F(mutation_tests, create_vector_one) {
+  // arrange
+  deterministic_index_generator rng{8};
+  gal::mutate::create op{rng, gal::countable<1>, []() { return 10; }};
+
+  // act
+  op(chromosome_vector_);
+
+  // assert
+  EXPECT_THAT(chromosome_vector_,
+              ::testing::ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 10, 8, 9));
+}
+
+TEST_F(mutation_tests, create_vector_two) {
+  // arrange
+  deterministic_index_generator rng{0, 11};
+  gal::mutate::create op{rng, gal::countable<2>, []() { return 10; }};
+
+  // act
+  op(chromosome_vector_);
+
+  // assert
+  EXPECT_THAT(chromosome_vector_,
+              ::testing::ElementsAre(10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+}
+
+TEST_F(mutation_tests, create_list_one) {
+  // arrange
+  deterministic_index_generator rng{8};
+  gal::mutate::create op{rng, gal::countable<1>, []() { return 10; }};
+
+  // act
+  op(chromosome_list_);
+
+  // assert
+  EXPECT_THAT(chromosome_list_,
+              ::testing::ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 10, 8, 9));
+}
+
+TEST_F(mutation_tests, create_list_two) {
+  // arrange
+  deterministic_index_generator rng{0, 11};
+  gal::mutate::create op{rng, gal::countable<2>, []() { return 10; }};
+
+  // act
+  op(chromosome_list_);
+
+  // assert
+  EXPECT_THAT(chromosome_list_,
+              ::testing::ElementsAre(10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+}
+
+TEST_F(mutation_tests, flip_vector_one) {
+  // arrange
+  deterministic_index_generator rng{8};
+  gal::mutate::flip op{rng, gal::countable<1>, [](auto& x) { x = 10; }};
+
+  // act
+  op(chromosome_vector_);
+
+  // assert
+  EXPECT_THAT(chromosome_vector_,
+              ::testing::ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 10, 9));
+}
+
+TEST_F(mutation_tests, flip_vector_two) {
+  // arrange
+  deterministic_index_generator rng{0, 9};
+  gal::mutate::flip op{rng, gal::countable<2>, [](auto& x) { x = 10; }};
+
+  // act
+  op(chromosome_vector_);
+
+  // assert
+  EXPECT_THAT(chromosome_vector_,
+              ::testing::ElementsAre(10, 1, 2, 3, 4, 5, 6, 7, 8, 10));
+}
+
+TEST_F(mutation_tests, flip_list_one) {
+  // arrange
+  deterministic_index_generator rng{8};
+  gal::mutate::flip op{rng, gal::countable<1>, [](auto& x) { x = 10; }};
+
+  // act
+  op(chromosome_list_);
+
+  // assert
+  EXPECT_THAT(chromosome_list_,
+              ::testing::ElementsAre(0, 1, 2, 3, 4, 5, 6, 7, 10, 9));
+}
+
+TEST_F(mutation_tests, flip_list_two) {
+  // arrange
+  deterministic_index_generator rng{0, 9};
+  gal::mutate::flip op{rng, gal::countable<2>, [](auto& x) { x = 10; }};
+
+  // act
+  op(chromosome_list_);
+
+  // assert
+  EXPECT_THAT(chromosome_list_,
+              ::testing::ElementsAre(10, 1, 2, 3, 4, 5, 6, 7, 8, 10));
 }
 
 } // namespace tests::mutation
