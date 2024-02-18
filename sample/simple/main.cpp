@@ -304,7 +304,7 @@ void rdga() {
       .project(project::factory<project::alternate, int_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8f, 0.2f, true>(rng))
-      .replace(replace::append{})
+      .replace(replace::nondominating_parents_raw{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
       .run(stop);

@@ -127,11 +127,16 @@ concept selection_range =
     };
 
 template<typename Range, typename Replaced, typename Replacement>
-concept replacement_range =
-    std::ranges::random_access_range<Range> && requires(Range r) {
+concept forward_replacement_range =
+    std::ranges::forward_range<Range> && requires(Range r) {
       { get_parent(*std::ranges::begin(r)) } -> util::decays_to<Replaced>;
       { get_child(*std::ranges::begin(r)) } -> util::decays_to<Replacement>;
     };
+
+template<typename Range, typename Replaced, typename Replacement>
+concept replacement_range =
+    std::ranges::random_access_range<Range> &&
+    forward_replacement_range<Range, Replaced, Replacement>;
 
 namespace details {
 

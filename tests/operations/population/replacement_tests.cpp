@@ -386,6 +386,79 @@ TEST_F(replacement_tests, parents_added_content) {
               ::testing::UnorderedElementsAre(9, 8, 2, 4, 3));
 }
 
+TEST_F(replacement_tests, nondominating_parents_raw_removed_count) {
+  // arrange
+  gal::replace::nondominating_parents_raw op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(2));
+}
+
+TEST_F(replacement_tests, nondominating_parents_raw_removed_content) {
+  // arrange
+  gal::replace::nondominating_parents_raw op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(replaced), ::testing::UnorderedElementsAre(6, 7));
+}
+
+TEST_F(replacement_tests, nondominating_parents_raw_added_content) {
+  // arrange
+  gal::replace::nondominating_parents_raw op{};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_raw_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(3, 4, 5, 8, 9));
+}
+
+/////////////
+
+TEST_F(replacement_tests, nondominating_parents_scaled_removed_count) {
+  // arrange
+  gal::replace::nondominating_parents_scaled op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(replaced, ::testing::SizeIs(2));
+}
+
+TEST_F(replacement_tests, nondominating_parents_scaled_removed_content) {
+  // arrange
+  gal::replace::nondominating_parents_scaled op{};
+
+  // act
+  auto replaced = op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(replaced),
+              ::testing::UnorderedElementsAre(6, 7));
+}
+
+TEST_F(replacement_tests, nondominating_parents_scaled_added_content) {
+  // arrange
+  gal::replace::nondominating_parents_scaled op{};
+
+  // act
+  op(population_, offsprings_5_);
+
+  // assert
+  EXPECT_THAT(get_scaled_fitness(population_.individuals()),
+              ::testing::UnorderedElementsAre(3, 4, 5, 8, 9));
+}
+
+/////////////
+
 TEST_F(replacement_tests, total_removed_count) {
   // arrange
   gal::replace::total op{};

@@ -15,11 +15,11 @@ List of task to implement or improve
  - [ ] initializator to produce tags
  - [ ] verify duplicates parents for parent replacement
  - [ ] roulette wheele selection when minimizing fitness
- - [ ] replacement with forbidden regions
  - [ ] optimize linkage clustering to recalculate only merged clusters
  - [ ] add pruning operation that removes the worst parents and offsprings (paes)
  - [ ] substractive translate projection
  - [ ] optimize field coupling by creating slot for each parent (avoid sorting)
+ - [x] replacement with forbidden regions
  - [x] tournament selection (random, roulette wheel)
  - [x] selection of hypercells rather than individuals
  - [x] insert-only replacement

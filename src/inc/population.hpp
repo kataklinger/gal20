@@ -25,7 +25,7 @@ struct sort_policy_base {
                      Comparator&& compare) noexcept {
     return std::ranges::minmax_element(
         individuals,
-        gal::fitness_worse{std::forward<Comparator>(compare)},
+        fitness_worse{std::forward<Comparator>(compare)},
         [](auto const& i) { return i.evaluation().get(fitness_tag); });
   }
 
@@ -33,7 +33,7 @@ struct sort_policy_base {
   inline auto sort(Collection& individuals, Comparator&& compare) {
     std::ranges::sort(
         individuals,
-        gal::fitness_better{std::forward<Comparator>(compare)},
+        fitness_better{std::forward<Comparator>(compare)},
         [](auto const& i) { return i.evaluation().get(fitness_tag); });
 
     return by;
@@ -128,9 +128,9 @@ public:
     return std::views::drop(individuals_, insertion);
   }
 
-  template<replacement_range<iterator_t, individual_t> Range>
+  template<forward_replacement_range<iterator_t, individual_t> Range>
   auto replace(Range&& replacements) {
-    auto removed = ensure_removed(std::ranges::size(replacements));
+    auto removed = ensure_removed(replacements);
 
     as_unsorted();
 
@@ -271,6 +271,16 @@ private:
     result.reserve(size);
 
     return result;
+  }
+
+  template<std::ranges::sized_range Range>
+  inline auto ensure_removed(Range const& range) {
+    return ensure_removed(std::ranges::size(range));
+  }
+
+  template<std::ranges::range Range>
+  inline auto ensure_removed(Range const& /*unused*/) {
+    return collection_t{};
   }
 
   inline void as_unsorted() noexcept {

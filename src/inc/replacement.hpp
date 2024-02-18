@@ -154,6 +154,32 @@ public:
   }
 };
 
+template<typename FitnessTag>
+class nondominating_parents {
+public:
+  using fitness_tag_t = FitnessTag;
+
+private:
+  inline static constexpr fitness_tag_t fitness_tag{};
+
+public:
+  template<typename Population,
+           replacement_range<typename Population::iterator_t,
+                             typename Population::individual_t> Offspring>
+  inline auto operator()(Population& population, Offspring&& offspring) const {
+    return population.replace(
+        offspring |
+        std::views::filter([cmp = fitness_better{
+                                population.comparator(fitness_tag)}](auto& p) {
+          return !cmp(get_parent(p)->evaluation().get(fitness_tag),
+                      get_child(p).evaluation().get(fitness_tag));
+        }));
+  }
+};
+
+using nondominating_parents_raw = nondominating_parents<raw_fitness_tag>;
+using nondominating_parents_scaled = nondominating_parents<scaled_fitness_tag>;
+
 class total {
 public:
   template<typename Population,
