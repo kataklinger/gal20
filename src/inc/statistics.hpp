@@ -218,7 +218,7 @@ struct population_size {
   public:
     body() = default;
 
-    inline body(Population const& population, body const& previous) noexcept
+    inline body(Population const& population, body const& /* unused */) noexcept
         : value_{population.current_size()} {
     }
 
@@ -242,7 +242,8 @@ struct generic_value {
   public:
     body() = default;
 
-    inline body(Population const& /*unused*/, body const& previous) noexcept {
+    inline body(Population const& /*unused*/,
+                body const& /* unused */) noexcept {
     }
 
     inline auto generic_value() const noexcept {
@@ -272,7 +273,8 @@ struct generic_timer {
   public:
     body() = default;
 
-    inline body(Population const& /*unused*/, body const& previous) noexcept {
+    inline body(Population const& /*unused*/,
+                body const& /* unused */) noexcept {
     }
 
     inline auto elapsed_value() const noexcept {
@@ -711,7 +713,7 @@ private:
 
 public:
   inline explicit enabled_timer(statistics_t& statistics)
-      : value_{&statistics.get<timer_t>()} {
+      : value_{&statistics.template get<timer_t>()} {
     value_->start_timer();
   }
 
@@ -757,7 +759,7 @@ public:
                                               statistics_t& statistics)
       : population_{&population}
       , start_size_{population.current_size()}
-      , value_{&statistics.get<counter_t>()} {
+      , value_{&statistics.template get<counter_t>()} {
   }
 
   inline ~enabled_size_change_tracker() noexcept {
@@ -803,7 +805,8 @@ inline void
   using counter_t = generic_counter<Tag>;
 
   if constexpr (tracks_model_v<Statistics, counter_t>) {
-    statistics.get<counter_t>().set_generic_value(std::ranges::size(range));
+    statistics.template get<counter_t>().set_generic_value(
+        std::ranges::size(range));
   }
 }
 
@@ -814,7 +817,7 @@ inline void increment_count(Statistics& statistics,
   using counter_t = generic_counter<Tag>;
 
   if constexpr (tracks_model_v<Statistics, counter_t>) {
-    auto& model = statistics.get<counter_t>();
+    auto& model = statistics.template get<counter_t>();
     model.set_generic_value(model.get_generic_value() + increment);
   }
 }
@@ -825,7 +828,7 @@ inline void
   using counter_t = generic_counter<Tag>;
 
   if constexpr (tracks_model_v<Statistics, counter_t>) {
-    statistics.get<counter_t>().set_generic_value(count);
+    statistics.template get<counter_t>().set_generic_value(count);
   }
 }
 
@@ -844,7 +847,7 @@ inline void compute_simple(Statistics& statistics, Tag /*unused*/, Fn&& fn) {
   using value_t = generic_value<details::compute_result_t<Fn>, Tag>;
 
   if constexpr (tracks_model_v<Statistics, value_t>) {
-    statistics.get<value_t>().set_generic_value(
+    statistics.template get<value_t>().set_generic_value(
         std::invoke(std::forward<Fn>(fn)));
   }
 }
@@ -1079,7 +1082,8 @@ namespace details {
                             tagged<Value, Tag>&& single) {
     using value_t = generic_value<Value, Tag>;
 
-    statistics.get<value_t>().set_generic_value(std::move(single.value));
+    statistics.template get<value_t>().set_generic_value(
+        std::move(single.value));
   }
 
   template<typename Statistics, typename... Tys>
