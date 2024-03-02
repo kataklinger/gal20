@@ -388,7 +388,7 @@ void test_ground() {
   pr2(mp, cls);
 
   gal::prune::cluster_edge pr3{};
-  pr2(mp, cls);
+  pr3(mp, cls);
 
   gal::crowd::none cw0{};
   cw0(mp, pps, cls);
