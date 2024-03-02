@@ -158,35 +158,35 @@ public:
 
 private:
   inline auto rank(statistics_t& current) {
-    auto timer = stats::start_timer(current, rank_time_tag);
+    [[maybe_unused]] auto timer = stats::start_timer(current, rank_time_tag);
     return std::invoke(config_.ranking(), population_, pareto_preservance_tag);
   }
 
   inline void elite(pareto_t& sets, statistics_t& current) {
     auto change =
         stats::track_size_change(population_, current, elite_count_tag);
-    auto timer = stats::start_timer(current, elite_time_tag);
+    [[maybe_unused]] auto timer = stats::start_timer(current, elite_time_tag);
     std::invoke(config_.elitism(), population_, sets);
   }
 
   inline auto cluster(pareto_t& sets, statistics_t& current) {
-    auto timer = stats::start_timer(current, cluster_time_tag);
+    [[maybe_unused]] auto timer = stats::start_timer(current, cluster_time_tag);
     return std::invoke(config_.clustering(), population_, sets);
   }
 
   inline void
       crowd(pareto_t& sets, cluster_set& clusters, statistics_t& current) {
-    auto timer = stats::start_timer(current, cluster_time_tag);
+    [[maybe_unused]] auto timer = stats::start_timer(current, cluster_time_tag);
     return std::invoke(config_.crowding(), population_, sets, clusters);
   }
 
-  template<cluster_pruning Pruning>
+  template<cluster_pruning<population_t> Pruning>
   inline void prune(Pruning const& operation,
                     cluster_set& clusters,
                     statistics_t& current) {
     auto change =
         stats::track_size_change(population_, current, prune_count_tag);
-    auto timer = stats::start_timer(current, prune_time_tag);
+    [[maybe_unused]] auto timer = stats::start_timer(current, prune_time_tag);
     std::invoke(operation, population_, clusters);
   }
 
@@ -196,11 +196,11 @@ private:
                     statistics_t& /*unused*/) noexcept {
   }
 
-  template<crowd_pruning Pruning>
+  template<crowd_pruning<population_t> Pruning>
   inline void prune(Pruning const& operation, statistics_t& current) {
     auto change =
         stats::track_size_change(population_, current, prune_count_tag);
-    auto timer = stats::start_timer(current, prune_time_tag);
+    [[maybe_unused]] auto timer = stats::start_timer(current, prune_time_tag);
     std::invoke(operation, population_);
   }
 
@@ -214,12 +214,13 @@ private:
                       pareto_t& sets,
                       cluster_set& clusters,
                       statistics_t& current) {
-    auto timer = stats::start_timer(current, project_time_tag);
+    [[maybe_unused]] auto timer = stats::start_timer(current, project_time_tag);
     return std::invoke(operation, sets, clusters);
   }
 
   inline auto select(statistics_t& current) {
-    auto timer = stats::start_timer(current, selection_time_tag);
+    [[maybe_unused]] auto timer =
+        stats::start_timer(current, selection_time_tag);
     return std::invoke(config_.selection(), population_);
   }
 
@@ -227,14 +228,16 @@ private:
            coupling<population_t, Selected> Coupling>
   inline auto
       couple(Selected&& selected, Coupling&& operation, statistics_t& current) {
-    auto coupling_time = stats::start_timer(current, coupling_time_tag);
+    [[maybe_unused]] auto coupling_time =
+        stats::start_timer(current, coupling_time_tag);
     return std::invoke(std::forward<Coupling>(operation),
                        std::forward<Selected>(selected));
   }
 
   template<std::ranges::range Offspring>
   inline auto replace(Offspring&& offspring, statistics_t& current) {
-    auto timer = stats::start_timer(current, replacement_time_tag);
+    [[maybe_unused]] auto timer =
+        stats::start_timer(current, replacement_time_tag);
     return std::invoke(
         config_.replacement(), population_, std::forward<Offspring>(offspring));
   }

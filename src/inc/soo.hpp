@@ -238,12 +238,13 @@ public:
 
 private:
   inline void scale(scaler_t& scaler, statistics_t& current) {
-    auto timer = stats::start_timer(current, scaling_time_tag);
+    [[maybe_unused]] auto timer = stats::start_timer(current, scaling_time_tag);
     scaler();
   }
 
   inline auto select(statistics_t& current) {
-    auto timer = stats::start_timer(current, selection_time_tag);
+    [[maybe_unused]] auto timer =
+        stats::start_timer(current, selection_time_tag);
     return std::invoke(config_.selection(), population_);
   }
 
@@ -251,14 +252,16 @@ private:
            coupling<population_t, Selected> Coupling>
   inline auto
       couple(Selected&& selected, Coupling&& coupling, statistics_t& current) {
-    auto coupling_time = stats::start_timer(current, coupling_time_tag);
+    [[maybe_unused]] auto coupling_time =
+        stats::start_timer(current, coupling_time_tag);
     return std::invoke(std::forward<Coupling>(coupling),
                        std::forward<Selected>(selected));
   }
 
   template<std::ranges::range Offspring>
   inline auto replace(Offspring&& offspring, statistics_t& current) {
-    auto timer = stats::start_timer(current, replacement_time_tag);
+    [[maybe_unused]] auto timer =
+        stats::start_timer(current, replacement_time_tag);
     return std::invoke(
         config_.replacement(), population_, std::forward<Offspring>(offspring));
   }

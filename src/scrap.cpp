@@ -186,6 +186,7 @@ void test_ground() {
   ctx_t ctx{p, hist};
 
   auto sc0 = gal::scale::factory<gal::scale::top, 2, 1.5>{}(ctx);
+  sc0();
 
   gal::scale::top<ctx_t, 5, 1.5> sc1{ctx};
   sc1();
