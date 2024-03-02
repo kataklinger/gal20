@@ -1,10 +1,12 @@
 
-#include "..\..\random.hpp"
+#include "../../random.hpp"
 
 #include <crossover.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include <list>
 
 namespace tests::crossover {
 
