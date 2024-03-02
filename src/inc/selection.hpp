@@ -113,21 +113,18 @@ public:
           idx, &population.individuals()[idx].evaluation().get(fitness_tag)};
     };
 
-    return sample_many(population,
-                       attribute_t::sample(),
-                       [&population, cmp, generate, this]() {
-                         auto [best_idx, best_fitness] = generate();
+    return sample_many(population, attribute_t::sample(), [cmp, generate]() {
+      auto [best_idx, best_fitness] = generate();
 
-                         for (auto i = rounds_t::value - 1; i > 0; --i) {
-                           if (auto [idx, current] = generate();
-                               cmp(*current, *best_fitness)) {
-                             best_idx = idx;
-                             best_fitness = current;
-                           }
-                         }
+      for (auto i = rounds_t::value - 1; i > 0; --i) {
+        if (auto [idx, current] = generate(); cmp(*current, *best_fitness)) {
+          best_idx = idx;
+          best_fitness = current;
+        }
+      }
 
-                         return best_idx;
-                       });
+      return best_idx;
+    });
   }
 
 private:
