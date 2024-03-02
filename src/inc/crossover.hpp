@@ -224,7 +224,7 @@ public:
     auto in1 = std::ranges::begin(p1), in2 = std::ranges::begin(p2);
 
     std::size_t current1 = 0, current2 = 0;
-    for (int i = 0; i < count; ++i) {
+    for (std::size_t i = 0; i < count; ++i) {
       for (; current1 < selected1[i]; ++current1) {
         *(out1++) = *(in1++);
       }
