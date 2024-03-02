@@ -98,7 +98,7 @@ public:
   }
 
   inline void operator()(ordinal_t /*unused*/, individual_t& individual) const {
-    auto& eval = individual.evaluation();
+    auto& eval = individual.eval();
     eval.set_scaled(calculate(eval.raw()));
   }
 
@@ -168,7 +168,7 @@ public:
   }
 
   inline void operator()(ordinal_t /*unused*/, individual_t& individual) const {
-    auto& eval = individual.evaluation();
+    auto& eval = individual.eval();
     eval.set_scaled(calculate(eval.raw()));
   }
 
@@ -231,7 +231,7 @@ public:
     auto value = Preassure - 2. * (*ordinal) * (Preassure - 1.) /
                                  (population_->current_size() - 1.);
 
-    auto& eval = individual.evaluation();
+    auto& eval = individual.eval();
     eval.set_scaled(scaled_fitness_t{value});
   }
 
@@ -270,7 +270,7 @@ public:
   }
 
   inline void operator()(ordinal_t ordinal, individual_t& individual) const {
-    auto& eval = individual.evaluation();
+    auto& eval = individual.eval();
 
     auto power = population_->current_size() - *ordinal - 1;
     eval.set_scaled(scaled_fitness_t{std::pow(Base, power)});
@@ -321,7 +321,7 @@ public:
   }
 
   inline void operator()(ordinal_t ordinal, individual_t& individual) const {
-    auto& eval = individual.evaluation();
+    auto& eval = individual.eval();
     eval.set_scaled(
         scaled_fitness_t{*ordinal <= cutoff ? Proportion * eval.raw() : 0});
   }
@@ -361,7 +361,7 @@ public:
   }
 
   inline void operator()(ordinal_t /*unused*/, individual_t& individual) const {
-    auto& eval = individual.evaluation();
+    auto& eval = individual.eval();
     eval.set_scaled(scaled_fitness_t{std::pow(eval.raw(), Power)});
   }
 };
@@ -397,7 +397,7 @@ public:
   }
 
   inline void operator()(ordinal_t /*unused*/, individual_t& individual) const {
-    auto& eval = individual.evaluation();
+    auto& eval = individual.eval();
     eval.set_scaled(scaled_fitness_t{eval.raw() - get_worst()});
   }
 

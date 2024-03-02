@@ -26,15 +26,14 @@ struct sort_policy_base {
     return std::ranges::minmax_element(
         individuals,
         fitness_worse{std::forward<Comparator>(compare)},
-        [](auto const& i) { return i.evaluation().get(fitness_tag); });
+        [](auto const& i) { return i.eval().get(fitness_tag); });
   }
 
   template<typename Collection, typename Comparator>
   inline auto sort(Collection& individuals, Comparator&& compare) {
-    std::ranges::sort(
-        individuals,
-        fitness_better{std::forward<Comparator>(compare)},
-        [](auto const& i) { return i.evaluation().get(fitness_tag); });
+    std::ranges::sort(individuals,
+                      fitness_better{std::forward<Comparator>(compare)},
+                      [](auto const& i) { return i.eval().get(fitness_tag); });
 
     return by;
   }
@@ -229,8 +228,7 @@ public:
   inline auto adopted_raw_comparator() const noexcept {
     return [adopted = raw_comparator_](individual_t const& lhs,
                                        individual_t const& rhs) {
-      return std::invoke(
-          adopted, lhs.evaluation().raw(), rhs.evaluation().raw());
+      return std::invoke(adopted, lhs.eval().raw(), rhs.eval().raw());
     };
   }
 
@@ -241,8 +239,7 @@ public:
   inline auto adopted_scaled_comparator() const noexcept {
     return [adopted = scaled_comparator_](individual_t const& lhs,
                                           individual_t const& rhs) {
-      return std::invoke(
-          adopted, lhs.evaluation().scaled(), rhs.evaluation().scaled());
+      return std::invoke(adopted, lhs.eval().scaled(), rhs.eval().scaled());
     };
   }
 

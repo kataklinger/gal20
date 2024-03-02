@@ -30,14 +30,13 @@ auto transform_result(Individuals const& individuals, Fn&& fn) {
 
 template<typename Individuals>
 auto get_raw_fitness(Individuals const& individuals) {
-  return transform_result(individuals,
-                          [](auto& i) { return i.evaluation().raw(); });
+  return transform_result(individuals, [](auto& i) { return i.eval().raw(); });
 }
 
 template<typename Individuals>
 auto get_scaled_fitness(Individuals const& individuals) {
   return transform_result(individuals,
-                          [](auto& i) { return i.evaluation().scaled(); });
+                          [](auto& i) { return i.eval().scaled(); });
 }
 
 struct replacement_tests : public ::testing::Test {

@@ -43,9 +43,8 @@ inline auto get_ranking(Population const& population, std::size_t index) {
 template<std::ranges::range R>
 constexpr auto to_vector(R&& r) {
   auto extracted =
-      std::forward<R>(r) | std::views::transform([](auto const& i) {
-        return i->evaluation().raw();
-      });
+      std::forward<R>(r) |
+      std::views::transform([](auto const& i) { return i->eval().raw(); });
 
   using elem_t = std::decay_t<std::ranges::range_value_t<decltype(extracted)>>;
   return std::vector<elem_t>{std::ranges::begin(extracted),

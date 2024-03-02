@@ -37,7 +37,7 @@ auto transform_result(Individuals const& individuals, Fn&& fn) {
 template<typename Population>
 auto get_scaled_fitness(Population const& population) {
   return transform_result(population.individuals(),
-                          [](auto& i) { return i.evaluation().scaled(); });
+                          [](auto& i) { return i.eval().scaled(); });
 }
 
 template<typename Population, typename Scaling>

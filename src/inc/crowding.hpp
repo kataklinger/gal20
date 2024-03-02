@@ -91,10 +91,10 @@ public:
     clean_tags<crowd_density_t>(population);
 
     auto objectives =
-        std::ranges::size(population.individuals()[0].evaluation().raw());
+        std::ranges::size(population.individuals()[0].eval().raw());
 
     static constexpr auto objective = [](auto ind, std::size_t obj) {
-      return ind->evaluation().raw()[obj];
+      return ind->eval().raw()[obj];
     };
 
     for (auto&& set : sets) {
@@ -159,8 +159,8 @@ private:
         h += 1;
         v += count;
 
-        distances[h] = distances[v] = euclidean_distance(
-            first->evaluation().raw(), other->evaluation().raw());
+        distances[h] = distances[v] =
+            euclidean_distance(first->eval().raw(), other->eval().raw());
       }
 
       ++i;

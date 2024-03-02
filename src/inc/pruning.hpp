@@ -268,9 +268,8 @@ public:
         for (auto idx = first; idx < current; ++idx) {
           auto& [other_individual, other_distance] = buffer[idx];
 
-          auto distance =
-              euclidean_distance(individual.evaluation().raw(),
-                                 other_individual->evaluation().raw());
+          auto distance = euclidean_distance(individual.eval().raw(),
+                                             other_individual->eval().raw());
 
           other_distance += distance;
           total_distance += distance;

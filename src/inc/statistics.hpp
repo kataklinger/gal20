@@ -312,8 +312,8 @@ struct extreme_fitness {
 
     inline body(Population const& population, body const& /*unused*/) noexcept {
       auto [mini, maxi] = population.extremes(fitness_tag);
-      value_ = minmax_fitness_t{mini.evaluation().get(fitness_tag),
-                                maxi.evaluation().get(fitness_tag)};
+      value_ = minmax_fitness_t{mini.eval().get(fitness_tag),
+                                maxi.eval().get(fitness_tag)};
     }
 
     inline auto const& fitness_worst_value() const noexcept {
@@ -351,8 +351,7 @@ struct total_fitness {
                                  std::ranges::end(population.individuals()),
                                  state_t{},
                                  [](state_t acc, auto const& ind) {
-                                   return acc.add(
-                                       ind.evaluation().get(fitness_tag));
+                                   return acc.add(ind.eval().get(fitness_tag));
                                  })
                      .sum()} {
     }
@@ -501,15 +500,14 @@ struct fitness_deviation {
           unpack_dependency<pack_t, average_fitness_t>(dependencies)
               .fitness_average_value();
 
-      variance_ =
-          std::accumulate(std::ranges::begin(population.individuals()),
-                          std::ranges::end(population.individuals()),
-                          state_t{},
-                          [this, &avg](state_t acc, auto const& ind) {
-                            return acc.add(
-                                pow_(avg - ind.evaluation().get(fitness_tag)));
-                          })
-              .sum();
+      variance_ = std::accumulate(
+                      std::ranges::begin(population.individuals()),
+                      std::ranges::end(population.individuals()),
+                      state_t{},
+                      [this, &avg](state_t acc, auto const& ind) {
+                        return acc.add(pow_(avg - ind.eval().get(fitness_tag)));
+                      })
+                      .sum();
 
       deviation_ = sqrt_(variance_ / population.current_size());
     }

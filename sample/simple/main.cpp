@@ -53,7 +53,7 @@ struct observe {
 
     for (int idx = 1; auto&& individual : population.individuals()) {
       auto&& c = individual.chromosome();
-      auto&& f = individual.evaluation().raw();
+      auto&& f = individual.eval().raw();
 
       std::cout << std::format(
                        "#{:3}| {:7.4f}, {:7.4f} | {:7.4f}", idx, c[0], c[1], f)

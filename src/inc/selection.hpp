@@ -109,8 +109,8 @@ public:
 
     auto generate = [&population, this]() {
       auto idx = distribution_t{0, population.current_size() - 1}(*generator_);
-      return std::tuple{
-          idx, &population.individuals()[idx].evaluation().get(fitness_tag)};
+      return std::tuple{idx,
+                        &population.individuals()[idx].eval().get(fitness_tag)};
     };
 
     return sample_many(population, attribute_t::sample(), [cmp, generate]() {
@@ -268,7 +268,7 @@ public:
 
     auto wheel =
         details::generate_wheel(population.individuals(), [](auto& ind) {
-          return ind.evaluation().get(fitness_tag);
+          return ind.eval().get(fitness_tag);
         });
 
     return sample_many(population, attribute_t::sample(), [&wheel, this]() {
@@ -476,7 +476,7 @@ public:
           result,
           result.begin(),
           gal::fitness_better{population.comparator(fitness_tag)},
-          [](auto const& ind) { return ind->evaluation().get(fitness_tag); });
+          [](auto const& ind) { return ind->eval().get(fitness_tag); });
 
       result.resize(1);
     }

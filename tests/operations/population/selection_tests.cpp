@@ -8,8 +8,8 @@ namespace tests::selection {
 
 template<typename Results>
 inline auto get_transformed(Results& results) {
-  return results | std::views::transform(
-                       [](auto const& i) { return i->evaluation().raw(); });
+  return results |
+         std::views::transform([](auto const& i) { return i->eval().raw(); });
 };
 
 template<typename Results>
@@ -515,7 +515,7 @@ TEST_F(lineal_selection_tests, raw_selection_content) {
   auto result = op(population_);
 
   // assert
-  EXPECT_THAT(result[0]->evaluation().raw(), ::testing::Eq(9.));
+  EXPECT_THAT(result[0]->eval().raw(), ::testing::Eq(9.));
 }
 
 TEST_F(lineal_selection_tests, scaled_selection_size) {
@@ -537,7 +537,7 @@ TEST_F(lineal_selection_tests, scaled_selection_content) {
   auto result = op(population_);
 
   // assert
-  EXPECT_THAT(result[0]->evaluation().scaled(), ::testing::Eq(9.));
+  EXPECT_THAT(result[0]->eval().scaled(), ::testing::Eq(9.));
 }
 
 } // namespace tests::selection

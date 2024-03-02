@@ -99,8 +99,8 @@ namespace details {
         results_.emplace_back(parent2, std::move(child2));
       }
       else if (std::invoke(gal::fitness_better{context_->comparator()},
-                           child1.evaluation().raw(),
-                           child2.evaluation().raw())) {
+                           child1.eval().raw(),
+                           child2.eval().raw())) {
         results_.emplace_back(parent1, std::move(child1));
       }
       else {
@@ -320,7 +320,7 @@ public:
     auto all = incubate.take();
     std::ranges::sort(
         all, gal::fitness_better{context_->comparator()}, [](auto const& item) {
-          return get_child(item).evaluation().raw();
+          return get_child(item).eval().raw();
         });
 
     decltype(all) results{};

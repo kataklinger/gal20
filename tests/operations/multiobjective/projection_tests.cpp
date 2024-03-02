@@ -26,9 +26,8 @@ constexpr fitness_t f3b{2, 3};
 template<std::ranges::range R>
 constexpr auto to_vector(R&& r) {
   auto extracted =
-      std::forward<R>(r) | std::views::transform([](auto const& i) {
-        return i.evaluation().scaled();
-      });
+      std::forward<R>(r) |
+      std::views::transform([](auto const& i) { return i.eval().scaled(); });
 
   using elem_t = std::decay_t<std::ranges::range_value_t<decltype(extracted)>>;
   return std::vector<elem_t>{std::ranges::begin(extracted),

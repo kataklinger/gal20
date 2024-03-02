@@ -51,7 +51,7 @@ TEST_F(elitism_tests, strict_preserved_population_content) {
 
   // assert
   EXPECT_EQ(population_4_.current_size(), 1);
-  EXPECT_EQ(population_4_.individuals()[0].evaluation().raw(), f1a);
+  EXPECT_EQ(population_4_.individuals()[0].eval().raw(), f1a);
 }
 
 TEST_F(elitism_tests, strict_preserved_fronts_content) {
@@ -64,7 +64,7 @@ TEST_F(elitism_tests, strict_preserved_fronts_content) {
   // assert
   EXPECT_EQ(pareto.size(), 1);
   EXPECT_EQ(pareto.get_size_of(1), 1);
-  EXPECT_EQ((*pareto.begin()->begin())->evaluation().raw(), f1a);
+  EXPECT_EQ((*pareto.begin()->begin())->eval().raw(), f1a);
 }
 
 TEST_F(elitism_tests, strict_reduced_population_content) {
@@ -76,7 +76,7 @@ TEST_F(elitism_tests, strict_reduced_population_content) {
 
   // assert
   EXPECT_EQ(population_4_.current_size(), 1);
-  EXPECT_EQ(population_4_.individuals()[0].evaluation().raw(), f1a);
+  EXPECT_EQ(population_4_.individuals()[0].eval().raw(), f1a);
 }
 
 TEST_F(elitism_tests, strict_reduced_fronts_content) {
@@ -89,7 +89,7 @@ TEST_F(elitism_tests, strict_reduced_fronts_content) {
   // assert
   EXPECT_EQ(pareto.size(), 1);
   EXPECT_EQ(pareto.get_size_of(1), 1);
-  EXPECT_EQ((*pareto.begin()->begin())->evaluation().raw(), f1a);
+  EXPECT_EQ((*pareto.begin()->begin())->eval().raw(), f1a);
 }
 
 TEST_F(elitism_tests, strict_nondominated_population_content) {
@@ -101,7 +101,7 @@ TEST_F(elitism_tests, strict_nondominated_population_content) {
 
   // assert
   EXPECT_EQ(population_4_.current_size(), 1);
-  EXPECT_EQ(population_4_.individuals()[0].evaluation().raw(), f1a);
+  EXPECT_EQ(population_4_.individuals()[0].eval().raw(), f1a);
 }
 
 TEST_F(elitism_tests, strict_ondominated_fronts_content) {
@@ -114,7 +114,7 @@ TEST_F(elitism_tests, strict_ondominated_fronts_content) {
   // assert
   EXPECT_EQ(pareto.size(), 1);
   EXPECT_EQ(pareto.get_size_of(1), 1);
-  EXPECT_EQ((*pareto.begin()->begin())->evaluation().raw(), f1a);
+  EXPECT_EQ((*pareto.begin()->begin())->eval().raw(), f1a);
 }
 
 } // namespace tests::elitism

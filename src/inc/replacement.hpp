@@ -171,8 +171,8 @@ public:
         offspring |
         std::views::filter([cmp = fitness_better{
                                 population.comparator(fitness_tag)}](auto& p) {
-          return !cmp(get_parent(p)->evaluation().get(fitness_tag),
-                      get_child(p).evaluation().get(fitness_tag));
+          return !cmp(get_parent(p)->eval().get(fitness_tag),
+                      get_child(p).eval().get(fitness_tag));
         }));
   }
 };

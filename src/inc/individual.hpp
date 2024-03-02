@@ -76,11 +76,11 @@ public:
     return chromosome_;
   }
 
-  inline auto const& evaluation() const noexcept {
+  inline auto const& eval() const noexcept {
     return evaluation_;
   }
 
-  inline auto& evaluation() noexcept {
+  inline auto& eval() noexcept {
     return evaluation_;
   }
 

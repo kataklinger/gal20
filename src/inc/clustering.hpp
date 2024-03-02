@@ -54,8 +54,8 @@ private:
 
       for (auto const& outer : members_) {
         for (auto const& inner : other.members_) {
-          total_distance += euclidean_distance(outer->evaluation().raw(),
-                                               inner->evaluation().raw());
+          total_distance +=
+              euclidean_distance(outer->eval().raw(), inner->eval().raw());
           ++count;
         }
       }
@@ -285,7 +285,7 @@ namespace details {
         hypermap_t hypermap{};
         for (auto&& individual : set) {
           auto coords = get_hypercoordinates(
-              individual->evaluation().raw(), minimums, granularity);
+              individual->eval().raw(), minimums, granularity);
           hypermap[coords].push_back(individual);
         }
 
@@ -365,13 +365,13 @@ public:
         multiobjective_value_t<get_fitness_t<raw_fitness_tag, Population>>;
 
     auto first = std::ranges::begin(population.individuals());
-    auto minimums = first->evaluation().raw();
-    auto maximums = first->evaluation().raw();
+    auto minimums = first->eval().raw();
+    auto maximums = first->eval().raw();
 
     for (auto last = std::ranges::end(population.individuals()); first != last;
          ++first) {
       auto min_first = minimums.begin(), max_first = maximums.begin();
-      for (auto&& v : first->evaluation().raw()) {
+      for (auto&& v : first->eval().raw()) {
         if (v < *min_first) {
           *min_first = v;
         }

@@ -81,7 +81,7 @@ public:
       auto scaled = multipliers[front] * get_tag<RankTag>(individual).get() *
                     get_tag<crowd_density_t>(individual).get();
 
-      individual.evaluation().set_scaled(scaled_fitness_t{scaled});
+      individual.eval().set_scaled(scaled_fitness_t{scaled});
     }
   }
 
@@ -112,7 +112,7 @@ public:
       auto rank = get_tag<RankTag>(individual).get();
       auto density = get_tag<crowd_density_t>(individual).get();
 
-      individual.evaluation().set_scaled(scaled_fitness_t{rank + density});
+      individual.eval().set_scaled(scaled_fitness_t{rank + density});
     }
   }
 
@@ -146,7 +146,7 @@ public:
       auto rank = get_tag<RankTag>(individual).get();
       auto density = get_tag<crowd_density_t>(individual).get();
 
-      individual.evaluation().set_scaled(scaled_fitness_t{rank, density});
+      individual.eval().set_scaled(scaled_fitness_t{rank, density});
     }
   }
 
@@ -168,7 +168,7 @@ namespace details {
 
     for (auto&& individual : population.individuals()) {
       auto value = static_cast<double>(get_tag<Tag>(individual).get());
-      individual.evaluation().set_scaled(scaled_fitness_t{value});
+      individual.eval().set_scaled(scaled_fitness_t{value});
     }
   }
 

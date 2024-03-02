@@ -50,7 +50,7 @@ using evaluation_t = individual_t::evaluation_t;
 
 struct scaling_test {
   inline void operator()(individual_t& individual) const {
-    auto& eval = individual.evaluation();
+    auto& eval = individual.eval();
     eval.set_scaled(eval.raw() * 10);
   }
 };
@@ -78,16 +78,15 @@ auto get_parent_indices(population_t const& population,
 template<typename Parents>
 auto get_child_raw_fitness(population_t const& population,
                            Parents const& parents) {
-  return transform_result(population, parents, [](auto& p) {
-    return get_child(p).evaluation().raw();
-  });
+  return transform_result(
+      population, parents, [](auto& p) { return get_child(p).eval().raw(); });
 }
 
 template<typename Parents>
 auto get_child_scaled_fitness(population_t const& population,
                               Parents const& parents) {
   return transform_result(population, parents, [](auto& p) {
-    return get_child(p).evaluation().scaled();
+    return get_child(p).eval().scaled();
   });
 }
 
