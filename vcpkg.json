@@ -1,0 +1,7 @@
+{
+  "name": "gal20",
+  "version-string": "latest",
+  "dependencies": [
+    "gtest"
+  ]
+}
