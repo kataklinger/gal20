@@ -309,7 +309,7 @@ namespace details {
   class clustering {
   public:
     template<typename Iter>
-    clustering(Iter first, Iter valid, Iter last) {
+    clustering(Iter valid, Iter last) {
       auto proper = std::ranges::find_if(valid, last, [](auto& i) {
         return !get_tag<cluster_label>(i).is_unique();
       });
@@ -408,7 +408,7 @@ public:
       return !get_tag<cluster_label>(i).is_unassigned();
     });
 
-    details::clustering staging{first, valid, last};
+    details::clustering staging{valid, last};
     auto buffer = staging.prepare_buffer(first, valid, last);
     auto clusters = staging.extract_clusters();
 
