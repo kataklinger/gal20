@@ -8,9 +8,15 @@ else()
   target_compile_options(warnings INTERFACE -Wall -Wextra -Wpedantic -Werror)
 endif()
 
+add_library(std_lib_ver INTERFACE)
+
+if(CLANG)
+  target_compile_options(std_lib_ver INTERFACE -stdlib=libc++)
+endif()
+
 add_library(gal20_lib STATIC scrap.cpp)
 
-target_link_libraries(gal20_lib PRIVATE warnings)
+target_link_libraries(gal20_lib PRIVATE warnings std_lib_ver)
 
 target_include_directories(
   gal20_lib PUBLIC
