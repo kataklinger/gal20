@@ -93,7 +93,7 @@ public:
     auto objectives =
         std::ranges::size(population.individuals()[0].evaluation().raw());
 
-    constexpr auto objective = [](auto ind, std::size_t obj) {
+    static constexpr auto objective = [](auto ind, std::size_t obj) {
       return ind->evaluation().raw()[obj];
     };
 
