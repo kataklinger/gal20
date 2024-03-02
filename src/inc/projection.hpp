@@ -2,8 +2,9 @@
 #pragma once
 
 #include "multiobjective.hpp"
-
 #include "statistics.hpp"
+
+#include <utility>
 
 namespace gal::project {
 

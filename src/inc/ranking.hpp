@@ -3,6 +3,8 @@
 
 #include "multiobjective.hpp"
 
+#include <utility>
+
 namespace gal::rank {
 
 namespace details {
