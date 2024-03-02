@@ -301,12 +301,12 @@ private:
     for (auto&& dominated : solution.dominated()) {
       get_tag<real_rank_t>(dominated.individual()) += s;
     }
-  };
+  }
 
   template<typename Solution>
   inline static void assign_dominated_strength(Solution& solution) noexcept {
     get_tag<real_rank_t>(solution.individual()) += 1.;
-  };
+  }
 };
 
 // number of dominated, all fronts (spea-ii)
