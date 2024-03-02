@@ -3,6 +3,7 @@
 
 #include <compare>
 #include <concepts>
+#include <functional>
 #include <random>
 #include <type_traits>
 
@@ -82,21 +83,36 @@ fitness_better(Comparator&&) -> fitness_better<Comparator>;
 
 enum class nan_three_way { smallest, greatest };
 
+namespace details {
+
+  enum class nan_order { less, greater };
+
+}
+
 template<nan_three_way Nan = nan_three_way::smallest>
 struct floatingpoint_three_way {
   using order = std::weak_ordering;
 
-  inline static constexpr auto order_left_nan =
+  inline static constexpr auto nan_order_left =
+      Nan == nan_three_way::smallest ? details::nan_order::less
+                                     : details::nan_order::greater;
+
+  inline static constexpr auto nan_order_right =
+      Nan == nan_three_way::smallest ? details::nan_order::greater
+                                     : details::nan_order::less;
+
+  inline static constexpr auto weak_left_nan =
       Nan == nan_three_way::smallest ? order::less : order::greater;
-  inline static constexpr auto order_right_nan =
+
+  inline static constexpr auto weak_right_nan =
       Nan == nan_three_way::smallest ? order::greater : order::less;
 
   template<std::floating_point Ty, std::floating_point Tx>
   inline auto operator()(Ty left, Tx right) const {
     auto left_nan = std::isnan(left), right_nan = std::isnan(right);
 
-    return left_nan       ? (right_nan ? order::equivalent : order_left_nan)
-           : right_nan    ? order_right_nan
+    return left_nan       ? (right_nan ? order::equivalent : weak_left_nan)
+           : right_nan    ? weak_right_nan
            : right < left ? order::greater
            : left < right ? order::less
                           : order::equivalent;
@@ -111,17 +127,17 @@ using min_floatingpoint_three_way =
 
 namespace details {
 
-  template<typename Ty, std::weak_ordering LeftNan, std::weak_ordering RightNan>
+  template<typename Ty, details::nan_order LeftNan, details::nan_order RightNan>
   struct is_proper_nan_ordered : std::true_type {};
 
   template<nan_three_way Nan,
-           std::weak_ordering LeftNan,
-           std::weak_ordering RightNan>
+           details::nan_order LeftNan,
+           details::nan_order RightNan>
   struct is_proper_nan_ordered<floatingpoint_three_way<Nan>, LeftNan, RightNan>
       : std::conjunction<
-            std::bool_constant<floatingpoint_three_way<Nan>::order_left_nan ==
+            std::bool_constant<floatingpoint_three_way<Nan>::nan_order_left ==
                                LeftNan>,
-            std::bool_constant<floatingpoint_three_way<Nan>::order_right_nan ==
+            std::bool_constant<floatingpoint_three_way<Nan>::nan_order_right ==
                                RightNan>> {};
 
 } // namespace details
@@ -129,14 +145,14 @@ namespace details {
 template<typename Ty>
 concept maximizable =
     details::is_proper_nan_ordered<Ty,
-                                   std::weak_ordering::less,
-                                   std::weak_ordering::greater>::value;
+                                   details::nan_order::less,
+                                   details::nan_order::greater>::value;
 
 template<typename Ty>
 concept minimizable =
     details::is_proper_nan_ordered<Ty,
-                                   std::weak_ordering::greater,
-                                   std::weak_ordering::less>::value;
+                                   details::nan_order::greater,
+                                   details::nan_order::less>::value;
 
 template<maximizable Comparator>
 struct maximize {
