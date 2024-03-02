@@ -89,6 +89,20 @@ namespace details {
   template<>
   class section_node<> {};
 
+  template<>
+  class section_node<details::empty_section> : public section_node<> {
+  public:
+    using section_t = details::empty_section;
+    using base_t = section_node<>;
+
+    inline constexpr section_node() noexcept {
+    }
+
+    inline constexpr section_node(section_t const& /*unused*/,
+                                  base_t const& /*unused*/) noexcept {
+    }
+  };
+
   template<section Section>
   class section_node<Section> : public Section, public section_node<> {
   public:
@@ -286,8 +300,8 @@ namespace details {
     using base_t = section_node<Section, Sections...>;
 
   public:
-    template<
-        typename = std::enable_if_t<std::is_same_v<section_t, empty_section>>>
+    template<typename S = section_t,
+             typename = std::enable_if_t<std::is_same_v<S, empty_section>>>
     inline constexpr built() noexcept {
     }
 
@@ -328,8 +342,8 @@ namespace details {
     using previous_section_t = typename built_base_t::previous_t;
 
   public:
-    template<typename = std::enable_if_t<
-                 std::is_same_v<current_section_t, empty_section>>>
+    template<typename S = current_section_t,
+             typename = std::enable_if_t<std::is_same_v<S, empty_section>>>
     inline constexpr builder_node() noexcept
         : ptype_base_t{this} {
     }
