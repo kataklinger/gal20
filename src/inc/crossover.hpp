@@ -109,8 +109,7 @@ public:
 
     auto selected = sample_many(
         unique_sample{count},
-        [this,
-         rnd = std::invoke(generator_, 1, details::shorter(p1, p2))]() mutable {
+        [rnd = std::invoke(generator_, 1, details::shorter(p1, p2))]() mutable {
           return std::invoke(rnd);
         });
 
@@ -201,19 +200,17 @@ public:
       return std::pair<Chromosome, Chromosome>{p1, p2};
     }
 
-    auto selected1 =
-        sample_many(unique_sample{count},
-                    [this, rnd = std::invoke(generator_, 1, p1)]() mutable {
-                      return std::invoke(rnd);
-                    });
+    auto selected1 = sample_many(
+        unique_sample{count}, [rnd = std::invoke(generator_, 1, p1)]() mutable {
+          return std::invoke(rnd);
+        });
 
     std::ranges::sort(selected1);
 
-    auto selected2 =
-        sample_many(unique_sample{count},
-                    [this, rnd = std::invoke(generator_, 1, p2)]() mutable {
-                      return std::invoke(rnd);
-                    });
+    auto selected2 = sample_many(
+        unique_sample{count}, [rnd = std::invoke(generator_, 1, p2)]() mutable {
+          return std::invoke(rnd);
+        });
 
     std::ranges::sort(selected2);
 
