@@ -52,7 +52,7 @@ namespace details {
   struct has_scaling : std::false_type {};
 
   template<typename Population, with_scaling<Population> Context>
-  struct has_scaling<Context, Population> : std::true_type {};
+  struct has_scaling<Population, Context> : std::true_type {};
 
   template<typename Population, typename Context>
   inline constexpr auto has_scaling_v = has_scaling<Context, Population>::value;
