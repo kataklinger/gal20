@@ -386,7 +386,7 @@ namespace details {
 
   public:
     inline constexpr explicit ptype_base(Built const* current)
-        : current_{current} {
+        : current_{*current} {
     }
 
   protected:
@@ -396,11 +396,11 @@ namespace details {
                             Derived,
                             Appended,
                             typename entry_map_t::unlocked_t>{
-          std::forward<Appended>(section), *current_};
+          std::forward<Appended>(section), current_};
     }
 
   private:
-    Built const* current_;
+    Built current_;
   };
 
   template<typename Built, typename = void>
