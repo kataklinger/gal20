@@ -233,7 +233,7 @@ public:
     return this->value_ <=> rhs.value_;
   }
 
-  inline auto operator==(tag_order_adopted_value const& rhs) const {
+  inline bool operator==(tag_order_adopted_value const& rhs) const {
     return this->value_ == rhs.value_;
   }
 };
