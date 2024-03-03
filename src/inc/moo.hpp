@@ -163,7 +163,7 @@ private:
   }
 
   inline void elite(pareto_t& sets, statistics_t& current) {
-    auto change =
+    [[maybe_unused]] auto change =
         stats::track_size_change(population_, current, elite_count_tag);
     [[maybe_unused]] auto timer = stats::start_timer(current, elite_time_tag);
     std::invoke(config_.elitism(), population_, sets);
@@ -184,7 +184,7 @@ private:
   inline void prune(Pruning const& operation,
                     cluster_set& clusters,
                     statistics_t& current) {
-    auto change =
+    [[maybe_unused]] auto change =
         stats::track_size_change(population_, current, prune_count_tag);
     [[maybe_unused]] auto timer = stats::start_timer(current, prune_time_tag);
     std::invoke(operation, population_, clusters);
@@ -198,7 +198,7 @@ private:
 
   template<crowd_pruning<population_t> Pruning>
   inline void prune(Pruning const& operation, statistics_t& current) {
-    auto change =
+    [[maybe_unused]] auto change =
         stats::track_size_change(population_, current, prune_count_tag);
     [[maybe_unused]] auto timer = stats::start_timer(current, prune_time_tag);
     std::invoke(operation, population_);
