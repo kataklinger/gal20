@@ -55,7 +55,7 @@ namespace details {
   struct has_scaling<Population, Context> : std::true_type {};
 
   template<typename Population, typename Context>
-  inline constexpr auto has_scaling_v = has_scaling<Context, Population>::value;
+  inline constexpr auto has_scaling_v = has_scaling<Population, Context>::value;
 
   template<typename Context, typename Params, util::boolean_flag Pairing>
   class incubator {
