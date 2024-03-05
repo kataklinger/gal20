@@ -6,9 +6,6 @@
 
 namespace gal::scale {
 
-template<auto Constant>
-concept scaling_constant = util::arithmetic<decltype(Constant)>;
-
 namespace details {
 
   using linear_coefficients = std::pair<double, double>;
@@ -17,7 +14,7 @@ namespace details {
     return std::fabs(delta) < 0.00001;
   }
 
-  template<auto Preassure, fitness Fitness>
+  template<literals::fp_const Preassure, fitness Fitness>
   linear_coefficients caclulate_linear_coefficients(Fitness const& fmin,
                                                     Fitness const& favg,
                                                     Fitness const& fmax) {
@@ -67,8 +64,7 @@ concept linear_context =
                           stats::extreme_fitness<raw_fitness_tag>,
                           stats::average_fitness<raw_fitness_tag>>;
 
-template<linear_context Context, auto Preassure>
-  requires(scaling_constant<Preassure>)
+template<linear_context Context, literals::fp_const Preassure>
 class linear {
 public:
   using is_stable_t = std::true_type;
@@ -203,8 +199,7 @@ concept ranked_context =
     sortable_population<typename Context::population_t, raw_fitness_tag> &&
     details::scalable_from<Context, double>;
 
-template<ranked_context Context, auto Preassure>
-  requires(scaling_constant<Preassure>)
+template<ranked_context Context, literals::fp_const Preassure>
 class ranked {
 public:
   using is_stable_t = std::true_type;
@@ -239,14 +234,12 @@ private:
   population_t* population_;
 };
 
-template<typename Context, typename Base>
+template<typename Context>
 concept exponential_context =
     sortable_population<typename Context::population_t, raw_fitness_tag> &&
-    details::scalable_from<Context, Base>;
+    details::scalable_from<Context, double>;
 
-template<typename Context, auto Base>
-  requires(exponential_context<Context, decltype(Base)> &&
-           scaling_constant<Base>)
+template<exponential_context Context, literals::fp_const Base>
 class exponential {
 public:
   using is_stable_t = std::true_type;
@@ -272,7 +265,8 @@ public:
   inline void operator()(ordinal_t ordinal, individual_t& individual) const {
     auto& eval = individual.eval();
 
-    auto power = population_->current_size() - *ordinal - 1;
+    auto power =
+        static_cast<double>(population_->current_size() - *ordinal - 1);
     eval.set_scaled(scaled_fitness_t{std::pow(Base, power)});
   }
 
@@ -285,17 +279,17 @@ concept proportional_fitness = requires(Fitness f, Proportion p) {
   { p* f } -> std::convertible_to<Output>;
 };
 
-template<typename Context, typename Proportion>
+template<typename Context>
 concept proportional_context =
     sortable_population<typename Context::population_t, raw_fitness_tag> &&
     proportional_fitness<typename Context::population_t::raw_fitness_t,
-                         Proportion,
+                         double,
                          typename Context::population_t::scaled_fitness_t>;
 
-template<typename Context, auto OrdinalCutoff, auto Proportion>
-  requires(proportional_context<Context, decltype(Proportion)> &&
-           std::integral<decltype(OrdinalCutoff)> && OrdinalCutoff > 0 &&
-           scaling_constant<Proportion>)
+template<proportional_context Context,
+         auto OrdinalCutoff,
+         literals::fp_const Proportion>
+  requires(std::integral<decltype(OrdinalCutoff)> && OrdinalCutoff > 0)
 class top {
 public:
   using is_stable_t = std::true_type;
@@ -335,14 +329,13 @@ concept power_fitness = requires(Fitness f, Power p) {
   { std::pow(f, p) } -> std::convertible_to<Output>;
 };
 
-template<typename Context, typename Power>
+template<typename Context>
 concept power_context =
     power_fitness<typename Context::population_t::raw_fitness_t,
-                  Power,
+                  double,
                   typename Context::population_t::scaled_fitness_t>;
 
-template<typename Context, auto Power>
-  requires(power_context<Context, decltype(Power)> && scaling_constant<Power>)
+template<power_context Context, literals::fp_const Power>
 class power {
 public:
   using is_stable_t = std::true_type;
@@ -411,6 +404,9 @@ private:
 private:
   stats::history<statistics_t>* statistics_;
 };
+
+template<auto Constant>
+concept scaling_constant = util::compile_arithmetic<decltype(Constant)>;
 
 template<template<typename, auto...> class Scaling, auto... Parameters>
   requires(scaling_constant<Parameters> && ...)

@@ -185,7 +185,9 @@ void test_ground() {
 
   ctx_t ctx{p, hist};
 
-  auto sc0 = gal::scale::factory<gal::scale::top, 2, 1.5>{}(ctx);
+  using namespace gal::literals;
+
+  auto sc0 = gal::scale::factory<gal::scale::top, 2, 1.5_fc>{}(ctx);
   sc0();
 
   gal::scale::top<ctx_t, 5, 1.5> sc1{ctx};
@@ -196,13 +198,13 @@ void test_ground() {
   sc2();
   sc2(0, p.individuals()[0]);
 
-  gal::scale::power<ctx_t, 2> sc3{ctx};
+  gal::scale::power<ctx_t, 2.> sc3{ctx};
   sc3(0, p.individuals()[0]);
 
   gal::scale::window<ctx_t> sc4{ctx};
   sc4(0, p.individuals()[0]);
 
-  gal::scale::ranked<ctx_t, 1> sc5{ctx};
+  gal::scale::ranked<ctx_t, 1.> sc5{ctx};
   sc5();
   sc5(0, p.individuals()[0]);
 
@@ -219,10 +221,10 @@ void test_ground() {
                                              test_crossover,
                                              test_mutation,
                                              test_evaluator,
-                                             gal::scale::power<ctx_t, 2>>;
+                                             gal::scale::power<ctx_t, 2.>>;
   rtx_t rtx{p, hist, test_crossover{}, test_mutation{}, test_evaluator{}, sc3};
 
-  gal::couple::reproduction_params<0.8f, 0.2f, std::true_type, std::mt19937>
+  gal::couple::reproduction_params<0.8, 0.2, std::true_type, std::mt19937>
       rep_p{gen};
 
   auto cp0 = gal::couple::parametrize<gal::couple::exclusive>(rep_p)(rtx);

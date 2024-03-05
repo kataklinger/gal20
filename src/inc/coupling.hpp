@@ -9,18 +9,18 @@
 
 namespace gal::couple {
 
-template<auto Crossover,
-         auto Mutation,
+template<literals::fp_const Crossover,
+         literals::fp_const Mutation,
          util::boolean_flag MutationImproveOnly,
          typename Generator>
-  requires(probability<Crossover> && probability<Mutation>)
+  requires(execution_probability<Crossover> && execution_probability<Mutation>)
 class reproduction_params {
 public:
   using generator_t = Generator;
   using mutation_improve_only_t = MutationImproveOnly;
 
-  inline static constexpr auto crossover_probability = Crossover;
-  inline static constexpr auto mutation_probability = Mutation;
+  inline static constexpr double crossover_probability = Crossover;
+  inline static constexpr double mutation_probability = Mutation;
 
 public:
   inline explicit reproduction_params(generator_t& generator) noexcept
@@ -415,12 +415,12 @@ inline constexpr auto parametrize(Params const& params) {
 }
 
 template<template<typename, typename> class Coupling,
-         auto Crossover,
-         auto Mutation,
+         literals::fp_const Crossover,
+         literals::fp_const Mutation,
          bool MutationImproveOnly,
          typename Generator>
 inline constexpr auto parametrize(Generator& generator)
-  requires(probability<Crossover> && probability<Mutation>)
+  requires(execution_probability<Crossover> && execution_probability<Mutation>)
 {
   using params_t = reproduction_params<Crossover,
                                        Mutation,

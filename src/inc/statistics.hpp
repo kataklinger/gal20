@@ -413,7 +413,7 @@ using average_fitness_scaled = average_fitness<scaled_fitness_tag>;
 template<typename Value>
 struct square_power;
 
-template<util::arithmetic Value>
+template<util::runtime_arithmetic Value>
 struct square_power<Value> {
   using result_t = Value;
 
@@ -430,7 +430,7 @@ using square_power_result_t = typename square_power<Value>::result_t;
 template<typename Value>
 struct square_root;
 
-template<util::arithmetic Value>
+template<util::runtime_arithmetic Value>
 struct square_root<Value> {
   using result_t = Value;
 

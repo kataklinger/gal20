@@ -25,7 +25,7 @@ concept matcher =
         Operation,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>> &&
-    util::arithmetic<std::invoke_result_t<
+    util::runtime_arithmetic<std::invoke_result_t<
         Operation,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>,
         std::add_lvalue_reference_t<std::add_const_t<Chromosome>>>>;

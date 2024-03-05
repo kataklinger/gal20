@@ -36,6 +36,7 @@ list(APPEND HEADER_LIST
   elitism.hpp
   fitness.hpp
   individual.hpp
+  literals.hpp
   moo.hpp
   multiobjective.hpp
   mutation.hpp

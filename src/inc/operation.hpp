@@ -152,16 +152,15 @@ concept coupling_factory =
              typename Context::population_t,
              Parents>;
 
-template<auto Probability>
-concept probability = Probability >= 0.f && Probability <= 1.f &&
-                      std::floating_point<decltype(Probability)>;
+template<literals::fp_const Probability>
+concept execution_probability = Probability >= 0. && Probability <= 1.;
 
-template<typename Generator, auto Probability>
-  requires(probability<Probability>)
+template<typename Generator, literals::fp_const Probability>
+  requires(execution_probability<Probability>)
 struct probabilistic_operation {
 public:
   using generator_t = Generator;
-  using distribution_t = std::uniform_real_distribution<decltype(Probability)>;
+  using distribution_t = std::uniform_real_distribution<double>;
 
 public:
   inline explicit probabilistic_operation(generator_t& generator) noexcept
@@ -169,14 +168,14 @@ public:
   }
 
   inline bool operator()() const {
-    if constexpr (Probability == 0.f) {
+    if constexpr (Probability == 0.) {
       return false;
     }
-    else if constexpr (Probability == 1.f) {
+    else if constexpr (Probability == 1.) {
       return true;
     }
 
-    return distribution_t{0.f, 1.f}(*generator_) < Probability;
+    return distribution_t{0., 1.}(*generator_) < Probability;
   }
 
 private:

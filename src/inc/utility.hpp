@@ -4,6 +4,8 @@
 #include <concepts>
 #include <type_traits>
 
+#include "literals.hpp"
+
 namespace gal::util {
 
 template<typename Ref, typename Decayed>
@@ -57,7 +59,12 @@ template<typename From, typename To>
 concept decays_to = std::same_as<std::decay_t<From>, To>;
 
 template<typename Value>
-concept arithmetic = std::integral<Value> || std::floating_point<Value>;
+concept runtime_arithmetic = std::integral<Value> || std::floating_point<Value>;
+
+template<typename Value>
+concept compile_arithmetic =
+    std::integral<Value> ||
+    std::same_as<std::remove_const_t<Value>, literals::fp_const>;
 
 template<typename Ty, boolean_flag Condition>
 inline decltype(auto) move_if(Ty&& value, Condition /*unused*/) noexcept {

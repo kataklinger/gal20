@@ -72,8 +72,10 @@ protected:
 };
 
 TEST_F(scaling_tests, linear) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::scale::factory<gal::scale::linear, 4.>{}(context_);
+  auto op = gal::scale::factory<gal::scale::linear, 4._fc>{}(context_);
 
   // act
   invoke_scaling(population_, op);
@@ -100,8 +102,10 @@ TEST_F(scaling_tests, sigma) {
 }
 
 TEST_F(scaling_tests, ranked) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::scale::factory<gal::scale::ranked, 2.>{}(context_);
+  auto op = gal::scale::factory<gal::scale::ranked, 2._fc>{}(context_);
 
   // act
   invoke_scaling(population_, op);
@@ -112,8 +116,10 @@ TEST_F(scaling_tests, ranked) {
 }
 
 TEST_F(scaling_tests, exponential) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::scale::factory<gal::scale::exponential, 2.>{}(context_);
+  auto op = gal::scale::factory<gal::scale::exponential, 2._fc>{}(context_);
 
   // act
   invoke_scaling(population_, op);
@@ -124,8 +130,10 @@ TEST_F(scaling_tests, exponential) {
 }
 
 TEST_F(scaling_tests, top) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::scale::factory<gal::scale::top, 3, 2.>{}(context_);
+  auto op = gal::scale::factory<gal::scale::top, 3, 2._fc>{}(context_);
 
   // act
   invoke_scaling(population_, op);
@@ -136,8 +144,10 @@ TEST_F(scaling_tests, top) {
 }
 
 TEST_F(scaling_tests, power) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::scale::factory<gal::scale::power, 3.>{}(context_);
+  auto op = gal::scale::factory<gal::scale::power, 3._fc>{}(context_);
 
   // act
   invoke_scaling(population_, op);
