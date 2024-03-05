@@ -47,12 +47,24 @@ jobs:
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v3
   
-    - name: Switch to GCC 13 on Linux
+    - name: Switch to GCC 13
       if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'gcc'
       run: |
         sudo apt install gcc-13 g++-13
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13
         sudo update-alternatives --set gcc /usr/bin/gcc-13
+
+    - name: Switch to Clang 17
+      if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang'
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod u+x llvm.sh
+        sudo ./llvm.sh 17
+        sudo update-alternatives --remove clang++ /usr/bin/clang++-13
+        sudo update-alternatives --remove clang++ /usr/bin/clang++-14
+        sudo update-alternatives --remove clang++ /usr/bin/clang++-15
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-17 100 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-17
+        sudo update-alternatives --set clang /usr/bin/clang-17
 
     - name: Run vcpkg
       uses: lukka/run-vcpkg@5e0cab206a5ea620130caf672fce3e4a6b5666a1 # v11.5
