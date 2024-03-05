@@ -152,15 +152,15 @@ concept coupling_factory =
              typename Context::population_t,
              Parents>;
 
-template<literals::fp_const Probability>
-concept execution_probability = Probability >= 0. && Probability <= 1.;
+template<literals::fp_const<float> Probability>
+concept execution_probability = Probability >= 0.f && Probability <= 1.f;
 
 template<typename Generator, literals::fp_const Probability>
   requires(execution_probability<Probability>)
 struct probabilistic_operation {
 public:
   using generator_t = Generator;
-  using distribution_t = std::uniform_real_distribution<double>;
+  using distribution_t = std::uniform_real_distribution<float>;
 
 public:
   inline explicit probabilistic_operation(generator_t& generator) noexcept
@@ -168,14 +168,14 @@ public:
   }
 
   inline bool operator()() const {
-    if constexpr (Probability == 0.) {
+    if constexpr (Probability == 0.f) {
       return false;
     }
-    else if constexpr (Probability == 1.) {
+    else if constexpr (Probability == 1.f) {
       return true;
     }
 
-    return distribution_t{0., 1.}(*generator_) < Probability;
+    return distribution_t{0.f, 1.f}(*generator_) < Probability;
   }
 
 private:
@@ -211,8 +211,6 @@ struct replacement_count_t {};
 
 inline constexpr replacement_time_t replacement_time_tag{};
 inline constexpr replacement_count_t replacement_count_tag{};
-
-//***
 
 struct rank_time_t {};
 struct rank_count_t {};

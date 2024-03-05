@@ -147,9 +147,12 @@ protected:
 };
 
 TEST_F(coupling_tests, exclusive_child_count) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -159,9 +162,12 @@ TEST_F(coupling_tests, exclusive_child_count) {
 }
 
 TEST_F(coupling_tests, exclusive_parents) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -172,9 +178,12 @@ TEST_F(coupling_tests, exclusive_parents) {
 }
 
 TEST_F(coupling_tests, exclusive_child_raw_fitness) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -185,9 +194,12 @@ TEST_F(coupling_tests, exclusive_child_raw_fitness) {
 }
 
 TEST_F(coupling_tests, exclusive_child_no_scaling) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -198,9 +210,12 @@ TEST_F(coupling_tests, exclusive_child_no_scaling) {
 }
 
 TEST_F(coupling_tests, exclusive_child_scaled_fitness) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 0., 0., false>(
-      rng_)(scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 0._fc, 0._fc, false>(
+          rng_)(scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -211,9 +226,12 @@ TEST_F(coupling_tests, exclusive_child_scaled_fitness) {
 }
 
 TEST_F(coupling_tests, exclusive_child_no_crossover) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -224,9 +242,12 @@ TEST_F(coupling_tests, exclusive_child_no_crossover) {
 }
 
 TEST_F(coupling_tests, exclusive_child_no_mutation) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -237,9 +258,12 @@ TEST_F(coupling_tests, exclusive_child_no_mutation) {
 }
 
 TEST_F(coupling_tests, exclusive_child_with_crossover) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 1., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 1._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -250,9 +274,12 @@ TEST_F(coupling_tests, exclusive_child_with_crossover) {
 }
 
 TEST_F(coupling_tests, exclusive_child_with_mutation) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 0., 1., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 0._fc, 1._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -263,9 +290,12 @@ TEST_F(coupling_tests, exclusive_child_with_mutation) {
 }
 
 TEST_F(coupling_tests, exclusive_child_with_improving_mutation) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::exclusive, 0., 1., true>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::exclusive, 0._fc, 1._fc, true>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -276,9 +306,12 @@ TEST_F(coupling_tests, exclusive_child_with_improving_mutation) {
 }
 
 TEST_F(coupling_tests, overlapping_child_count) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -288,9 +321,12 @@ TEST_F(coupling_tests, overlapping_child_count) {
 }
 
 TEST_F(coupling_tests, overlapping_parents) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -301,9 +337,12 @@ TEST_F(coupling_tests, overlapping_parents) {
 }
 
 TEST_F(coupling_tests, overlapping_child_raw_fitness) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -314,9 +353,12 @@ TEST_F(coupling_tests, overlapping_child_raw_fitness) {
 }
 
 TEST_F(coupling_tests, overlapping_child_no_scaling) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -327,9 +369,12 @@ TEST_F(coupling_tests, overlapping_child_no_scaling) {
 }
 
 TEST_F(coupling_tests, overlapping_child_scaled_fitness) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
-      rng_)(scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 0._fc, 0._fc, false>(
+          rng_)(scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -340,9 +385,12 @@ TEST_F(coupling_tests, overlapping_child_scaled_fitness) {
 }
 
 TEST_F(coupling_tests, overlapping_child_no_crossover) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -353,9 +401,12 @@ TEST_F(coupling_tests, overlapping_child_no_crossover) {
 }
 
 TEST_F(coupling_tests, overlapping_child_no_mutation) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 0._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -366,9 +417,12 @@ TEST_F(coupling_tests, overlapping_child_no_mutation) {
 }
 
 TEST_F(coupling_tests, overlapping_child_with_crossover) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 1., 0., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 1._fc, 0._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -379,9 +433,12 @@ TEST_F(coupling_tests, overlapping_child_with_crossover) {
 }
 
 TEST_F(coupling_tests, overlapping_child_with_mutation) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 1., false>(
-      rng_)(no_scaling_ctx_);
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 0._fc, 1._fc, false>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -393,8 +450,11 @@ TEST_F(coupling_tests, overlapping_child_with_mutation) {
 
 TEST_F(coupling_tests, overlapping_child_with_improving_mutation) {
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::overlapping, 0., 1., true>(
-      rng_)(no_scaling_ctx_);
+  using namespace gal::literals;
+
+  auto op =
+      gal::couple::parametrize<gal::couple::overlapping, 0._fc, 1._fc, true>(
+          rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -406,8 +466,10 @@ TEST_F(coupling_tests, overlapping_child_with_improving_mutation) {
 
 TEST_F(coupling_tests, field_child_count) {
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
-      no_scaling_ctx_);
+  using namespace gal::literals;
+
+  auto op = gal::couple::parametrize<gal::couple::field, 0._fc, 0._fc, false>(
+      rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -418,8 +480,10 @@ TEST_F(coupling_tests, field_child_count) {
 
 TEST_F(coupling_tests, field_parents) {
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
-      no_scaling_ctx_);
+  using namespace gal::literals;
+
+  auto op = gal::couple::parametrize<gal::couple::field, 0._fc, 0._fc, false>(
+      rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -430,9 +494,11 @@ TEST_F(coupling_tests, field_parents) {
 }
 
 TEST_F(coupling_tests, field_child_raw_fitness) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
-      no_scaling_ctx_);
+  auto op = gal::couple::parametrize<gal::couple::field, 0._fc, 0._fc, false>(
+      rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -443,9 +509,11 @@ TEST_F(coupling_tests, field_child_raw_fitness) {
 }
 
 TEST_F(coupling_tests, field_child_no_scaling) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
-      no_scaling_ctx_);
+  auto op = gal::couple::parametrize<gal::couple::field, 0._fc, 0._fc, false>(
+      rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -456,9 +524,11 @@ TEST_F(coupling_tests, field_child_no_scaling) {
 }
 
 TEST_F(coupling_tests, field_child_scaled_fitness) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
-      scaling_ctx_);
+  auto op = gal::couple::parametrize<gal::couple::field, 0._fc, 0._fc, false>(
+      rng_)(scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -469,9 +539,11 @@ TEST_F(coupling_tests, field_child_scaled_fitness) {
 }
 
 TEST_F(coupling_tests, field_child_no_crossover) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
-      no_scaling_ctx_);
+  auto op = gal::couple::parametrize<gal::couple::field, 0._fc, 0._fc, false>(
+      rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -482,9 +554,11 @@ TEST_F(coupling_tests, field_child_no_crossover) {
 }
 
 TEST_F(coupling_tests, field_child_no_mutation) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 0., 0., false>(rng_)(
-      no_scaling_ctx_);
+  auto op = gal::couple::parametrize<gal::couple::field, 0._fc, 0._fc, false>(
+      rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -495,9 +569,11 @@ TEST_F(coupling_tests, field_child_no_mutation) {
 }
 
 TEST_F(coupling_tests, field_child_with_crossover) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 1., 0., false>(rng_)(
-      no_scaling_ctx_);
+  auto op = gal::couple::parametrize<gal::couple::field, 1._fc, 0._fc, false>(
+      rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -508,9 +584,11 @@ TEST_F(coupling_tests, field_child_with_crossover) {
 }
 
 TEST_F(coupling_tests, field_child_with_mutation) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 0., 1., false>(rng_)(
-      no_scaling_ctx_);
+  auto op = gal::couple::parametrize<gal::couple::field, 0._fc, 1._fc, false>(
+      rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -521,9 +599,11 @@ TEST_F(coupling_tests, field_child_with_mutation) {
 }
 
 TEST_F(coupling_tests, field_child_with_improving_mutation) {
+  using namespace gal::literals;
+
   // arrange
-  auto op = gal::couple::parametrize<gal::couple::field, 0., 1., true>(rng_)(
-      no_scaling_ctx_);
+  auto op = gal::couple::parametrize<gal::couple::field, 0._fc, 1._fc, true>(
+      rng_)(no_scaling_ctx_);
 
   // act
   auto result = op(parents_4_);
@@ -532,8 +612,6 @@ TEST_F(coupling_tests, field_child_with_improving_mutation) {
   EXPECT_THAT(get_child_mutations(population_, result),
               ::testing::ElementsAre(true, true, false, false));
 }
-
-//////////////////////
 
 TEST_F(coupling_tests, local_child_count) {
   // arrange

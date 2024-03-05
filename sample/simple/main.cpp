@@ -99,6 +99,7 @@ struct observe {
 
 void simple() {
   using namespace gal;
+  using namespace gal::literals;
 
   std::mt19937 rng{};
   gal::index_generator igen{rng};
@@ -126,7 +127,7 @@ void simple() {
       .stop(criteria::generation_limit{100})
       //.select(select::random{select::unique<4>, rng})
       .select(select::roulette_raw{select::unique<4>, rng})
-      .couple(couple::parametrize<couple::exclusive, 0.8, 0.2, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::worst_raw{})
       .observe(observe{generation_event, f1::observe{}})
       .build<soo::algo>()
@@ -135,6 +136,7 @@ void simple() {
 
 void nsga() {
   using namespace gal;
+  using namespace gal::literals;
 
   std::mt19937 rng{};
   gal::index_generator igen{rng};
@@ -161,7 +163,7 @@ void nsga() {
       .prune(prune::none{})
       .project(project::factory<project::scale, int_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
-      .couple(couple::parametrize<couple::exclusive, 0.8, 0.2, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::total{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
@@ -170,6 +172,7 @@ void nsga() {
 
 void nsga_ii() {
   using namespace gal;
+  using namespace gal::literals;
 
   std::mt19937 rng{};
   gal::index_generator igen{rng};
@@ -198,7 +201,7 @@ void nsga_ii() {
       .project(project::factory<project::merge, int_rank_t>{})
       .select(
           select::tournament_scaled{select::unique<2>, select::rounds<2>, rng})
-      .couple(couple::parametrize<couple::exclusive, 0.8, 0.2, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
@@ -207,6 +210,7 @@ void nsga_ii() {
 
 void spea() {
   using namespace gal;
+  using namespace gal::literals;
 
   std::mt19937 rng{};
   gal::index_generator igen{rng};
@@ -233,7 +237,7 @@ void spea() {
       .prune(prune::cluster_edge{})
       .project(project::factory<project::truncate, real_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
-      .couple(couple::parametrize<couple::exclusive, 0.8, 0.2, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
@@ -242,6 +246,7 @@ void spea() {
 
 void spea_ii() {
   using namespace gal;
+  using namespace gal::literals;
 
   std::mt19937 rng{};
   gal::index_generator igen{rng};
@@ -268,7 +273,7 @@ void spea_ii() {
       .prune(prune::global_worst<int_rank_t>{})
       .project(project::factory<project::translate, int_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
-      .couple(couple::parametrize<couple::exclusive, 0.8, 0.2, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
@@ -277,6 +282,7 @@ void spea_ii() {
 
 void rdga() {
   using namespace gal;
+  using namespace gal::literals;
 
   std::mt19937 rng{};
   gal::index_generator igen{rng};
@@ -303,7 +309,7 @@ void rdga() {
       .prune(prune::none{})
       .project(project::factory<project::alternate, int_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
-      .couple(couple::parametrize<couple::exclusive, 0.8, 0.2, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::nondominating_parents_raw{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
@@ -312,6 +318,7 @@ void rdga() {
 
 void pesa() {
   using namespace gal;
+  using namespace gal::literals;
 
   std::mt19937 rng{};
   gal::index_generator igen{rng};
@@ -342,7 +349,7 @@ void pesa() {
       .prune(prune::cluster_random{rng})
       .project(project::factory<project::truncate, crowd_density_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
-      .couple(couple::parametrize<couple::exclusive, 0.8, 0.2, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
@@ -351,6 +358,7 @@ void pesa() {
 
 void pesa_ii() {
   using namespace gal;
+  using namespace gal::literals;
 
   std::mt19937 rng{};
   gal::index_generator igen{rng};
@@ -378,7 +386,7 @@ void pesa_ii() {
       .project(project::factory<project::none>{})
       .select(select::cluster{
           gal::select::shared<cluster_label>, select::unique<4>, rng})
-      .couple(couple::parametrize<couple::exclusive, 0.8, 0.2, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()
@@ -387,6 +395,7 @@ void pesa_ii() {
 
 void paes() {
   using namespace gal;
+  using namespace gal::literals;
 
   std::mt19937 rng{};
   gal::index_generator igen{rng};
@@ -418,7 +427,7 @@ void paes() {
       .prune(prune::cluster_random{rng})
       .project(project::factory<project::truncate, crowd_density_t>{})
       .select(select::lineal_scaled{})
-      .couple(couple::parametrize<couple::exclusive, 0.8, 0.2, true>(rng))
+      .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::append{})
       .observe(observe{generation_event, f1f2::observe{}})
       .build<moo::algo>()

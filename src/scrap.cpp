@@ -187,31 +187,31 @@ void test_ground() {
 
   using namespace gal::literals;
 
-  auto sc0 = gal::scale::factory<gal::scale::top, 2, 1.5_fc>{}(ctx);
+  auto sc0 = gal::scale::factory<gal::scale::top, 2, 1.5_dc>{}(ctx);
   sc0();
 
-  gal::scale::top<ctx_t, 5, 1.5> sc1{ctx};
+  gal::scale::top<ctx_t, 5, 1.5_dc> sc1{ctx};
   sc1();
   sc1(0, p.individuals()[0]);
 
-  gal::scale::exponential<ctx_t, 1.0025> sc2{ctx};
+  gal::scale::exponential<ctx_t, 1.0025_dc> sc2{ctx};
   sc2();
   sc2(0, p.individuals()[0]);
 
-  gal::scale::power<ctx_t, 2.> sc3{ctx};
+  gal::scale::power<ctx_t, 2._dc> sc3{ctx};
   sc3(0, p.individuals()[0]);
 
   gal::scale::window<ctx_t> sc4{ctx};
   sc4(0, p.individuals()[0]);
 
-  gal::scale::ranked<ctx_t, 1.> sc5{ctx};
+  gal::scale::ranked<ctx_t, 1._dc> sc5{ctx};
   sc5();
   sc5(0, p.individuals()[0]);
 
   gal::scale::sigma<ctx_t> sc6{ctx};
   sc6(0, p.individuals()[0]);
 
-  gal::scale::linear<ctx_t, 1.0025> sc7{ctx};
+  gal::scale::linear<ctx_t, 1.0025_dc> sc7{ctx};
   sc7();
   sc7(0, p.individuals()[0]);
 
@@ -221,10 +221,10 @@ void test_ground() {
                                              test_crossover,
                                              test_mutation,
                                              test_evaluator,
-                                             gal::scale::power<ctx_t, 2.>>;
+                                             gal::scale::power<ctx_t, 2._dc>>;
   rtx_t rtx{p, hist, test_crossover{}, test_mutation{}, test_evaluator{}, sc3};
 
-  gal::couple::reproduction_params<0.8, 0.2, std::true_type, std::mt19937>
+  gal::couple::reproduction_params<0.8_fc, 0.2_fc, std::true_type, std::mt19937>
       rep_p{gen};
 
   auto cp0 = gal::couple::parametrize<gal::couple::exclusive>(rep_p)(rtx);

@@ -188,7 +188,7 @@ private:
 };
 
 // cell-sharing (rdga, pesa, paes)
-template<literals::fp_const Alpha = 1.>
+template<literals::fp_const<double> Alpha = 1.>
 class cluster {
 public:
   template<crowded_population Population, typename Preserved>
