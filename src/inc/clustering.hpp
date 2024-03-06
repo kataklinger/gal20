@@ -313,10 +313,15 @@ namespace details {
     return result;
   }
 
+  template<typename Fitness>
+  using hypergrid_granularity_t =
+      literals::to_const_type<multiobjective_value_t<Fitness>>;
+
 } // namespace details
 
 // hypercell (pesa, pesa-ii, paes)
-template<grid_fitness Fitness, multiobjective_value_t<Fitness>... Granularity>
+template<grid_fitness Fitness,
+         details::hypergrid_granularity_t<Fitness>... Granularity>
 class hypergrid {
 private:
   inline static constexpr std::array<multiobjective_value_t<Fitness>,

@@ -307,8 +307,10 @@ protected:
 };
 
 TEST_F(hypergird_exact_tests, grouped_clusters_count) {
+  using namespace gal::literals;
+
   // arrange
-  gal::cluster::hypergrid<fitness_t, 0.5, 0.5> op;
+  gal::cluster::hypergrid<fitness_t, 0.5_dc, 0.5_dc> op;
 
   // act
   auto clusters = op(*population_, pareto_);
@@ -318,8 +320,10 @@ TEST_F(hypergird_exact_tests, grouped_clusters_count) {
 }
 
 TEST_F(hypergird_exact_tests, grouped_clusters_content) {
+  using namespace gal::literals;
+
   // arrange
-  gal::cluster::hypergrid<fitness_t, 0.5, 0.5> op;
+  gal::cluster::hypergrid<fitness_t, 0.5_dc, 0.5_dc> op;
 
   // act
   auto clusters = op(*population_, pareto_);
@@ -334,8 +338,10 @@ TEST_F(hypergird_exact_tests, grouped_clusters_content) {
 }
 
 TEST_F(hypergird_exact_tests, grouped_clusters_labels) {
+  using namespace gal::literals;
+
   // arrange
-  gal::cluster::hypergrid<fitness_t, 0.5, 0.5> op;
+  gal::cluster::hypergrid<fitness_t, 0.5_dc, 0.5_dc> op;
 
   // act
   auto clusters = op(*population_, pareto_);
@@ -350,8 +356,10 @@ TEST_F(hypergird_exact_tests, grouped_clusters_labels) {
 }
 
 TEST_F(hypergird_exact_tests, unique_clusters_count) {
+  using namespace gal::literals;
+
   // arrange
-  gal::cluster::hypergrid<fitness_t, 0.05, 0.05> op;
+  gal::cluster::hypergrid<fitness_t, 0.05_dc, 0.05_dc> op;
 
   // act
   auto clusters = op(*population_, pareto_);
@@ -361,8 +369,10 @@ TEST_F(hypergird_exact_tests, unique_clusters_count) {
 }
 
 TEST_F(hypergird_exact_tests, unique_clusters_labels) {
+  using namespace gal::literals;
+
   // arrange
-  gal::cluster::hypergrid<fitness_t, 0.05, 0.05> op;
+  gal::cluster::hypergrid<fitness_t, 0.05_dc, 0.05_dc> op;
 
   // act
   auto clusters = op(*population_, pareto_);
@@ -381,8 +391,10 @@ protected:
 };
 
 TEST_F(hypergird_overflow_tests, unique_clusters_count) {
+  using namespace gal::literals;
+
   // arrange
-  gal::cluster::hypergrid<fitness_t, 0.05, 0.05> op;
+  gal::cluster::hypergrid<fitness_t, 0.05_dc, 0.05_dc> op;
 
   // act
   auto clusters = op(*population_, pareto_);
@@ -392,8 +404,10 @@ TEST_F(hypergird_overflow_tests, unique_clusters_count) {
 }
 
 TEST_F(hypergird_overflow_tests, unique_clusters_labels) {
+  using namespace gal::literals;
+
   // arrange
-  gal::cluster::hypergrid<fitness_t, 0.05, 0.05> op;
+  gal::cluster::hypergrid<fitness_t, 0.05_dc, 0.05_dc> op;
 
   // act
   auto clusters = op(*population_, pareto_);

@@ -56,17 +56,35 @@ inline constexpr fp_const<float> operator""_fc(long double value) noexcept {
   return fp_const{static_cast<float>(value)};
 }
 
-template<typename Ty>
-struct underlying_const_type_impl {
-  using type = Ty;
-};
+namespace details {
+
+  template<typename Ty>
+  struct underlying_const_type_impl {
+    using type = Ty;
+  };
+
+  template<typename Ty>
+  struct underlying_const_type_impl<fp_const<Ty>> {
+    using type = typename fp_const<Ty>::value_t;
+  };
+
+  template<typename Ty>
+  struct to_const_type_impl {
+    using type = Ty;
+  };
+
+  template<std::floating_point Ty>
+  struct to_const_type_impl<Ty> {
+    using type = fp_const<Ty>;
+  };
+
+} // namespace details
 
 template<typename Ty>
-struct underlying_const_type_impl<fp_const<Ty>> {
-  using type = typename fp_const<Ty>::value_t;
-};
+using underlying_const_type =
+    typename details::underlying_const_type_impl<Ty>::type;
 
 template<typename Ty>
-using underlying_const_type = typename underlying_const_type_impl<Ty>::type;
+using to_const_type = typename details::to_const_type_impl<Ty>::type;
 
 } // namespace gal::literals
