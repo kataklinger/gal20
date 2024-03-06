@@ -153,7 +153,7 @@ void test_ground() {
   gal::select::lineal_raw sl6{};
   sl6(p);
 
-  gal::replace::random_raw<std::mt19937, 2> ro1{gen};
+  gal::replace::random_raw ro1{gen, gal::countable<1>};
   ro1(p, std::vector<parent_replacement_t>{});
 
   gal::replace::worst<gal::raw_fitness_tag> ro2{};

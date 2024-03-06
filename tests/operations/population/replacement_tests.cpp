@@ -72,7 +72,7 @@ protected:
 
 TEST_F(replacement_tests, random_raw_elitism_removed_count) {
   // arrange
-  gal::replace::random_raw<std::mt19937, 2> op{rng_};
+  gal::replace::random_raw op{rng_, gal::countable<2>};
 
   // act
   auto replaced = op(population_, offsprings_5_);
@@ -83,7 +83,7 @@ TEST_F(replacement_tests, random_raw_elitism_removed_count) {
 
 TEST_F(replacement_tests, random_raw_elitism_removed_content) {
   // arrange
-  gal::replace::random_raw<std::mt19937, 2> op{rng_};
+  gal::replace::random_raw op{rng_, gal::countable<2>};
 
   // act
   auto replaced = op(population_, offsprings_5_);
@@ -95,7 +95,7 @@ TEST_F(replacement_tests, random_raw_elitism_removed_content) {
 
 TEST_F(replacement_tests, random_raw_elitism_added_content) {
   // arrange
-  gal::replace::random_raw<std::mt19937, 2> op{rng_};
+  gal::replace::random_raw op{rng_, gal::countable<2>};
 
   // act
   op(population_, offsprings_5_);
@@ -107,7 +107,7 @@ TEST_F(replacement_tests, random_raw_elitism_added_content) {
 
 TEST_F(replacement_tests, random_scaled_elitism_removed_count) {
   // arrange
-  gal::replace::random_scaled<std::mt19937, 2> op{rng_};
+  gal::replace::random_scaled op{rng_, gal::countable<2>};
 
   // act
   auto replaced = op(population_, offsprings_5_);
@@ -118,7 +118,7 @@ TEST_F(replacement_tests, random_scaled_elitism_removed_count) {
 
 TEST_F(replacement_tests, random_scaled_elitism_removed_content) {
   // arrange
-  gal::replace::random_scaled<std::mt19937, 2> op{rng_};
+  gal::replace::random_scaled op{rng_, gal::countable<2>};
 
   // act
   auto replaced = op(population_, offsprings_5_);
@@ -130,7 +130,7 @@ TEST_F(replacement_tests, random_scaled_elitism_removed_content) {
 
 TEST_F(replacement_tests, random_scaled_elitism_added_content) {
   // arrange
-  gal::replace::random_scaled<std::mt19937, 2> op{rng_};
+  gal::replace::random_scaled op{rng_, gal::countable<2>};
 
   // act
   op(population_, offsprings_5_);
@@ -142,7 +142,7 @@ TEST_F(replacement_tests, random_scaled_elitism_added_content) {
 
 TEST_F(replacement_tests, random_raw_no_elitism_removed_count) {
   // arrange
-  gal::replace::random_raw op{rng_};
+  gal::replace::random_raw op{rng_, gal::countable<0>};
 
   // act
   auto replaced = op(population_, offsprings_5_);
@@ -153,7 +153,7 @@ TEST_F(replacement_tests, random_raw_no_elitism_removed_count) {
 
 TEST_F(replacement_tests, random_raw_no_elitism_removed_content) {
   // arrange
-  gal::replace::random_raw op{rng_};
+  gal::replace::random_raw op{rng_, gal::countable<0>};
 
   // act
   auto replaced = op(population_, offsprings_5_);
@@ -165,7 +165,7 @@ TEST_F(replacement_tests, random_raw_no_elitism_removed_content) {
 
 TEST_F(replacement_tests, random_raw_no_elitism_added_content) {
   // arrange
-  gal::replace::random_raw op{rng_};
+  gal::replace::random_raw op{rng_, gal::countable<0>};
 
   // act
   op(population_, offsprings_5_);
@@ -177,7 +177,7 @@ TEST_F(replacement_tests, random_raw_no_elitism_added_content) {
 
 TEST_F(replacement_tests, random_scaled_no_elitism_removed_count) {
   // arrange
-  gal::replace::random_scaled op{rng_};
+  gal::replace::random_scaled op{rng_, gal::countable<0>};
 
   // act
   auto replaced = op(population_, offsprings_5_);
@@ -188,7 +188,7 @@ TEST_F(replacement_tests, random_scaled_no_elitism_removed_count) {
 
 TEST_F(replacement_tests, random_scaled_no_elitism_removed_content) {
   // arrange
-  gal::replace::random_scaled op{rng_};
+  gal::replace::random_scaled op{rng_, gal::countable<0>};
 
   // act
   auto replaced = op(population_, offsprings_5_);
@@ -200,7 +200,7 @@ TEST_F(replacement_tests, random_scaled_no_elitism_removed_content) {
 
 TEST_F(replacement_tests, random_scaled_no_elitism_added_content) {
   // arrange
-  gal::replace::random_scaled op{rng_};
+  gal::replace::random_scaled op{rng_, gal::countable<0>};
 
   // act
   op(population_, offsprings_5_);

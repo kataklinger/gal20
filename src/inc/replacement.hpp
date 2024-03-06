@@ -66,7 +66,8 @@ private:
   inline static constexpr fitness_tag_t fitness_tag{};
 
 public:
-  inline explicit random(generator_t& generator) noexcept
+  inline explicit random(generator_t& generator,
+                         countable_t<Elitism> /*unused*/) noexcept
       : generator_{&generator} {
   }
 
@@ -92,11 +93,29 @@ private:
   generator_t* generator_;
 };
 
-template<typename Generator, std::size_t Elitism = 0>
-using random_raw = random<Generator, Elitism, raw_fitness_tag>;
+template<typename Generator, std::size_t Elitism>
+class random_raw : public random<Generator, Elitism, raw_fitness_tag> {
+private:
+  using base_t = random<Generator, Elitism, raw_fitness_tag>;
 
-template<typename Generator, std::size_t Elitism = 0>
-using random_scaled = random<Generator, Elitism, scaled_fitness_tag>;
+public:
+  inline explicit random_raw(Generator& generator,
+                             countable_t<Elitism> size) noexcept
+      : base_t{generator, size} {
+  }
+};
+
+template<typename Generator, std::size_t Elitism>
+class random_scaled : public random<Generator, Elitism, scaled_fitness_tag> {
+private:
+  using base_t = random<Generator, Elitism, scaled_fitness_tag>;
+
+public:
+  inline explicit random_scaled(Generator& generator,
+                                countable_t<Elitism> size) noexcept
+      : base_t{generator, size} {
+  }
+};
 
 template<typename FitnessTag>
 class worst {
