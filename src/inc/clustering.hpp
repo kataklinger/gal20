@@ -156,21 +156,21 @@ private:
 namespace details {
 
   template<typename Ty>
-  struct hypercooridnate_element_impl {
+  struct hypercoordinate_element_impl {
     using type = Ty;
   };
 
   template<std::floating_point Ty>
-  struct hypercooridnate_element_impl<Ty> {
+  struct hypercoordinate_element_impl<Ty> {
     using type = std::ptrdiff_t;
   };
 
   template<typename Ty>
-  using hypercooridnate_element_t =
-      typename hypercooridnate_element_impl<Ty>::type;
+  using hypercoordinate_element_t =
+      typename hypercoordinate_element_impl<Ty>::type;
 
   template<typename Ty, std::size_t N>
-  using hypercooridnates_t = std::array<hypercooridnate_element_t<Ty>, N>;
+  using hypercoordinates_t = std::array<hypercoordinate_element_t<Ty>, N>;
 
   template<std::size_t I, typename Ty, std::size_t N>
   inline auto calculate_coord_hash(std::uint64_t value,
@@ -185,7 +185,7 @@ namespace details {
     }
   }
 
-  class hypercooridnates_hash {
+  class hypercoordinates_hash {
   public:
     template<typename Ty, std::size_t N>
     std::uint64_t operator()(std::array<Ty, N> const& coords) const noexcept {
@@ -235,7 +235,7 @@ namespace details {
                            no_minimum /*unused*/,
                            array_t<Fitness, Idxs...> const& granularity,
                            std::index_sequence<Idxs...> /*unused*/) noexcept {
-    return hypercooridnates_t<multiobjective_value_t<Fitness>, sizeof...(Idxs)>{
+    return hypercoordinates_t<multiobjective_value_t<Fitness>, sizeof...(Idxs)>{
         cacluate_hypercoordinate(fitness[Idxs], granularity[Idxs])...};
   }
 
@@ -245,7 +245,7 @@ namespace details {
                            array_t<Fitness, Idxs...> const& minimums,
                            array_t<Fitness, Idxs...> const& granularity,
                            std::index_sequence<Idxs...> /*unused*/) noexcept {
-    return hypercooridnates_t<multiobjective_value_t<Fitness>, sizeof...(Idxs)>{
+    return hypercoordinates_t<multiobjective_value_t<Fitness>, sizeof...(Idxs)>{
         cacluate_hypercoordinate(
             minimums[Idxs], fitness[Idxs], granularity[Idxs])...};
   }
@@ -272,9 +272,9 @@ namespace details {
                      std::array<FitnessValue, Dimensions> const& granularity) {
     using individual_t = typename Population::individual_t;
     using hypermap_t =
-        std::unordered_map<hypercooridnates_t<FitnessValue, Dimensions>,
+        std::unordered_map<hypercoordinates_t<FitnessValue, Dimensions>,
                            std::vector<individual_t*>,
-                           hypercooridnates_hash>;
+                           hypercoordinates_hash>;
 
     cluster_set result;
 
