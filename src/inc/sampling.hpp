@@ -51,12 +51,12 @@ public:
 
   inline auto operator()(std::size_t margin,
                          std::ranges::sized_range auto const& range) const {
-    return random_index_adapter{
-        *generator_, margin, std::ranges::size(range) - margin};
+    auto max_idx = std::ranges::size(range) - 1;
+    return random_index_adapter{*generator_, margin, max_idx - margin};
   }
 
   inline auto operator()(std::ranges::sized_range auto const& range) const {
-    return operator()(0, std::ranges::size(range));
+    return operator()(0, range);
   }
 
   inline auto operator()(std::size_t margin, std::size_t max_idx) const {
