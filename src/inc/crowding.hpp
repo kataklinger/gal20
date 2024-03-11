@@ -48,7 +48,7 @@ public:
     clean_tags<crowd_density_t>(population);
 
     for (auto&& set : sets) {
-      double total = 0.;
+      double total = 1.;
 
       for (auto in = std::ranges::begin(set); auto&& left : set) {
         std::ranges::advance(in, 1);
@@ -106,7 +106,14 @@ public:
         auto first = std::ranges::begin(set);
         auto last = --std::ranges::end(set);
 
-        get_tag<crowd_density_t>(**first) = get_tag<crowd_density_t>(**last) =
+        get_tag<crowd_density_t>(**first) =
+            std::numeric_limits<double>::infinity();
+
+        if (first == last) {
+          break;
+        }
+
+        get_tag<crowd_density_t>(**last) =
             std::numeric_limits<double>::infinity();
 
         while (++first != last) {
