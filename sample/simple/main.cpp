@@ -159,7 +159,11 @@ void nsga() {
       .rank<pareto_preserved_t>(gal::rank::level{})
       .elite(elite::relaxed{})
       .cluster(cluster::none{})
-      .crowd(crowd::sharing{1., 2., [](auto&, auto&) { return 0.; }})
+      .crowd(crowd::sharing{20.,
+                            2.,
+                            [](auto const& c1, auto const& c2) {
+                              return gal::euclidean_distance(c1, c2);
+                            }})
       .prune(prune::none{})
       .project(project::factory<project::scale, int_rank_t>{})
       .select(select::roulette_scaled{select::unique<4>, rng})
