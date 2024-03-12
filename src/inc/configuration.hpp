@@ -634,22 +634,22 @@ struct select_ptype : public details::ptype_base<Built, select_ptype> {
   }
 };
 
-template<typename Factory, typename Context>
+template<typename Projection>
 class project_body {
 public:
-  using projection_t = operation_factory_result_t<Factory, Context>;
+  using projection_t = Projection;
 
 public:
-  inline constexpr explicit project_body(Factory const& projection)
+  inline constexpr explicit project_body(projection_t const& projection)
       : projection_{projection} {
   }
 
-  inline auto projection(Context& context) const {
-    return projection_(context);
+  inline auto const& projection() const {
+    return projection_;
   }
 
 private:
-  Factory projection_;
+  projection_t projection_;
 };
 
 template<typename Built>
@@ -662,10 +662,9 @@ struct project_ptype : public details::ptype_base<Built, project_ptype> {
       : details::ptype_base<Built, project_ptype>{current} {
   }
 
-  template<
-      projection_factory<population_context_t, pareto_preservance_t> Factory>
-  inline constexpr auto project(Factory const& projection) const {
-    return this->next(project_body<Factory, population_context_t>{projection});
+  template<projection<population_context_t, pareto_preservance_t> Projection>
+  inline constexpr auto project(Projection const& projection) const {
+    return this->next(project_body<Projection>{projection});
   }
 };
 

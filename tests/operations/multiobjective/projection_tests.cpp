@@ -69,11 +69,11 @@ protected:
 
 TEST_F(projection_tests, scale_scaled_fitness_value) {
   // arrange
-  gal::project::scale<population_ctx_t, gal::int_rank_t> op{context_};
+  gal::project::scale<gal::int_rank_t> op{};
   auto pareto = gal::rank::level{}(population_, gal::pareto_preserved_tag);
 
   // act
-  op(pareto, gal::cluster_set{});
+  op(context_, pareto, gal::cluster_set{});
 
   // assert
   auto values = to_vector(population_.individuals());
@@ -86,11 +86,11 @@ TEST_F(projection_tests, scale_scaled_fitness_value) {
 }
 TEST_F(projection_tests, translate_scaled_fitness_value) {
   // arrange
-  gal::project::translate<population_ctx_t, gal::int_rank_t> op{context_};
+  gal::project::translate<gal::int_rank_t> op{};
   gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
 
   // act
-  op(pareto, gal::cluster_set{});
+  op(context_, pareto, gal::cluster_set{});
 
   // assert
   auto values = to_vector(population_.individuals());
@@ -104,11 +104,11 @@ TEST_F(projection_tests, translate_scaled_fitness_value) {
 
 TEST_F(projection_tests, truncate_ranking_scaled_fitness_value) {
   // arrange
-  gal::project::truncate<population_ctx_t, gal::int_rank_t> op{context_};
+  gal::project::truncate<gal::int_rank_t> op{};
   gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
 
   // act
-  op(pareto, gal::cluster_set{});
+  op(context_, pareto, gal::cluster_set{});
 
   // assert
   auto values = to_vector(population_.individuals());
@@ -122,11 +122,11 @@ TEST_F(projection_tests, truncate_ranking_scaled_fitness_value) {
 
 TEST_F(projection_tests, truncate_density_scaled_fitness_value) {
   // arrange
-  gal::project::truncate<population_ctx_t, gal::crowd_density_t> op{context_};
+  gal::project::truncate<gal::crowd_density_t> op{};
   gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
 
   // act
-  op(pareto, gal::cluster_set{});
+  op(context_, pareto, gal::cluster_set{});
 
   // assert
   auto values = to_vector(population_.individuals());
@@ -140,11 +140,11 @@ TEST_F(projection_tests, truncate_density_scaled_fitness_value) {
 
 TEST_F(projection_tests, alternate_ranking_scaled_fitness_value) {
   // arrange
-  gal::project::truncate<population_ctx_t, gal::int_rank_t> op{context_};
+  gal::project::alternate<gal::int_rank_t> op{};
   gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
 
   // act
-  op(pareto, gal::cluster_set{});
+  op(context_, pareto, gal::cluster_set{});
 
   // assert
   auto values = to_vector(population_.individuals());
@@ -158,12 +158,12 @@ TEST_F(projection_tests, alternate_ranking_scaled_fitness_value) {
 
 TEST_F(projection_tests, alternate_density_scaled_fitness_value) {
   // arrange
-  gal::project::truncate<population_ctx_t, gal::crowd_density_t> op{context_};
+  gal::project::alternate<gal::crowd_density_t> op{};
   gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
   statistics_.next(population_);
 
   // act
-  op(pareto, gal::cluster_set{});
+  op(context_, pareto, gal::cluster_set{});
 
   // assert
   auto values = to_vector(population_.individuals());
@@ -173,6 +173,24 @@ TEST_F(projection_tests, alternate_density_scaled_fitness_value) {
   EXPECT_NEAR(values[3], 0.125, 0.0001);
   EXPECT_NEAR(values[4], 0.05, 0.0001);
   EXPECT_NEAR(values[5], 0.025, 0.0001);
+}
+
+TEST_F(projection_tests, custom_scaled_fitness_value) {
+  // arrange
+  gal::project::custom op{[](auto const&) { return 1.1; }};
+  gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
+
+  // act
+  op(context_, pareto, gal::cluster_set{});
+
+  // assert
+  auto values = to_vector(population_.individuals());
+  EXPECT_NEAR(values[0], 1.1, 0.0001);
+  EXPECT_NEAR(values[1], 1.1, 0.0001);
+  EXPECT_NEAR(values[2], 1.1, 0.0001);
+  EXPECT_NEAR(values[3], 1.1, 0.0001);
+  EXPECT_NEAR(values[4], 1.1, 0.0001);
+  EXPECT_NEAR(values[5], 1.1, 0.0001);
 }
 
 class merge_tests : public ::testing::Test {
@@ -210,11 +228,11 @@ protected:
 
 TEST_F(merge_tests, merge_scaled_fitness_value) {
   // arrange
-  gal::project::merge<population_ctx_t, gal::int_rank_t> op{context_};
+  gal::project::merge<gal::int_rank_t> op{};
   gal::population_pareto_t<population_t, gal::pareto_preserved_t> pareto{0};
 
   // act
-  op(pareto, gal::cluster_set{});
+  op(context_, pareto, gal::cluster_set{});
 
   // assert
   auto values = to_vector(population_.individuals());

@@ -66,7 +66,7 @@ concept algo_config = basic_algo_config<Config> && requires(Config c) {
                     typename Config::pareto_preservance_t>;
   requires pruning<typename Config::pruning_t, typename Config::population_t>;
   requires projection<typename Config::projection_t,
-                      typename Config::population_t,
+                      typename Config::population_context_t,
                       typename Config::pareto_preservance_t>;
 
   { c.ranking() } -> std::convertible_to<typename Config::ranking_t>;
@@ -74,10 +74,7 @@ concept algo_config = basic_algo_config<Config> && requires(Config c) {
   { c.clustering() } -> std::convertible_to<typename Config::clustering_t>;
   { c.crowding() } -> std::convertible_to<typename Config::crowding_t>;
   { c.pruning() } -> std::convertible_to<typename Config::pruning_t>;
-
-  {
-    c.projection(std::declval<typename Config::population_context_t&>())
-  } -> std::convertible_to<typename Config::projection_t>;
+  { c.projection() } -> std::convertible_to<typename Config::projection_t>;
 };
 
 template<algo_config Config>
@@ -120,7 +117,6 @@ public:
                                         config_.evaluator()};
 
     auto coupler = config_.coupling(reproduction);
-    auto projector = config_.projection(ctx);
 
     auto* statistics = &init();
     while (!token.stop_requested() &&
@@ -139,7 +135,7 @@ public:
 
       prune(config_.pruning(), *statistics);
 
-      project(projector, fronts, clusters, *statistics);
+      project(config_.projection(), ctx, fronts, clusters, *statistics);
 
       auto selected = select(*statistics);
       stats::count_range(*statistics, selection_count_tag, selected);
@@ -211,11 +207,12 @@ private:
 
   template<typename Projection>
   inline void project(Projection const& operation,
+                      population_context_t& ctx,
                       pareto_t& sets,
                       cluster_set& clusters,
                       statistics_t& current) {
     [[maybe_unused]] auto timer = stats::start_timer(current, project_time_tag);
-    return std::invoke(operation, sets, clusters);
+    return std::invoke(operation, ctx, sets, clusters);
   }
 
   inline auto select(statistics_t& current) {

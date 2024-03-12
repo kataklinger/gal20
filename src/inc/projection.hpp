@@ -23,46 +23,33 @@ concept projectable_context =
     ranked_population<typename Context::population_t, RankTag> &&
     details::projectable_from<typename Context::population_t, From...> &&
     std::convertible_to<typename tag_adopted_traits<RankTag>::value_t, double>;
+
 // x = empty (pesa-ii)
-template<typename Context>
 class none {
 public:
-  using context_t = Context;
-  using population_t = typename context_t::population_t;
-
-public:
-  inline explicit none(context_t& /*unused*/) noexcept {
-  }
-
-  template<typename Preserved>
-  void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
+  template<typename Context, typename Preserved>
+  void operator()(Context& /*unused*/,
+                  population_pareto_t<typename Context::population_t,
+                                      Preserved>& /*unused*/,
                   cluster_set const& /*unused*/) const {
   }
 };
 
 // x = f(rank) / (1 - density) (nsga)
-template<typename Context, typename RankTag>
-  requires(projectable_context<Context, RankTag, double>)
+template<typename RankTag>
 class scale {
 public:
-  using context_t = Context;
-  using population_t = typename context_t::population_t;
+  template<projectable_context<RankTag, double> Context, typename Preserved>
+  void operator()(
+      Context& context,
+      population_pareto_t<typename Context::population_t, Preserved>& sets,
+      cluster_set const& /*unused*/) const {
+    using scaled_fitness_t = typename Context::population_t::scaled_fitness_t;
 
-private:
-  using scaled_fitness_t = typename population_t::scaled_fitness_t;
-
-public:
-  inline explicit scale(context_t& context) noexcept
-      : population_{&context.population()} {
-  }
-
-  template<typename Preserved>
-  void operator()(population_pareto_t<population_t, Preserved>& sets,
-                  cluster_set const& /*unused*/) const {
     std::vector<double> multipliers(sets.size(),
                                     std::numeric_limits<double>::max());
 
-    for (auto&& individual : population_->individuals()) {
+    for (auto&& individual : context.population().individuals()) {
       auto front = get_tag<frontier_level_t>(individual).get() - 1;
       double density{get_tag<crowd_density_t>(individual)};
 
@@ -76,7 +63,7 @@ public:
       correction *= std::exchange(multiplier, multiplier / correction);
     }
 
-    for (auto&& individual : population_->individuals()) {
+    for (auto&& individual : context.population().individuals()) {
       auto front = get_tag<frontier_level_t>(individual).get() - 1;
       auto scaled = multipliers[front] * get_tag<RankTag>(individual).get() *
                     get_tag<crowd_density_t>(individual).get();
@@ -84,74 +71,49 @@ public:
       individual.eval().set_scaled(scaled_fitness_t{scaled});
     }
   }
-
-private:
-  population_t* population_;
 };
 
 // x = f(rank) + g(density) (spea-ii)
-template<typename Context, typename RankTag>
-  requires(projectable_context<Context, RankTag, double>)
+template<typename RankTag>
 class translate {
 public:
-  using context_t = Context;
-  using population_t = typename context_t::population_t;
-
-private:
-  using scaled_fitness_t = typename population_t::scaled_fitness_t;
-
-public:
-  inline explicit translate(context_t& context) noexcept
-      : population_{&context.population()} {
-  }
-
-  template<typename Preserved>
-  void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
+  template<projectable_context<RankTag, double> Context, typename Preserved>
+  void operator()(Context& context,
+                  population_pareto_t<typename Context::population_t,
+                                      Preserved>& /*unused*/,
                   cluster_set const& /*unused*/) const noexcept {
-    for (auto&& individual : population_->individuals()) {
+    using scaled_fitness_t = typename Context::population_t::scaled_fitness_t;
+
+    for (auto&& individual : context.population().individuals()) {
       auto rank = get_tag<RankTag>(individual).get();
       auto density = get_tag<crowd_density_t>(individual).get();
 
       individual.eval().set_scaled(scaled_fitness_t{rank + density});
     }
   }
-
-private:
-  population_t* population_;
 };
 
 // x = <rank, density> (nsga-ii)
-template<typename Context, typename RankTag>
-  requires(projectable_context<Context,
-                               RankTag,
-                               typename tag_adopted_traits<RankTag>::value_t,
-                               double>)
+template<typename RankTag>
 class merge {
 public:
-  using context_t = Context;
-  using population_t = typename context_t::population_t;
-
-private:
-  using scaled_fitness_t = typename population_t::scaled_fitness_t;
-
-public:
-  inline explicit merge(context_t& context) noexcept
-      : population_{&context.population()} {
-  }
-
-  template<typename Preserved>
-  void operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
+  template<projectable_context<RankTag,
+                               typename tag_adopted_traits<RankTag>::value_t,
+                               double> Context,
+           typename Preserved>
+  void operator()(Context& context,
+                  population_pareto_t<typename Context::population_t,
+                                      Preserved>& /*unused*/,
                   cluster_set const& /*unused*/) const noexcept {
-    for (auto&& individual : population_->individuals()) {
+    using scaled_fitness_t = typename Context::population_t::scaled_fitness_t;
+
+    for (auto&& individual : context.population().individuals()) {
       auto rank = get_tag<RankTag>(individual).get();
       auto density = get_tag<crowd_density_t>(individual).get();
 
       individual.eval().set_scaled(scaled_fitness_t{rank, density});
     }
   }
-
-private:
-  population_t* population_;
 };
 
 template<typename Context, typename Tag>
@@ -164,7 +126,7 @@ namespace details {
 
   template<typename Tag, typename Population>
   inline void assign_truncated(Population& population) noexcept {
-    using scaled_fitness_t = get_fitness_t<scaled_fitness_tag, Population>;
+    using scaled_fitness_t = typename Population::scaled_fitness_t;
 
     for (auto&& individual : population.individuals()) {
       auto value = static_cast<double>(get_tag<Tag>(individual).get());
@@ -174,29 +136,17 @@ namespace details {
 
 } // namespace details
 
-// x = rank or x = density (spea, pesa, paes)
-template<typename Context, typename SelectedTag>
-  requires(truncateable_context<Context, SelectedTag>)
+// x = rank or x = density (pesa, paes)
+template<typename SelectedTag>
 class truncate {
 public:
-  using context_t = Context;
-  using population_t = typename context_t::population_t;
-
-public:
-  inline explicit truncate(context_t& context) noexcept
-      : population_{&context.population()} {
+  template<truncateable_context<SelectedTag> Context, typename Preserved>
+  inline void operator()(Context& context,
+                         population_pareto_t<typename Context::population_t,
+                                             Preserved>& /*unused*/,
+                         cluster_set const& /*unused*/) const noexcept {
+    details::assign_truncated<SelectedTag>(context.population());
   }
-
-public:
-  template<typename Preserved>
-  inline void
-      operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
-                 cluster_set const& /*unused*/) const noexcept {
-    details::assign_truncated<SelectedTag>(*population_);
-  }
-
-private:
-  population_t* population_;
 };
 
 template<typename Context, typename Tag>
@@ -206,42 +156,49 @@ concept alternateable_context =
     stats::tracked_models<typename Context::statistics_t, stats::generation>;
 
 // x0 = rank, x1 = density, ... (rdga)
-template<typename Context, typename RankTag>
-  requires(truncateable_context<Context, RankTag>)
+template<typename RankTag>
 class alternate {
 public:
-  using context_t = Context;
-  using population_t = typename context_t::population_t;
-
-public:
-  inline explicit alternate(context_t& context) noexcept
-      : context_{&context} {
-  }
-
-  template<typename Preserved>
-  inline void
-      operator()(population_pareto_t<population_t, Preserved>& /*unused*/,
-                 cluster_set const& /*unused*/) const noexcept {
-    if (auto& stats = context_->history().current();
+  template<truncateable_context<RankTag> Context, typename Preserved>
+  inline void operator()(Context& context,
+                         population_pareto_t<typename Context::population_t,
+                                             Preserved>& /*unused*/,
+                         cluster_set const& /*unused*/) const noexcept {
+    if (auto& stats = context.history().current();
         stats.generation_value() % 2 == 0) {
-      details::assign_truncated<RankTag>(context_->population());
+      details::assign_truncated<RankTag>(context.population());
     }
     else {
-      details::assign_truncated<crowd_density_t>(context_->population());
+      details::assign_truncated<crowd_density_t>(context.population());
+    }
+  }
+};
+
+// x = f(chrosome) (spea)
+template<typename Fn>
+class custom {
+public:
+  inline explicit custom(Fn const& fn)
+      : fn_{fn} {
+  }
+
+public:
+  template<typename Context, typename Preserved>
+  void operator()(Context& context,
+                  population_pareto_t<typename Context::population_t,
+                                      Preserved>& /*unused*/,
+                  cluster_set const& /*unused*/) const noexcept {
+    using scaled_fitness_t = typename Context::population_t::scaled_fitness_t;
+
+    for (auto&& individual : context.population().individuals()) {
+      auto value = std::invoke(fn_, individual);
+
+      individual.eval().set_scaled(scaled_fitness_t{value});
     }
   }
 
 private:
-  context_t* context_;
-};
-
-template<template<typename...> class Projection, typename... Tys>
-class factory {
-public:
-  template<typename Context>
-  inline constexpr auto operator()(Context& context) const {
-    return Projection<Context, Tys...>{context};
-  }
+  Fn fn_;
 };
 
 } // namespace gal::project

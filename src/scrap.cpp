@@ -411,11 +411,11 @@ void test_ground() {
   using mo_ctx_t = gal::population_context<mo_pop_t, stat_t>;
   mo_ctx_t mo_ctx{mp, hist};
 
-  gal::project::scale<mo_ctx_t, gal::int_rank_t> pj0{mo_ctx};
-  pj0(pps, cls);
+  gal::project::scale<gal::int_rank_t> pj0{};
+  pj0(mo_ctx, pps, cls);
 
-  gal::project::translate<mo_ctx_t, gal::int_rank_t> pj1{mo_ctx};
-  pj1(pps, cls);
+  gal::project::translate<gal::int_rank_t> pj1{};
+  pj1(mo_ctx, pps, cls);
 
   mo_m_pop_t mmp{{}, {}, true};
   gal::population_pareto_t<mo_m_pop_t, gal::pareto_preserved_t> mpps{1};
@@ -423,15 +423,15 @@ void test_ground() {
   using mo_m_ctx_t = gal::population_context<mo_m_pop_t, stat_t>;
   mo_m_ctx_t mo_m_ctx{mmp, hist};
 
-  gal::project::merge<mo_m_ctx_t, gal::int_rank_t> pj2{mo_m_ctx};
-  pj2(mpps, cls);
+  gal::project::merge<gal::int_rank_t> pj2{};
+  pj2(mo_m_ctx, mpps, cls);
 
-  gal::project::truncate<mo_ctx_t, gal::int_rank_t> pj3{mo_ctx};
-  pj3(pps, cls);
+  gal::project::truncate<gal::int_rank_t> pj3{};
+  pj3(mo_ctx, pps, cls);
 
-  gal::project::truncate<mo_ctx_t, gal::crowd_density_t> pj4{mo_ctx};
-  pj4(pps, cls);
+  gal::project::truncate<gal::crowd_density_t> pj4{};
+  pj4(mo_ctx, pps, cls);
 
-  gal::project::alternate<mo_ctx_t, gal::int_rank_t> pj5{mo_ctx};
-  pj5(pps, cls);
+  gal::project::alternate<gal::int_rank_t> pj5{};
+  pj5(mo_ctx, pps, cls);
 }

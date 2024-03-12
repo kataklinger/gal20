@@ -421,18 +421,12 @@ namespace details {
 template<typename Population, typename Pruning>
 struct pruning_traits : details::pruning_helper<Population, Pruning> {};
 
-template<typename Operation, typename Population, typename Preserved>
+template<typename Operation, typename Context, typename Preserved>
 concept projection = std::invocable<
     Operation,
-    std::add_lvalue_reference_t<population_pareto_t<Population, Preserved>>,
+    std::add_lvalue_reference_t<Context>,
+    std::add_lvalue_reference_t<
+        population_pareto_t<typename Context::population_t, Preserved>>,
     cluster_set const&>;
-
-template<typename Factory, typename Context, typename Preserved>
-concept projection_factory =
-    std::is_invocable_v<std::add_const_t<Factory>,
-                        std::add_lvalue_reference_t<Context>> &&
-    projection<operation_factory_result_t<Factory, Context>,
-               typename Context::population_t,
-               Preserved>;
 
 } // namespace gal
