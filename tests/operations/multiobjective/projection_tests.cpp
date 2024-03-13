@@ -94,12 +94,12 @@ TEST_F(projection_tests, translate_scaled_fitness_value) {
 
   // assert
   auto values = to_vector(population_.individuals());
-  EXPECT_NEAR(values[0], 1.75, 0.000001);
+  EXPECT_NEAR(values[0], 1.25, 0.000001);
   EXPECT_NEAR(values[1], 1.5, 0.000001);
-  EXPECT_NEAR(values[2], 2.25, 0.000001);
-  EXPECT_NEAR(values[3], 2.125, 0.000001);
-  EXPECT_NEAR(values[4], 3.049999, 0.000001);
-  EXPECT_NEAR(values[5], 3.024999, 0.000001);
+  EXPECT_NEAR(values[2], 2.75, 0.000001);
+  EXPECT_NEAR(values[3], 2.875, 0.000001);
+  EXPECT_NEAR(values[4], 3.95, 0.000001);
+  EXPECT_NEAR(values[5], 3.975, 0.000001);
 }
 
 TEST_F(projection_tests, truncate_ranking_scaled_fitness_value) {
@@ -130,12 +130,12 @@ TEST_F(projection_tests, truncate_density_scaled_fitness_value) {
 
   // assert
   auto values = to_vector(population_.individuals());
-  EXPECT_NEAR(values[0], 0.75, 0.0001);
+  EXPECT_NEAR(values[0], 0.25, 0.0001);
   EXPECT_NEAR(values[1], 0.5, 0.0001);
-  EXPECT_NEAR(values[2], 0.25, 0.0001);
-  EXPECT_NEAR(values[3], 0.125, 0.0001);
-  EXPECT_NEAR(values[4], 0.05, 0.0001);
-  EXPECT_NEAR(values[5], 0.025, 0.0001);
+  EXPECT_NEAR(values[2], 0.75, 0.0001);
+  EXPECT_NEAR(values[3], 0.875, 0.0001);
+  EXPECT_NEAR(values[4], 0.95, 0.0001);
+  EXPECT_NEAR(values[5], 0.975, 0.0001);
 }
 
 TEST_F(projection_tests, alternate_ranking_scaled_fitness_value) {
@@ -167,12 +167,12 @@ TEST_F(projection_tests, alternate_density_scaled_fitness_value) {
 
   // assert
   auto values = to_vector(population_.individuals());
-  EXPECT_NEAR(values[0], 0.75, 0.0001);
+  EXPECT_NEAR(values[0], 0.25, 0.0001);
   EXPECT_NEAR(values[1], 0.5, 0.0001);
-  EXPECT_NEAR(values[2], 0.25, 0.0001);
-  EXPECT_NEAR(values[3], 0.125, 0.0001);
-  EXPECT_NEAR(values[4], 0.05, 0.0001);
-  EXPECT_NEAR(values[5], 0.025, 0.0001);
+  EXPECT_NEAR(values[2], 0.75, 0.0001);
+  EXPECT_NEAR(values[3], 0.875, 0.0001);
+  EXPECT_NEAR(values[4], 0.95, 0.0001);
+  EXPECT_NEAR(values[5], 0.975, 0.0001);
 }
 
 TEST_F(projection_tests, custom_scaled_fitness_value) {
@@ -243,12 +243,12 @@ TEST_F(merge_tests, merge_scaled_fitness_value) {
   EXPECT_EQ(std::get<0>(values[4]), 3);
   EXPECT_EQ(std::get<0>(values[5]), 3);
 
-  EXPECT_NEAR(std::get<1>(values[0]), 0.75, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[0]), 0.25, 0.000001);
   EXPECT_NEAR(std::get<1>(values[1]), 0.5, 0.000001);
-  EXPECT_NEAR(std::get<1>(values[2]), 0.25, 0.000001);
-  EXPECT_NEAR(std::get<1>(values[3]), 0.125, 0.000001);
-  EXPECT_NEAR(std::get<1>(values[4]), 0.05, 0.000001);
-  EXPECT_NEAR(std::get<1>(values[5]), 0.025, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[2]), 0.75, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[3]), 0.875, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[4]), 0.95, 0.000001);
+  EXPECT_NEAR(std::get<1>(values[5]), 0.975, 0.000001);
 }
 
 } // namespace tests::projection

@@ -35,7 +35,7 @@ public:
   }
 };
 
-// x = f(rank) / (1 - density) (nsga)
+// x = rank / (1. - density) (nsga)
 template<typename RankTag>
 class scale {
 public:
@@ -73,7 +73,7 @@ public:
   }
 };
 
-// x = f(rank) + g(density) (spea-ii)
+// x = rank + (1. - density) (spea-ii)
 template<typename RankTag>
 class translate {
 public:
@@ -86,7 +86,7 @@ public:
 
     for (auto&& individual : context.population().individuals()) {
       auto rank = get_tag<RankTag>(individual).get();
-      auto density = get_tag<crowd_density_t>(individual).get();
+      auto density = 1. - get_tag<crowd_density_t>(individual).get();
 
       individual.eval().set_scaled(scaled_fitness_t{rank + density});
     }
@@ -109,7 +109,7 @@ public:
 
     for (auto&& individual : context.population().individuals()) {
       auto rank = get_tag<RankTag>(individual).get();
-      auto density = get_tag<crowd_density_t>(individual).get();
+      auto density = 1. - get_tag<crowd_density_t>(individual).get();
 
       individual.eval().set_scaled(scaled_fitness_t{rank, density});
     }
@@ -130,13 +130,18 @@ namespace details {
 
     for (auto&& individual : population.individuals()) {
       auto value = static_cast<double>(get_tag<Tag>(individual).get());
+
+      if constexpr (std::is_same_v<Tag, crowd_density_t>) {
+        value = 1. - value;
+      }
+
       individual.eval().set_scaled(scaled_fitness_t{value});
     }
   }
 
 } // namespace details
 
-// x = rank or x = density (pesa, paes)
+// x = rank or x = 1. - density (pesa, paes)
 template<typename SelectedTag>
 class truncate {
 public:
@@ -155,7 +160,7 @@ concept alternateable_context =
     population_tagged_with<typename Context::population_t, crowd_density_t> &&
     stats::tracked_models<typename Context::statistics_t, stats::generation>;
 
-// x0 = rank, x1 = density, ... (rdga)
+// x0 = rank, x1 = 1. - density, ... (rdga)
 template<typename RankTag>
 class alternate {
 public:
