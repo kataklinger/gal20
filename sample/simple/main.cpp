@@ -314,7 +314,8 @@ void rdga() {
       .crowd(crowd::cluster{})
       .prune(prune::none{})
       .project(project::alternate<int_rank_t>{})
-      .select(select::roulette_scaled{select::unique<4>, rng})
+      .select(
+          select::tournament_scaled{select::unique<4>, select::rounds<2>, rng})
       .couple(couple::parametrize<couple::exclusive, 0.8_fc, 0.2_fc, true>(rng))
       .replace(replace::nondominating_parents_raw{})
       .observe(observe{generation_event, f1f2::observe{}})
