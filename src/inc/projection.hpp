@@ -38,6 +38,9 @@ public:
 // x = rank / (1. - density) (nsga)
 template<typename RankTag>
 class scale {
+private:
+  inline static constexpr double epsilon = 0.00001;
+
 public:
   template<projectable_context<RankTag, double> Context, typename Preserved>
   void operator()(
@@ -51,7 +54,7 @@ public:
 
     for (auto&& individual : context.population().individuals()) {
       auto front = get_tag<frontier_level_t>(individual).get() - 1;
-      double density{get_tag<crowd_density_t>(individual)};
+      auto density = 1. - get_tag<crowd_density_t>(individual).get();
 
       if (multipliers[front] > density) {
         multipliers[front] = density;
@@ -60,13 +63,14 @@ public:
 
     for (auto correction = 1.0;
          auto&& multiplier : multipliers | std::views::reverse) {
-      correction *= std::exchange(multiplier, multiplier / correction);
+      correction /= multiplier > epsilon ? multiplier : epsilon;
+      multiplier = correction;
     }
 
     for (auto&& individual : context.population().individuals()) {
       auto front = get_tag<frontier_level_t>(individual).get() - 1;
-      auto scaled = multipliers[front] * get_tag<RankTag>(individual).get() *
-                    get_tag<crowd_density_t>(individual).get();
+      auto scaled = multipliers[front] *
+                    (1. - get_tag<crowd_density_t>(individual).get());
 
       individual.eval().set_scaled(scaled_fitness_t{scaled});
     }

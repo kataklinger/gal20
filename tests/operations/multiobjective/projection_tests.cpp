@@ -77,12 +77,12 @@ TEST_F(projection_tests, scale_scaled_fitness_value) {
 
   // assert
   auto values = to_vector(population_.individuals());
-  EXPECT_NEAR(values[0], 120., 0.0000001);
-  EXPECT_NEAR(values[1], 80., 0.0000001);
-  EXPECT_NEAR(values[2], 2.5, 0.0000001);
-  EXPECT_NEAR(values[3], 1.25, 0.0000001);
-  EXPECT_NEAR(values[4], 0.00375, 0.0000001);
-  EXPECT_NEAR(values[5], 0.001875, 0.0000001);
+  EXPECT_NEAR(values[0], 1.4035, 0.0001);
+  EXPECT_NEAR(values[1], 2.8070, 0.0001);
+  EXPECT_NEAR(values[2], 1.0526, 0.0001);
+  EXPECT_NEAR(values[3], 1.2280, 0.0001);
+  EXPECT_NEAR(values[4], 0.9999, 0.0001);
+  EXPECT_NEAR(values[5], 1.0263, 0.0001);
 }
 TEST_F(projection_tests, translate_scaled_fitness_value) {
   // arrange
