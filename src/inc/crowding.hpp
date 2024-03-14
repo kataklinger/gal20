@@ -50,18 +50,26 @@ public:
     for (auto&& set : sets) {
       double total = 1.;
 
-      for (auto in = std::ranges::begin(set); auto&& left : set) {
-        std::ranges::advance(in, 1);
-        for (auto&& right : std::ranges::subrange{in, std::ranges::end(set)}) {
-          auto dist = static_cast<double>(
-              proximity_(left->chromosome(), right->chromosome()));
+      if (auto in = std::ranges::begin(set); std::ranges::size(set) == 1) {
+        get_tag<crowd_density_t>(**in) = 1.;
+        total += 1.;
+      }
+      else {
+        for (auto&& left : set) {
+          std::ranges::advance(in, 1);
 
-          auto niching =
-              dist < cutoff_ ? 1. - std::pow(dist / cutoff_, alpha_) : 0.;
+          for (auto&& right :
+               std::ranges::subrange{in, std::ranges::end(set)}) {
+            auto dist = static_cast<double>(
+                proximity_(left->chromosome(), right->chromosome()));
 
-          get_tag<crowd_density_t>(*left) += niching;
-          get_tag<crowd_density_t>(*right) += niching;
-          total += niching;
+            auto niching =
+                dist < cutoff_ ? 1. - std::pow(dist / cutoff_, alpha_) : 0.;
+
+            get_tag<crowd_density_t>(*left) += niching;
+            get_tag<crowd_density_t>(*right) += niching;
+            total += niching;
+          }
         }
       }
 
